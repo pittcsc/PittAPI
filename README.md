@@ -1,7 +1,7 @@
-### Pitt Course API
+### Pitt API
 
 ```python
-from pittCourseAPI import CourseAPI
+from pittAPI import CourseAPI
 
 caller = CourseAPI()
 
