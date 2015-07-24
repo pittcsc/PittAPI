@@ -9,8 +9,7 @@ class CourseAPI:
     def __init__(self):
         pass
 
-    def get_courses(self, term="2161", subject="CS"):
-
+    def get_courses(self, term, subject):
         '''
         Returns a list of dictionaries containing the data for all SUBJECT classes in TERM
 
@@ -46,3 +45,27 @@ class CourseAPI:
             raise InvalidParameterException("The TERM or SUBJECT is invalid")
 
         return course_details
+
+    def get_class_description(self, class_number, term):
+        '''
+        Returns a string that is the description for CLASS_NUMBER in term TERM
+
+        Keyword arguments
+        class_number -- String, class number
+        term -- String, term number
+        '''
+
+        url= 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM=%s&TERM=%s' % (class_number, term)
+        page = urllib2.urlopen(url)
+        soup = BeautifulSoup(page.read())
+        table = soup.findChildren('table')[0]
+        rows = table.findChildren('tr')
+
+        description_flag = False
+        for row in rows:
+            cells = row.findChildren('td')
+            for cell in cells:
+                if description_flag == True:
+                    return cell.string.strip()
+                if len(cell.contents) > 0 and str(cell.contents[0]) == '<strong>Description</strong>':
+                    description_flag = True
