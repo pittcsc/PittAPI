@@ -39,10 +39,79 @@ class CourseAPI:
             for i in range(len(temp)):
                 temp[i] = temp[i].replace('&nbsp;', '')
 
-            course_details.append({'catalog_number': temp[0], 'term': temp[1], 'title': temp[2], 'class_number': course.find('a').contents[0], 'instructor': 'Not decided' if len(temp[3].strip()) == 0 else temp[3].strip(), 'credits': temp[4]})
+            course_details.append(
+                {
+                    'catalog_number': temp[0].strip(),
+                    'term': temp[1].replace('\r\n\t', ''),
+                    'title': temp[2].strip(),
+                    'class_number': course.find('a').contents[0].strip(),
+                    'instructor': 'Not decided' if len(temp[3].strip()) == 0 else temp[3].strip(),
+                    'credits': temp[4].strip()
+                }
+            )
 
         if len(course_details) == 0:
             raise InvalidParameterException("The TERM or SUBJECT is invalid")
+
+        return course_details
+
+    def get_courses_by_req(self, term, req):
+        '''
+        Returns a list of dictionaries containing the data for all SUBJECT classes in TERM
+
+        Keyword arguments
+        term -- String, term number
+        req -- string, requirement abbreviation
+        '''
+
+        req = req.upper()
+
+        url= 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ=%s&TERM=%s' % (req, term)
+        page = urllib2.urlopen(url)
+        soup = BeautifulSoup(page.read())
+        courses = soup.findAll("tr", {"class": "odd"})
+        courses_even = soup.findAll("tr", {"class": "even"})
+        courses.extend(courses_even)
+
+        course_details = []
+
+        for course in courses:
+            temp = []
+            for i in course:
+                try:
+                    if len(i.string.strip()) > 2:
+                        temp.append(i.string.strip())
+                except (TypeError, AttributeError) as e:
+                    pass
+
+            for i in range(len(temp)):
+                temp[i] = temp[i].replace('&nbsp;', '')
+
+            if len(temp) == 6:
+                course_details.append(
+                    {
+                        'subject': temp[0].strip(),
+                        'catalog_number': temp[1].strip(),
+                        'term': temp[2].replace('\r\n\t', ' '),
+                        'title': temp[3].strip(),
+                        'instructor': 'Not decided' if len(temp[4].strip()) == 0 else temp[4].strip(),
+                        'credits': temp[5].strip()
+                    }
+                )
+            else:
+                course_details.append(
+                    {
+                        'subject': 'Not available',
+                        'catalog_number': temp[0].strip(),
+                        'term': temp[1].strip(),
+                        'title': temp[2].replace('\r\n\t', ' '),
+                        'instructor': 'Not decided' if len(temp[3].strip()) == 0 else temp[3].strip(),
+                        'credits': temp[4].strip()
+                    }
+                )
+
+        if len(course_details) == 0:
+            raise InvalidParameterException("The TERM or REQ is invalid")
 
         return course_details
 
