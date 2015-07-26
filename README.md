@@ -1,4 +1,6 @@
-### Pitt API
+### Pitt API  
+
+Made by Ritwik Gupta at the University of Pittsburgh in an effort to get more open data from Pitt.  
 
 ```python
 from pittAPI import CourseAPI, LaundryAPI
