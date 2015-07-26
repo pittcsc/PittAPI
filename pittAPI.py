@@ -138,3 +138,86 @@ class CourseAPI:
                     return cell.string.strip()
                 if len(cell.contents) > 0 and str(cell.contents[0]) == '<strong>Description</strong>':
                     description_flag = True
+
+class LabAPI:
+
+    def __init__(self):
+        pass
+
+    def get_status(self):
+        '''
+        Doesn't do much for now, but it does return the status of the
+        labs if they're all closed. Untested when a single lab is open.
+        '''
+
+        url= 'http://www.ewi-ssl.pitt.edu/labstats_txtmsg/'
+        page = urllib2.urlopen(url)
+        soup = BeautifulSoup(page.read())
+        labs = soup.span.contents[0].strip().split(".")
+        labs = map(lambda x: x.strip(), labs)
+        labs = filter(lambda x: len(x) > 0, labs)
+
+        return labs
+
+class LaundryAPI:
+
+    location_dict = {
+        'TOWERS': '2430136',
+        'BRACKENRIDGE': '2430119',
+        'HOLLAND': '2430137',
+        'LOTHROP': '2430151',
+        'MCCORMICK': '2430120',
+        'SUTH_EAST': '2430135',
+        'SUTH_WEST': '2430134'
+    }
+
+    def __init__(self):
+        pass
+
+    def get_status_simple(self, loc):
+        '''
+        Returns a dictionary with free washers and dryers as well as total washers
+        and dryers for given building
+
+        Keyword arguments
+        loc -- Building name, case doesn't matter
+            -> TOWERS
+            -> BRACKENRIDGE
+            -> HOLLAND
+            -> LOTHROP
+            -> MCCORMICK
+            -> SUTH_EAST
+            -> SUTH_WEST
+        '''
+
+        import re
+
+        url = 'http://classic.laundryview.com/appliance_status_ajax.php?lr=%s' % self.location_dict[loc]
+        page = urllib2.urlopen(url)
+        soup = BeautifulSoup(page.read())
+
+        re1 = ['(\\d+)','(\\s+)','(of)','(\\s+)','(\\d+)','(\\s+)','((?:[a-z][a-z]+))']
+
+        rg = re.compile(''.join(re1),re.IGNORECASE|re.DOTALL)
+        search = rg.findall(str(soup))
+
+        di = {
+                'building': loc,
+                'free_washers': search[0][0],
+                'total_washers': search[0][4],
+                'free_dryers': search[1][0],
+                'total_dryers': search[1][4]
+            }
+
+        return di
+
+    def get_status_detailed(self, loc):
+        '''
+        Doesn't work for now
+        '''
+
+        url = 'http://classic.laundryview.com/classic_laundry_room_ajax.php?lr=%s' % self.location_dict[loc]
+        page = urllib2.urlopen(url)
+        soup = BeautifulSoup(page.read())
+
+        print soup
