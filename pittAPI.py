@@ -215,9 +215,42 @@ class LaundryAPI:
         '''
         Doesn't work for now
         '''
+        import subprocess
 
-        url = 'http://classic.laundryview.com/classic_laundry_room_ajax.php?lr=%s' % self.location_dict[loc]
-        page = urllib2.urlopen(url)
-        soup = BeautifulSoup(page.read())
+        cmd = "curl 'http://www.laundryview.com/dynamicRoomData.php?location=%s' -H 'Pragma: no-cache' -H 'Accept-Encoding: gzip, deflate, sdch' -H 'Accept-Language: en-US,en;q=0.8' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' -H 'Cache-Control: no-cache' -H 'Cookie: PHPSESSID=isu5hngvjfvv6f9l5lvcderkc7' -H 'Connection: keep-alive' --compressed" % self.location_dict[loc]
+        response = subprocess.check_output(cmd, shell=True)
+        resp_split = response.split('&')[3:]
+        cleaned_resp = map(lambda x: x[x.index('=') + 1:], resp_split)
 
-        print soup
+        washer_dryer_split = []
+        for string in cleaned_resp:
+            temp = []
+            temp.append(string[:string.index('\n')][::-1])
+            temp.append(string[string.index('\n'):][::-1].strip())
+            washer_dryer_split.append(temp)
+
+        n = 5
+        washer_dryer_split_two = []
+        for sublist in washer_dryer_split:
+            temp = []
+            for string in sublist:
+                groups = string.split(':')
+                final = ':'.join(groups[:n])[::-1]
+                if final == '1:0:0:0:':
+                    temp.append('Free')
+                elif final == '1::0:0:':
+                    temp.append('In Use/OOS')
+                else:
+                    temp.append(string[::-1])
+            washer_dryer_split_two.append(temp)
+
+        washer_dryer_split_two = filter(lambda x: x != ['1:0:0:0:0:0:', ''], washer_dryer_split_two)
+
+        di = {}
+        for k,v in enumerate(washer_dryer_split_two):
+            if v[1]:
+                di[k + 1] = v
+            else:
+                di[k + 1] = [v[0]]
+
+        return di
