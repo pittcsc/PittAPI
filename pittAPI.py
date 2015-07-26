@@ -103,7 +103,7 @@ class CourseAPI:
                     {
                         'subject': 'Not available',
                         'catalog_number': temp[0].strip(),
-                        'term': temp[1].strip(),
+                        'term': temp[1].strip().replace('\r\n\t', ' '),
                         'title': temp[2].replace('\r\n\t', ' '),
                         'instructor': 'Not decided' if len(temp[3].strip()) == 0 else temp[3].strip(),
                         'credits': temp[4].strip()
