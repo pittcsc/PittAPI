@@ -219,16 +219,20 @@ class LaundryAPI:
         '''
         import subprocess
 
+        # Get a cookie
         cookie_cmd = "curl -I -s 'http://www.laundryview.com/laundry_room.php?view=c&lr=%s'" % self.location_dict[loc]
         response = subprocess.check_output(cookie_cmd, shell=True)
         response = response[response.index('Set-Cookie'):]
         cookie = response[response.index('=') + 1:response.index(';')]
 
+        # Get the weird laundry data
         cmd = "curl -s 'http://www.laundryview.com/dynamicRoomData.php?location=%s' -H 'Cookie: PHPSESSID=%s' --compressed" % (self.location_dict[loc], cookie)
         response = subprocess.check_output(cmd, shell=True)
         resp_split = response.split('&')[3:]
         cleaned_resp = map(lambda x: x[x.index('=') + 1:], resp_split)
 
+        # Everything below this is washing the dirty data
+        # ^hashtag puns
         washer_dryer_split = []
         for string in cleaned_resp:
             part_a = string[:string.index('\n')][::-1]
