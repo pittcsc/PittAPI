@@ -188,6 +188,8 @@ class LaundryAPI:
             -> MCCORMICK
             -> SUTH_EAST
             -> SUTH_WEST
+
+        session.hash_bits_per_character = 5
         '''
 
         import re
@@ -217,7 +219,12 @@ class LaundryAPI:
         '''
         import subprocess
 
-        cmd = "curl -s 'http://www.laundryview.com/dynamicRoomData.php?location=%s' -H 'Pragma: no-cache' -H 'Accept-Encoding: gzip, deflate, sdch' -H 'Accept-Language: en-US,en;q=0.8' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' -H 'Cache-Control: no-cache' -H 'Cookie: PHPSESSID=isu5hngvjfvv6f9l5lvcderkc7' -H 'Connection: keep-alive' --compressed" % self.location_dict[loc]
+        cookie_cmd = "curl -I -s 'http://www.laundryview.com/laundry_room.php?view=c&lr=%s'" % self.location_dict[loc]
+        response = subprocess.check_output(cookie_cmd, shell=True)
+        response = response[response.index('Set-Cookie'):]
+        cookie = response[response.index('=') + 1:response.index(';')]
+
+        cmd = "curl -s 'http://www.laundryview.com/dynamicRoomData.php?location=%s' -H 'Cookie: PHPSESSID=%s' --compressed" % (self.location_dict[loc], cookie)
         response = subprocess.check_output(cmd, shell=True)
         resp_split = response.split('&')[3:]
         cleaned_resp = map(lambda x: x[x.index('=') + 1:], resp_split)
