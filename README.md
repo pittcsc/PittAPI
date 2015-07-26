@@ -2,6 +2,8 @@
 
 Made by Ritwik Gupta at the University of Pittsburgh in an effort to get more open data from Pitt.  
 
+### Usage examples  
+
 ```python
 from pittAPI import CourseAPI, LaundryAPI
 
