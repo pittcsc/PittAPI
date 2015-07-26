@@ -243,7 +243,7 @@ class LaundryAPI:
                     temp.append('Something\'s wrong, contact Ritwik')
             washer_dryer_split_two.append(temp)
 
-        washer_dryer_split_two = filter(lambda x: x != ['1:0:0:0:0:0:', ''], washer_dryer_split_two)
+        washer_dryer_split_two = filter(lambda x: 'Something\'s wrong, contact Ritwik' not in x, washer_dryer_split_two)
 
         di = {}
         for k,v in enumerate(washer_dryer_split_two):
