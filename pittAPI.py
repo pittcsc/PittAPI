@@ -224,10 +224,9 @@ class LaundryAPI:
 
         washer_dryer_split = []
         for string in cleaned_resp:
-            temp = []
-            temp.append(string[:string.index('\n')][::-1])
-            temp.append(string[string.index('\n'):][::-1].strip())
-            washer_dryer_split.append(temp)
+            part_a = string[:string.index('\n')][::-1]
+            part_b = string[string.index('\n'):][::-1].strip()
+            washer_dryer_split.append([part_a, part_b])
 
         n = 5
         washer_dryer_split_two = []
@@ -241,7 +240,7 @@ class LaundryAPI:
                 elif final == '1::0:0:':
                     temp.append('In Use/OOS')
                 else:
-                    temp.append(string[::-1])
+                    temp.append('Something\'s wrong, contact Ritwik')
             washer_dryer_split_two.append(temp)
 
         washer_dryer_split_two = filter(lambda x: x != ['1:0:0:0:0:0:', ''], washer_dryer_split_two)
