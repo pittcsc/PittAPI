@@ -19,3 +19,8 @@ description = course.get_class_description(class_number="10163", term="2161")
 # in use vs. total washers and dryers at building
 small_dict = laundry.get_status_simple(loc="TOWERS")
 ```
+
+### TODO  
+* Make the laundry detailed method work  
+* Test the computer lab status API and make it return a dictionary  
+* Try to get a dining API  
