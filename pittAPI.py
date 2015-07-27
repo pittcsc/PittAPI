@@ -141,23 +141,41 @@ class CourseAPI:
 
 class LabAPI:
 
+    location_dict = {
+        'ALUMNI': 0,
+        'BENEDUM': 1,
+        'CATHEDRALG26': 2,
+        'CATHEDRALG27': 3,
+        'LAWRENCE': 4,
+        'HILLMAN': 5,
+        'SUTHERLAND': 6
+    }
+
     def __init__(self):
         pass
 
-    def get_status(self):
+    def get_status(self, loc):
         '''
-        Doesn't do much for now, but it does return the status of the
-        labs if they're all closed. Untested when a single lab is open.
+        Returns a dictionary with the status of the lab and the amount of free machines.
         '''
-
+        
         url= 'http://www.ewi-ssl.pitt.edu/labstats_txtmsg/'
         page = urllib2.urlopen(url)
         soup = BeautifulSoup(page.read())
-        labs = soup.span.contents[0].strip().split(".")
-        labs = map(lambda x: x.strip(), labs)
-        labs = filter(lambda x: len(x) > 0, labs)
-
-        return labs
+        labs = soup.span.contents[0].strip().split("  ")
+        lab = labs[self.location_dict[loc]]
+        if len(lab.split(':'))>1:
+            lab = map(str.strip, map(str,lab.split(':')[1].strip().split(',')))
+            machines = [int(x.split(' ')[0]) for x in lab] 
+            return {'STATUS': 'open',
+                    'WINDOWS': machines[0],
+                    'MAC': machines[1],
+                    'LINUX': machines[2]}
+        else:
+            return {'STATUS': 'closed',
+                    'WINDOWS': 0,
+                    'MAC': 0,
+                    'LINUX': 0}
 
 class LaundryAPI:
 
