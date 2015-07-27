@@ -71,38 +71,34 @@ class CourseAPI:
 
         course_details = []
 
+
         for course in courses:
-            temp = []
-            for i in course:
-                try:
-                    if len(i.string.strip()) > 2:
-                        temp.append(i.string.strip())
-                except (TypeError, AttributeError):
-                    pass
 
-            for i in range(len(temp)):
-                temp[i] = temp[i].replace('&nbsp;', '')
+            details = [course_detail.string.replace('&nbsp;', '').strip()
+                       for course_detail in course
+                       if course_detail.string is not None
+                       and len(course_detail.string.strip()) > 2]
 
-            if len(temp) == 6:
+            if len(details) == 6:
                 course_details.append(
                     {
-                        'subject': temp[0].strip(),
-                        'catalog_number': temp[1].strip(),
-                        'term': temp[2].replace('\r\n\t', ' '),
-                        'title': temp[3].strip(),
-                        'instructor': 'Not decided' if len(temp[4].strip()) == 0 else temp[4].strip(),
-                        'credits': temp[5].strip()
+                        'subject': details[0],
+                        'catalog_number': details[1],
+                        'term': details[2].replace('\r\n\t', ' '),
+                        'title': details[3],
+                        'instructor': details[4] if len(details[4]) > 0 else 'Not decided',
+                        'credits': details[5]
                     }
                 )
             else:
                 course_details.append(
                     {
                         'subject': 'Not available',
-                        'catalog_number': temp[0].strip(),
-                        'term': temp[1].strip().replace('\r\n\t', ' '),
-                        'title': temp[2].replace('\r\n\t', ' '),
-                        'instructor': 'Not decided' if len(temp[3].strip()) == 0 else temp[3].strip(),
-                        'credits': temp[4].strip()
+                        'catalog_number': details[0],
+                        'term': details[1].replace('\r\n\t', ' '),
+                        'title': details[2].replace('\r\n\t', ' '),
+                        'instructor': details[3] if len(details[3]) > 0 else 'Not decided',
+                        'credits': details[4]
                     }
                 )
 
