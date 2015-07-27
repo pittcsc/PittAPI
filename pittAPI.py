@@ -1,4 +1,6 @@
 import urllib2
+import subprocess
+import re
 
 from BeautifulSoup import BeautifulSoup
 
@@ -234,7 +236,6 @@ class LaundryAPI:
         """
         Works!
         """
-        import subprocess
 
         # Get a cookie
         cookie_cmd = "curl -I -s 'http://www.laundryview.com/laundry_room.php?view=c&lr=%s'" % self.location_dict[loc]
