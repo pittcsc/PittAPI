@@ -18,7 +18,7 @@ class CourseAPI:
         subject -- String, course abbreviation
         '''
 
-        url= 'http://www.courses.as.pitt.edu/results-subja.asp?TERM=%s&SUBJ=%s' % (term, subject)
+        url = 'http://www.courses.as.pitt.edu/results-subja.asp?TERM=%s&SUBJ=%s' % (term, subject)
         page = urllib2.urlopen(url)
         soup = BeautifulSoup(page.read())
         courses = soup.findAll("tr", {"class": "odd"})
@@ -66,7 +66,7 @@ class CourseAPI:
 
         req = req.upper()
 
-        url= 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ=%s&TERM=%s' % (req, term)
+        url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ=%s&TERM=%s' % (req, term)
         page = urllib2.urlopen(url)
         soup = BeautifulSoup(page.read())
         courses = soup.findAll("tr", {"class": "odd"})
@@ -124,7 +124,7 @@ class CourseAPI:
         term -- String, term number
         '''
 
-        url= 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM=%s&TERM=%s' % (class_number, term)
+        url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM=%s&TERM=%s' % (class_number, term)
         page = urllib2.urlopen(url)
         soup = BeautifulSoup(page.read())
         table = soup.findChildren('table')[0]
@@ -141,23 +141,53 @@ class CourseAPI:
 
 class LabAPI:
 
+    location_dict = {
+        'ALUMNI': 0,
+        'BENEDUM': 1,
+        'CATH_G26': 2,
+        'CATH_G27': 3,
+        'LAWRENCE': 4,
+        'HILLMAN': 5,
+        'SUTH': 6
+    }
+
     def __init__(self):
         pass
 
-    def get_status(self):
+    def get_status(self, loc):
         '''
-        Doesn't do much for now, but it does return the status of the
-        labs if they're all closed. Untested when a single lab is open.
+        Returns a dictionary with status and amount of OS machines.
+
+        Keyword arguments
+        loc -- Building name
         '''
 
-        url= 'http://www.ewi-ssl.pitt.edu/labstats_txtmsg/'
+        loc = loc.upper()
+        url = 'http://www.ewi-ssl.pitt.edu/labstats_txtmsg/'
         page = urllib2.urlopen(url)
         soup = BeautifulSoup(page.read())
-        labs = soup.span.contents[0].strip().split(".")
-        labs = map(lambda x: x.strip(), labs)
-        labs = filter(lambda x: len(x) > 0, labs)
+        labs = soup.span.contents[0].strip().split("  ")
 
-        return labs
+        lab = labs[self.location_dict[loc]].split(':')
+        di = {}
+        if len(lab) > 1:
+            lab = [x.strip() for x in lab[1].split(',')]
+            machines = [int(x[:x.index(' ')]) for x in lab]
+            di = {
+                    'status': 'open',
+                    'windows': machines[0],
+                    'mac': machines[1],
+                    'linux': machines[2]
+            }
+        else:
+            di = {
+                    'status': 'closed',
+                    'windows': 0,
+                    'mac': 0,
+                    'linux': 0
+            }
+
+        return di
 
 class LaundryAPI:
 
@@ -194,6 +224,7 @@ class LaundryAPI:
 
         import re
 
+        loc = loc.upper()
         url = 'http://classic.laundryview.com/appliance_status_ajax.php?lr=%s' % self.location_dict[loc]
         page = urllib2.urlopen(url)
         soup = BeautifulSoup(page.read())
