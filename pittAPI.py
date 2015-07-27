@@ -71,7 +71,6 @@ class CourseAPI:
 
         course_details = []
 
-
         for course in courses:
 
             details = [course_detail.string.replace('&nbsp;', '').strip()
@@ -107,29 +106,29 @@ class CourseAPI:
 
         return course_details
 
-    def get_class_description(self, class_number, term):
+    @staticmethod
+    def get_class_description(class_number, term):
         """
-        Returns a string that is the description for CLASS_NUMBER in term TERM
+        :returns: a string that is the description for CLASS_NUMBER in term TERM
 
-        Keyword arguments
-        class_number -- String, class number
-        term -- String, term number
+        :param: class_number: String, class number
+        :param: term: String, term number
         """
 
-        url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM=%s&TERM=%s' % (class_number, term)
+        url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM={}&TERM={}'.format(class_number, term)
         page = urllib2.urlopen(url)
         soup = BeautifulSoup(page.read())
         table = soup.findChildren('table')[0]
         rows = table.findChildren('tr')
 
-        description_flag = False
+        has_description = False
         for row in rows:
             cells = row.findChildren('td')
             for cell in cells:
-                if description_flag == True:
+                if has_description:
                     return cell.string.strip()
                 if len(cell.contents) > 0 and str(cell.contents[0]) == '<strong>Description</strong>':
-                    description_flag = True
+                    has_description = True
 
 
 class LabAPI:
