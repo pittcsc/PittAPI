@@ -215,59 +215,7 @@ class LaundryAPI:
 
     def get_status_detailed(self, loc):
         '''
-        Doesn't work for now
-        '''
-        import subprocess
-
-        # Get a cookie
-        cookie_cmd = "curl -I -s 'http://www.laundryview.com/laundry_room.php?view=c&lr=%s'" % self.location_dict[loc]
-        response = subprocess.check_output(cookie_cmd, shell=True)
-        response = response[response.index('Set-Cookie'):]
-        cookie = response[response.index('=') + 1:response.index(';')]
-
-        # Get the weird laundry data
-        cmd = "curl -s 'http://www.laundryview.com/dynamicRoomData.php?location=%s' -H 'Cookie: PHPSESSID=%s' --compressed" % (self.location_dict[loc], cookie)
-        response = subprocess.check_output(cmd, shell=True)
-        resp_split = response.split('&')[3:]
-        cleaned_resp = map(lambda x: x[x.index('=') + 1:], resp_split)
-
-        # Everything below this is washing the dirty data
-        # ^hashtag puns
-        washer_dryer_split = []
-        for string in cleaned_resp:
-            part_a = string[:string.index('\n')][::-1]
-            part_b = string[string.index('\n'):][::-1].strip()
-            washer_dryer_split.append([part_a, part_b])
-
-        n = 5
-        washer_dryer_split_two = []
-        for sublist in washer_dryer_split:
-            temp = []
-            for string in sublist:
-                groups = string.split(':')
-                final = ':'.join(groups[:n])[::-1]
-                if final == '1:0:0:0:':
-                    temp.append('Free')
-                elif final == '1::0:0:':
-                    temp.append('In Use/OOS')
-                else:
-                    temp.append('Something\'s wrong, contact Ritwik')
-            washer_dryer_split_two.append(temp)
-
-        washer_dryer_split_two = filter(lambda x: 'Something\'s wrong, contact Ritwik' not in x, washer_dryer_split_two)
-
-        di = {}
-        for k,v in enumerate(washer_dryer_split_two):
-            if v[1]:
-                di['machine' + str(k + 1)] = v
-            else:
-                di['machine' + str(k + 1)] = [v[0]]
-
-        return di
-
-    def get_status_detailed_alt(self, loc):
-        '''
-        Doesn't work for now
+        Works!
         '''
         import subprocess
 
@@ -302,7 +250,6 @@ class LaundryAPI:
         cleaned_resp = filter(lambda x: len(x) == 10, cleaned_resp)
 
         di = []
-        print cleaned_resp
         for machine in cleaned_resp:
             time_left = -1
             machine_name = "%s_%s" % (machine[9], machine[3])
