@@ -77,7 +77,7 @@ class CourseAPI:
                 try:
                     if len(i.string.strip()) > 2:
                         temp.append(i.string.strip())
-                except (TypeError, AttributeError) as e:
+                except (TypeError, AttributeError):
                     pass
 
             for i in range(len(temp)):
