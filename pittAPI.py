@@ -1,5 +1,6 @@
-from BeautifulSoup import BeautifulSoup
 import urllib2
+
+from BeautifulSoup import BeautifulSoup
 
 
 class InvalidParameterException(Exception):
@@ -10,44 +11,42 @@ class CourseAPI:
     def __init__(self):
         pass
 
-    def get_courses(self, term, subject):
-        """
-        Returns a list of dictionaries containing the data for all SUBJECT classes in TERM
-
-        Keyword arguments
-        term -- String, term number
-        subject -- String, course abbreviation
-        """
-
-        url = 'http://www.courses.as.pitt.edu/results-subja.asp?TERM=%s&SUBJ=%s' % (term, subject)
+    @staticmethod
+    def _retrieve_from_url(url):
         page = urllib2.urlopen(url)
         soup = BeautifulSoup(page.read())
         courses = soup.findAll("tr", {"class": "odd"})
         courses_even = soup.findAll("tr", {"class": "even"})
         courses.extend(courses_even)
+        return courses
+
+    def get_courses(self, term, subject):
+        """
+        :returns: a list of dictionaries containing the data for all SUBJECT classes in TERM
+
+        :param: term: String, term number
+        :param: subject: String, course abbreviation
+        """
+
+        url = 'http://www.courses.as.pitt.edu/results-subja.asp?TERM={}&SUBJ={}'.format(term, subject)
+        courses = self._retrieve_from_url(url)
 
         course_details = []
 
         for course in courses:
-            temp = []
-            for i in course:
-                try:
-                    if len(i.string.strip()) > 2:
-                        temp.append(i.string)
-                except (TypeError, AttributeError) as e:
-                    pass
-
-            for i in range(len(temp)):
-                temp[i] = temp[i].replace('&nbsp;', '')
+            details = [course_detail.string.replace('&nbsp;', '').strip()
+                       for course_detail in course
+                       if course_detail.string is not None
+                       and len(course_detail.string.strip()) > 2]
 
             course_details.append(
                 {
-                    'catalog_number': temp[0].strip(),
-                    'term': temp[1].replace('\r\n\t', ''),
-                    'title': temp[2].strip(),
-                    'class_number': course.find('a').contents[0].strip(),
-                    'instructor': 'Not decided' if len(temp[3].strip()) == 0 else temp[3].strip(),
-                    'credits': temp[4].strip()
+                    'catalog_number': details[0],
+                    'term': details[1].replace('\r\n\t', ''),
+                    'title': details[2],
+                    'class_number': course.find('a').contents[0],
+                    'instructor': details[3] if len(details[3]) > 0 else 'Not decided',
+                    'credits': details[4]
                 }
             )
 
@@ -67,12 +66,8 @@ class CourseAPI:
 
         req = req.upper()
 
-        url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ=%s&TERM=%s' % (req, term)
-        page = urllib2.urlopen(url)
-        soup = BeautifulSoup(page.read())
-        courses = soup.findAll("tr", {"class": "odd"})
-        courses_even = soup.findAll("tr", {"class": "even"})
-        courses.extend(courses_even)
+        url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ={}&TERM={}'.format(req, term)
+        courses = self._retrieve_from_url(url)
 
         course_details = []
 
