@@ -259,8 +259,70 @@ class LaundryAPI:
         di = {}
         for k,v in enumerate(washer_dryer_split_two):
             if v[1]:
-                di[k + 1] = v
+                di['machine' + str(k + 1)] = v
             else:
-                di[k + 1] = [v[0]]
+                di['machine' + str(k + 1)] = [v[0]]
+
+        return di
+
+    def get_status_detailed_alt(self, loc):
+        '''
+        Doesn't work for now
+        '''
+        import subprocess
+
+        # Get a cookie
+        cookie_cmd = "curl -I -s 'http://www.laundryview.com/laundry_room.php?view=c&lr=%s'" % self.location_dict[loc]
+        response = subprocess.check_output(cookie_cmd, shell=True)
+        response = response[response.index('Set-Cookie'):]
+        cookie = response[response.index('=') + 1:response.index(';')]
+
+        # Get the weird laundry data
+        cmd = "curl -s 'http://www.laundryview.com/dynamicRoomData.php?location=%s' -H 'Cookie: PHPSESSID=%s' --compressed" % (self.location_dict[loc], cookie)
+        response = subprocess.check_output(cmd, shell=True)
+        resp_split = response.split('&')[3:]
+
+        cleaned_resp = []
+        for string in resp_split:
+            machine_name = string[:string.index('=')].replace('Status', '')
+            string = string[string.index('=') + 1:].strip()
+            machine_split = string.split("\n")
+            machine_split[0] += machine_name
+            try:
+                machine_split[1] += machine_name
+            except IndexError:
+                pass
+            machine_split = map(lambda x: x.split(':'), machine_split)
+            cleaned_resp.append(machine_split[0])
+            try:
+                cleaned_resp.append(machine_split[1])
+            except IndexError:
+                pass
+
+        cleaned_resp = filter(lambda x: len(x) == 10, cleaned_resp)
+
+        di = []
+        print cleaned_resp
+        for machine in cleaned_resp:
+            time_left = -1
+            machine_name = "%s_%s" % (machine[9], machine[3])
+            machine_status = ""
+            if machine[0] == '1':
+                machine_status = 'Free'
+            else:
+                if machine[6] == '':
+                    machine_status = 'Out of service'
+                else:
+                    machine_status = 'In use'
+
+            if machine_status == 'In use':
+                time_left = int(machine[1])
+            else:
+                time_left = -1 if machine[6] == '' else machine[6]
+            di.append({
+                    'machine_name': machine_name,
+                    'machine_status': machine_status,
+                    'time_left': time_left
+                })
 
         return di
