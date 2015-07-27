@@ -20,13 +20,13 @@ description = course.get_class_description(class_number="10163", term="2161")
 laundry = LaundryAPI()
 # Will return a dictionary with amount of washers and dryers
 # in use vs. total washers and dryers at building
-small_dict = laundry.get_status_simple(loc="TOWERS")
+small_dict = laundry.get_status_simple(building_name="TOWERS")
 
 ### Computer Lab
 lab = LabAPI()
 # Will return a dictionary with status of the lab, and amount
 # of machines with a certain OS
-small_dict = lab.get_status(loc="ALUMNI")
+small_dict = lab.get_status(building_name="ALUMNI")
 ```
 
 ### TODO  
