@@ -1,22 +1,23 @@
 from BeautifulSoup import BeautifulSoup
 import urllib2
 
+
 class InvalidParameterException(Exception):
     pass
 
-class CourseAPI:
 
+class CourseAPI:
     def __init__(self):
         pass
 
     def get_courses(self, term, subject):
-        '''
+        """
         Returns a list of dictionaries containing the data for all SUBJECT classes in TERM
 
         Keyword arguments
         term -- String, term number
         subject -- String, course abbreviation
-        '''
+        """
 
         url = 'http://www.courses.as.pitt.edu/results-subja.asp?TERM=%s&SUBJ=%s' % (term, subject)
         page = urllib2.urlopen(url)
@@ -56,13 +57,13 @@ class CourseAPI:
         return course_details
 
     def get_courses_by_req(self, term, req):
-        '''
+        """
         Returns a list of dictionaries containing the data for all SUBJECT classes in TERM
 
         Keyword arguments
         term -- String, term number
         req -- string, requirement abbreviation
-        '''
+        """
 
         req = req.upper()
 
@@ -116,13 +117,13 @@ class CourseAPI:
         return course_details
 
     def get_class_description(self, class_number, term):
-        '''
+        """
         Returns a string that is the description for CLASS_NUMBER in term TERM
 
         Keyword arguments
         class_number -- String, class number
         term -- String, term number
-        '''
+        """
 
         url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM=%s&TERM=%s' % (class_number, term)
         page = urllib2.urlopen(url)
@@ -139,8 +140,8 @@ class CourseAPI:
                 if len(cell.contents) > 0 and str(cell.contents[0]) == '<strong>Description</strong>':
                     description_flag = True
 
-class LabAPI:
 
+class LabAPI:
     location_dict = {
         'ALUMNI': 0,
         'BENEDUM': 1,
@@ -155,12 +156,12 @@ class LabAPI:
         pass
 
     def get_status(self, loc):
-        '''
+        """
         Returns a dictionary with status and amount of OS machines.
 
         Keyword arguments
         loc -- Building name
-        '''
+        """
 
         loc = loc.upper()
         url = 'http://www.ewi-ssl.pitt.edu/labstats_txtmsg/'
@@ -174,23 +175,23 @@ class LabAPI:
             lab = [x.strip() for x in lab[1].split(',')]
             machines = [int(x[:x.index(' ')]) for x in lab]
             di = {
-                    'status': 'open',
-                    'windows': machines[0],
-                    'mac': machines[1],
-                    'linux': machines[2]
+                'status': 'open',
+                'windows': machines[0],
+                'mac': machines[1],
+                'linux': machines[2]
             }
         else:
             di = {
-                    'status': 'closed',
-                    'windows': 0,
-                    'mac': 0,
-                    'linux': 0
+                'status': 'closed',
+                'windows': 0,
+                'mac': 0,
+                'linux': 0
             }
 
         return di
 
-class LaundryAPI:
 
+class LaundryAPI:
     location_dict = {
         'TOWERS': '2430136',
         'BRACKENRIDGE': '2430119',
@@ -205,7 +206,7 @@ class LaundryAPI:
         pass
 
     def get_status_simple(self, loc):
-        '''
+        """
         Returns a dictionary with free washers and dryers as well as total washers
         and dryers for given building
 
@@ -220,7 +221,7 @@ class LaundryAPI:
             -> SUTH_WEST
 
         session.hash_bits_per_character = 5
-        '''
+        """
 
         import re
 
@@ -229,25 +230,25 @@ class LaundryAPI:
         page = urllib2.urlopen(url)
         soup = BeautifulSoup(page.read())
 
-        re1 = ['(\\d+)','(\\s+)','(of)','(\\s+)','(\\d+)','(\\s+)','((?:[a-z][a-z]+))']
+        re1 = ['(\\d+)', '(\\s+)', '(of)', '(\\s+)', '(\\d+)', '(\\s+)', '((?:[a-z][a-z]+))']
 
-        rg = re.compile(''.join(re1),re.IGNORECASE|re.DOTALL)
+        rg = re.compile(''.join(re1), re.IGNORECASE | re.DOTALL)
         search = rg.findall(str(soup))
 
         di = {
-                'building': loc,
-                'free_washers': search[0][0],
-                'total_washers': search[0][4],
-                'free_dryers': search[1][0],
-                'total_dryers': search[1][4]
-            }
+            'building': loc,
+            'free_washers': search[0][0],
+            'total_washers': search[0][4],
+            'free_dryers': search[1][0],
+            'total_dryers': search[1][4]
+        }
 
         return di
 
     def get_status_detailed(self, loc):
-        '''
+        """
         Works!
-        '''
+        """
         import subprocess
 
         # Get a cookie
@@ -257,7 +258,8 @@ class LaundryAPI:
         cookie = response[response.index('=') + 1:response.index(';')]
 
         # Get the weird laundry data
-        cmd = "curl -s 'http://www.laundryview.com/dynamicRoomData.php?location=%s' -H 'Cookie: PHPSESSID=%s' --compressed" % (self.location_dict[loc], cookie)
+        cmd = "curl -s 'http://www.laundryview.com/dynamicRoomData.php?location=%s' -H 'Cookie: PHPSESSID=%s' --compressed" % (
+            self.location_dict[loc], cookie)
         response = subprocess.check_output(cmd, shell=True)
         resp_split = response.split('&')[3:]
 
@@ -298,9 +300,9 @@ class LaundryAPI:
             else:
                 time_left = -1 if machine[6] == '' else machine[6]
             di.append({
-                    'machine_name': machine_name,
-                    'machine_status': machine_status,
-                    'time_left': time_left
-                })
+                'machine_name': machine_name,
+                'machine_status': machine_status,
+                'time_left': time_left
+            })
 
         return di
