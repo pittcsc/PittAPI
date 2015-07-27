@@ -101,7 +101,6 @@ class CourseAPI:
         courses = self._retrieve_from_url(url)
 
         for course in courses:
-
             details = [course_detail.string.replace('&nbsp;', '').strip()
                        for course_detail in course
                        if course_detail.string is not None
@@ -135,7 +134,7 @@ class CourseAPI:
             for cell in cells:
                 if has_description:
                     return cell.string.strip()
-                if len(cell.contents) > 0 and str(cell.contents[0]) == '<strong>Description</strong>':
+                if len(cell.contents) > 0 and str(cell.contents[0]) is '<strong>Description</strong>':
                     has_description = True
 
 
@@ -202,7 +201,7 @@ class LaundryAPI:
     def __init__(self):
         pass
 
-    def get_status_simple(self, loc):
+    def get_status_simple(self, building_name):
         """
         :returns: a dictionary with free washers and dryers as well as total washers
         and dryers for given building
@@ -219,8 +218,8 @@ class LaundryAPI:
         session.hash_bits_per_character = 5
         """
 
-        loc = loc.upper()
-        url = 'http://classic.laundryview.com/appliance_status_ajax.php?lr={}'.format(self.location_dict[loc])
+        building_name = building_name.upper()
+        url = 'http://classic.laundryview.com/appliance_status_ajax.php?lr={}'.format(self.location_dict[building_name])
         page = urllib2.urlopen(url)
         soup = BeautifulSoup(page.read())
 
@@ -230,7 +229,7 @@ class LaundryAPI:
         search = rg.findall(str(soup))
 
         di = {
-            'building': loc,
+            'building': building_name,
             'free_washers': search[0][0],
             'total_washers': search[0][4],
             'free_dryers': search[1][0],
@@ -239,34 +238,37 @@ class LaundryAPI:
 
         return di
 
-    def get_status_detailed(self, loc):
-        """
-        Works!
-        """
+    def get_status_detailed(self, building_name):
 
         # Get a cookie
         cookie_cmd = "curl -I -s 'http://www.laundryview.com/laundry_room.php?view=c&lr={}'".format(
-            self.location_dict[loc])
+            self.location_dict[building_name])
+
         response = subprocess.check_output(cookie_cmd, shell=True)
         response = response[response.index('Set-Cookie'):]
         cookie = response[response.index('=') + 1:response.index(';')]
 
         # Get the weird laundry data
-        cmd = "curl -s 'http://www.laundryview.com/dynamicRoomData.php?location={}' -H 'Cookie: PHPSESSID={}' --compressed".format(
-            self.location_dict[loc], cookie)
+        cmd = """
+        curl -s 'http://www.laundryview.com/dynamicRoomData.php?location={}' -H 'Cookie: PHPSESSID={}' --compressed
+        """.format(self.location_dict[building_name], cookie)
+
         response = subprocess.check_output(cmd, shell=True)
         resp_split = response.split('&')[3:]
 
         cleaned_resp = []
-        for string in resp_split:
-            machine_name = string[:string.index('=')].replace('Status', '')
-            string = string[string.index('=') + 1:].strip()
-            machine_split = string.split("\n")
+        for status_string in resp_split:
+            machine_name = status_string[:status_string.index('=')].replace('Status', '')
+            status_string = status_string[status_string.index('=') + 1:].strip()
+
+            machine_split = status_string.split("\n")
             machine_split[0] += machine_name
+
             try:
                 machine_split[1] += machine_name
             except IndexError:
                 pass
+
             machine_split = map(lambda x: x.split(':'), machine_split)
             cleaned_resp.append(machine_split[0])
             try:
@@ -281,18 +283,19 @@ class LaundryAPI:
             time_left = -1
             machine_name = "{}_{}".format(machine[9], machine[3])
             machine_status = ""
-            if machine[0] == '1':
+
+            if machine[0] is '1':
                 machine_status = 'Free'
             else:
-                if machine[6] == '':
+                if machine[6] is '':
                     machine_status = 'Out of service'
                 else:
                     machine_status = 'In use'
 
-            if machine_status == 'In use':
+            if machine_status is 'In use':
                 time_left = int(machine[1])
             else:
-                time_left = -1 if machine[6] == '' else machine[6]
+                time_left = -1 if machine[6] is '' else machine[6]
             di.append({
                 'machine_name': machine_name,
                 'machine_status': machine_status,
