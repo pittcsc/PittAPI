@@ -57,6 +57,36 @@ class CourseAPI:
 
         return course_details
 
+    @staticmethod
+    def _get_course_dict(details):
+
+        course_details = []
+
+        if len(details) == 6:
+            course_details.append(
+                {
+                    'subject': details[0],
+                    'catalog_number': details[1],
+                    'term': details[2].replace('\r\n\t', ' '),
+                    'title': details[3],
+                    'instructor': details[4] if len(details[4]) > 0 else 'Not decided',
+                    'credits': details[5]
+                }
+            )
+        else:
+            course_details.append(
+                {
+                    'subject': 'Not available',
+                    'catalog_number': details[0],
+                    'term': details[1].replace('\r\n\t', ' '),
+                    'title': details[2].replace('\r\n\t', ' '),
+                    'instructor': details[3] if len(details[3]) > 0 else 'Not decided',
+                    'credits': details[4]
+                }
+            )
+
+        return course_details
+
     def get_courses_by_req(self, term, req):
         """
         :returns: a list of dictionaries containing the data for all SUBJECT classes in TERM
@@ -70,8 +100,6 @@ class CourseAPI:
         url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ={}&TERM={}'.format(req, term)
         courses = self._retrieve_from_url(url)
 
-        course_details = []
-
         for course in courses:
 
             details = [course_detail.string.replace('&nbsp;', '').strip()
@@ -79,28 +107,7 @@ class CourseAPI:
                        if course_detail.string is not None
                        and len(course_detail.string.strip()) > 2]
 
-            if len(details) == 6:
-                course_details.append(
-                    {
-                        'subject': details[0],
-                        'catalog_number': details[1],
-                        'term': details[2].replace('\r\n\t', ' '),
-                        'title': details[3],
-                        'instructor': details[4] if len(details[4]) > 0 else 'Not decided',
-                        'credits': details[5]
-                    }
-                )
-            else:
-                course_details.append(
-                    {
-                        'subject': 'Not available',
-                        'catalog_number': details[0],
-                        'term': details[1].replace('\r\n\t', ' '),
-                        'title': details[2].replace('\r\n\t', ' '),
-                        'instructor': details[3] if len(details[3]) > 0 else 'Not decided',
-                        'credits': details[4]
-                    }
-                )
+            course_details = self._get_course_dict(details)
 
         if len(course_details) == 0:
             raise InvalidParameterException("The TERM or REQ is invalid")
@@ -238,7 +245,8 @@ class LaundryAPI:
         """
 
         # Get a cookie
-        cookie_cmd = "curl -I -s 'http://www.laundryview.com/laundry_room.php?view=c&lr={}'".format(self.location_dict[loc])
+        cookie_cmd = "curl -I -s 'http://www.laundryview.com/laundry_room.php?view=c&lr={}'".format(
+            self.location_dict[loc])
         response = subprocess.check_output(cookie_cmd, shell=True)
         response = response[response.index('Set-Cookie'):]
         cookie = response[response.index('=') + 1:response.index(';')]
