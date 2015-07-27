@@ -5,7 +5,7 @@ Made by Ritwik Gupta at the University of Pittsburgh in an effort to get more op
 ### Usage examples  
 
 ```python
-from pittAPI import CourseAPI, LaundryAPI
+from pittAPI import CourseAPI, LaundryAPI, LabAPI
 
 ### Courses
 course = CourseAPI()
@@ -21,6 +21,12 @@ laundry = LaundryAPI()
 # Will return a dictionary with amount of washers and dryers
 # in use vs. total washers and dryers at building
 small_dict = laundry.get_status_simple(loc="TOWERS")
+
+### Computer Lab
+lab = LabAPI()
+# Will return a dictionary with status of the lab, and amount
+# of machines with a certain OS
+small_dict = lab.get_status(loc="ALUMNI")
 ```
 
 ### TODO  
