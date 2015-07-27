@@ -57,11 +57,10 @@ class CourseAPI:
 
     def get_courses_by_req(self, term, req):
         """
-        Returns a list of dictionaries containing the data for all SUBJECT classes in TERM
+        :returns: a list of dictionaries containing the data for all SUBJECT classes in TERM
 
-        Keyword arguments
-        term -- String, term number
-        req -- string, requirement abbreviation
+        :param: term: String, term number
+        :param: req: String, requirement abbreviation
         """
 
         req = req.upper()
@@ -145,21 +144,20 @@ class LabAPI:
     def __init__(self):
         pass
 
-    def get_status(self, loc):
+    def get_status(self, building_name):
         """
-        Returns a dictionary with status and amount of OS machines.
+        :returns: a dictionary with status and amount of OS machines.
 
-        Keyword arguments
-        loc -- Building name
+        :param: building_name: Building name
         """
 
-        loc = loc.upper()
+        building_name = building_name.upper()
         url = 'http://www.ewi-ssl.pitt.edu/labstats_txtmsg/'
         page = urllib2.urlopen(url)
         soup = BeautifulSoup(page.read())
         labs = soup.span.contents[0].strip().split("  ")
 
-        lab = labs[self.location_dict[loc]].split(':')
+        lab = labs[self.location_dict[building_name]].split(':')
         di = {}
         if len(lab) > 1:
             lab = [x.strip() for x in lab[1].split(',')]
@@ -197,11 +195,10 @@ class LaundryAPI:
 
     def get_status_simple(self, loc):
         """
-        Returns a dictionary with free washers and dryers as well as total washers
+        :returns: a dictionary with free washers and dryers as well as total washers
         and dryers for given building
 
-        Keyword arguments
-        loc -- Building name, case doesn't matter
+        :param: loc: Building name, case doesn't matter
             -> TOWERS
             -> BRACKENRIDGE
             -> HOLLAND
@@ -212,8 +209,6 @@ class LaundryAPI:
 
         session.hash_bits_per_character = 5
         """
-
-        import re
 
         loc = loc.upper()
         url = 'http://classic.laundryview.com/appliance_status_ajax.php?lr=%s' % self.location_dict[loc]
