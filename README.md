@@ -24,6 +24,6 @@ small_dict = laundry.get_status_simple(loc="TOWERS")
 ```
 
 ### TODO  
-* Make the laundry detailed method work  
-* Test the computer lab status API and make it return a dictionary  
+* ~~Make the laundry detailed method work~~  
+* ~~Test the computer lab status API and make it return a dictionary~~  
 * Try to get a dining API  
