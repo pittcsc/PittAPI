@@ -1,8 +1,8 @@
-import urllib2
+from urllib.request import urlopen
 import subprocess
 import re
 
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 
 
 class InvalidParameterException(Exception):
@@ -15,8 +15,8 @@ class CourseAPI:
 
     @staticmethod
     def _retrieve_from_url(url):
-        page = urllib2.urlopen(url)
-        soup = BeautifulSoup(page.read())
+        page = urlopen(url)
+        soup = BeautifulSoup(page.read(), "html.parser")
         courses = soup.findAll("tr", {"class": "odd"})
         courses_even = soup.findAll("tr", {"class": "even"})
         courses.extend(courses_even)
@@ -123,8 +123,8 @@ class CourseAPI:
         """
 
         url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM={}&TERM={}'.format(class_number, term)
-        page = urllib2.urlopen(url)
-        soup = BeautifulSoup(page.read())
+        page = urlopen(url)
+        soup = BeautifulSoup(page.read(), "html.parser")
         table = soup.findChildren('table')[0]
         rows = table.findChildren('tr')
 
@@ -161,8 +161,8 @@ class LabAPI:
 
         lab_name = lab_name.upper()
         url = 'http://www.ewi-ssl.pitt.edu/labstats_txtmsg/'
-        page = urllib2.urlopen(url)
-        soup = BeautifulSoup(page.read())
+        page = urlopen(url)
+        soup = BeautifulSoup(page.read(), "html.parser")
         labs = soup.span.contents[0].strip().split("  ")
 
         lab = labs[self.location_dict[lab_name]].split(':')
@@ -220,8 +220,8 @@ class LaundryAPI:
 
         building_name = building_name.upper()
         url = 'http://classic.laundryview.com/appliance_status_ajax.php?lr={}'.format(self.location_dict[building_name])
-        page = urllib2.urlopen(url)
-        soup = BeautifulSoup(page.read())
+        page = urlopen(url)
+        soup = BeautifulSoup(page.read(), "html.parser")
 
         re1 = ['(\\d+)', '(\\s+)', '(of)', '(\\s+)', '(\\d+)', '(\\s+)', '((?:[a-z][a-z]+))']
 
