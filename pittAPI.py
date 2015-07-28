@@ -241,7 +241,7 @@ class LaundryAPI:
     def get_status_detailed(self, building_name):
 
         # Get a cookie
-        cookie_cmd = "curl -I -s 'http://www.laundryview.com/laundry_room.php?view=c&lr={}'".format(
+        cookie_cmd = "curl -I -s \"http://www.laundryview.com/laundry_room.php?view=c&lr={}\"".format(
             self.location_dict[building_name])
 
         response = subprocess.check_output(cookie_cmd, shell=True)
@@ -250,7 +250,7 @@ class LaundryAPI:
 
         # Get the weird laundry data
         cmd = """
-        curl -s 'http://www.laundryview.com/dynamicRoomData.php?location={}' -H 'Cookie: PHPSESSID={}' --compressed
+        curl -s "http://www.laundryview.com/dynamicRoomData.php?location={}" -H "Cookie: PHPSESSID={}" --compressed
         """.format(self.location_dict[building_name], cookie)
 
         response = subprocess.check_output(cmd, shell=True)
