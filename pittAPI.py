@@ -303,3 +303,35 @@ class LaundryAPI:
             })
 
         return di
+
+class PeopleAPI:
+
+    def __init__(self):
+        pass
+
+    def get_person(self, query):
+        '''
+        Doesn't work completely for now.
+        Returns a dict with URLs of user profiles. No scraping yet.
+        '''
+
+        query = query.replace(' ', '+')
+
+        cmd = """
+        curl -k -s "https://136.142.34.69/people/search?search=Search&filter={}&_region=kgoui_Rcontent_I0_Rcontent_I0_Ritems"
+        """.format(query)
+
+        response = subprocess.check_output(cmd, shell=True)
+
+        results = []
+        while("formatted" in response):
+            response = response[response.index('"formatted"'):]
+            response = response[response.index(":") + 2:]
+            response_str = response[:response.index('}') - 1]
+            response_str = response_str.replace('\u0026', '&')
+            response_str = response_str.replace('\\', '')
+            if '&start=' not in response_str:
+                results.append("https://136.142.34.69" + response_str)
+            response = response[response.index('}') :]
+
+        return results
