@@ -26,7 +26,7 @@ small_dict = laundry.get_status_simple(building_name="TOWERS")
 lab = LabAPI()
 # Will return a dictionary with status of the lab, and amount
 # of machines with a certain OS
-small_dict = lab.get_status(building_name="ALUMNI")
+small_dict = lab.get_status(lab_name="ALUMNI")
 ```
 
 ### TODO  

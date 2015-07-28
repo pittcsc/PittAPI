@@ -152,20 +152,20 @@ class LabAPI:
     def __init__(self):
         pass
 
-    def get_status(self, building_name):
+    def get_status(self, lab_name):
         """
         :returns: a dictionary with status and amount of OS machines.
 
-        :param: building_name: Building name
+        :param: lab_name: Lab name
         """
 
-        building_name = building_name.upper()
+        lab_name = lab_name.upper()
         url = 'http://www.ewi-ssl.pitt.edu/labstats_txtmsg/'
         page = urllib2.urlopen(url)
         soup = BeautifulSoup(page.read())
         labs = soup.span.contents[0].strip().split("  ")
 
-        lab = labs[self.location_dict[building_name]].split(':')
+        lab = labs[self.location_dict[lab_name]].split(':')
         di = {}
         if len(lab) > 1:
             lab = [x.strip() for x in lab[1].split(',')]
