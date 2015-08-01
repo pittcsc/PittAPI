@@ -167,7 +167,7 @@ class CourseAPI:
             for cell in cells:
                 if has_description:
                     return cell.string.strip()
-                if len(cell.contents) > 0 and str(cell.contents[0]) is '<strong>Description</strong>':
+                if len(cell.contents) > 0 and str(cell.contents[0]) == '<strong>Description</strong>':
                     has_description = True
 
 
