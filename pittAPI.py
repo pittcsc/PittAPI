@@ -97,7 +97,7 @@ class CourseAPI:
 
         req = req.upper()
 
-        url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ=%s&TERM=%s' % (req, term)
+        url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ={}&TERM={}'.format(req, term)
         page = urllib2.urlopen(url)
         soup = BeautifulSoup(page.read())
         courses = soup.findAll("tr", {"class": "odd"})
