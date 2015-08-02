@@ -49,6 +49,8 @@ class CourseAPI:
         :param: subject: String, course abbreviation
         """
 
+        subject = subject.upper()
+
         url = 'http://www.courses.as.pitt.edu/results-subja.asp?TERM={}&SUBJ={}'.format(term, subject)
         courses = self._retrieve_from_url(url)
 
