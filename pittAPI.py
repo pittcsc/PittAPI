@@ -292,6 +292,8 @@ class LaundryAPI:
 
     def get_status_detailed(self, building_name):
 
+        building_name = building_name.upper()
+
         # Get a cookie
         cookie_cmd = "curl -I -s \"http://www.laundryview.com/laundry_room.php?view=c&lr={}\"".format(
             self.location_dict[building_name])
