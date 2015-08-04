@@ -1,7 +1,7 @@
 ### Pitt API  
 
 Made by Ritwik Gupta at the University of Pittsburgh in an effort to get more open data from Pitt. 
-This project is licensed under the terms of the MIT license.   
+This project is licensed under the terms of the GPLv2 license.   
 
 ### Usage examples  
 
