@@ -249,7 +249,8 @@ class LaundryAPI:
         'LOTHROP': '2430151',
         'MCCORMICK': '2430120',
         'SUTH_EAST': '2430135',
-        'SUTH_WEST': '2430134'
+        'SUTH_WEST': '2430134',
+        'FORBES_CRAIG': '2430142'
     }
 
     def __init__(self):
