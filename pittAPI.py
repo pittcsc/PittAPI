@@ -17,11 +17,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
 
-import urllib2
+try:
+    # Python 3
+    from urllib.request import urlopen
+except ImportError:
+    # Python 2
+    from urllib2 import urlopen
 import subprocess
 import re
 
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 
 
 class InvalidParameterException(Exception):
@@ -34,14 +39,15 @@ class CourseAPI:
 
     @staticmethod
     def _retrieve_from_url(url):
-        page = urllib2.urlopen(url)
-        soup = BeautifulSoup(page.read())
+        page = urlopen(url)
+        soup = BeautifulSoup(page.read(), 'html.parser')
         courses = soup.findAll("tr", {"class": "odd"})
         courses_even = soup.findAll("tr", {"class": "even"})
         courses.extend(courses_even)
         return courses
 
     def get_courses(self, term, subject):
+        # type: (str, str) -> List[Dict[str, str]]
         """
         :returns: a list of dictionaries containing the data for all SUBJECT classes in TERM
 
@@ -62,16 +68,28 @@ class CourseAPI:
                        if course_detail.string is not None
                        and len(course_detail.string.strip()) > 2]
 
-            course_details.append(
-                {
-                    'catalog_number': details[0],
-                    'term': details[1].replace('\r\n\t', ''),
-                    'title': details[2],
-                    'class_number': course.find('a').contents[0],
-                    'instructor': details[3] if len(details[3]) > 0 else 'Not decided',
-                    'credits': details[4]
-                }
-            )
+            if len(details) == 5:
+                course_details.append(
+                    {
+                        'catalog_number': details[0],
+                        'term': details[1].replace('\r\n\t', ''),
+                        'title': details[2],
+                        'class_number': course.find('a').contents[0],
+                        'instructor': details[3] if len(details[3]) > 0 else 'Not decided',
+                        'credits': details[4]
+                    }
+                )
+            else:
+                course_details.append(
+                    {
+                        'catalog_number': details[0],
+                        'term': details[1].replace('\r\n\t', ''),
+                        'title': details[2],
+                        'class_number': course.find('a').contents[0],
+                        'instructor': None,
+                        'credits': details[3]
+                    }
+                )
 
         if len(course_details) == 0:
             raise InvalidParameterException("The TERM or SUBJECT is invalid")
@@ -119,8 +137,8 @@ class CourseAPI:
         req = req.upper()
 
         url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ={}&TERM={}'.format(req, term)
-        page = urllib2.urlopen(url)
-        soup = BeautifulSoup(page.read())
+        page = urlopen(url)
+        soup = BeautifulSoup(page.read(), 'html.parser')
         courses = soup.findAll("tr", {"class": "odd"})
         courses_even = soup.findAll("tr", {"class": "even"})
         courses.extend(courses_even)
@@ -177,8 +195,8 @@ class CourseAPI:
         """
 
         url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM={}&TERM={}'.format(class_number, term)
-        page = urllib2.urlopen(url)
-        soup = BeautifulSoup(page.read())
+        page = urlopen(url)
+        soup = BeautifulSoup(page.read(), 'html.parser')
         table = soup.findChildren('table')[0]
         rows = table.findChildren('tr')
 
@@ -215,8 +233,8 @@ class LabAPI:
 
         lab_name = lab_name.upper()
         url = 'http://www.ewi-ssl.pitt.edu/labstats_txtmsg/'
-        page = urllib2.urlopen(url)
-        soup = BeautifulSoup(page.read())
+        page = urlopen(url)
+        soup = BeautifulSoup(page.read, 'html.parser')
         labs = soup.span.contents[0].strip().split("  ")
 
         lab = labs[self.location_dict[lab_name]].split(':')
@@ -275,8 +293,8 @@ class LaundryAPI:
 
         building_name = building_name.upper()
         url = 'http://classic.laundryview.com/appliance_status_ajax.php?lr={}'.format(self.location_dict[building_name])
-        page = urllib2.urlopen(url)
-        soup = BeautifulSoup(page.read())
+        page = urlopen(url)
+        soup = BeautifulSoup(page.read(), 'html.parser')
 
         re1 = ['(\\d+)', '(\\s+)', '(of)', '(\\s+)', '(\\d+)', '(\\s+)', '((?:[a-z][a-z]+))']
 
