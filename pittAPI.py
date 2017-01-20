@@ -67,7 +67,7 @@ class CourseAPI:
                        for course_detail in course
                        if course_detail.string is not None]
 
-            course_details.append
+            course_details.append(
                 {
                     'subject': details[1] if details[1] else "Not Decided"
                     'catalog_number': details[3] if details[3] else "Not Decided",
