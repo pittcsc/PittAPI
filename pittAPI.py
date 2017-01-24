@@ -67,22 +67,22 @@ class CourseAPI:
                        for course_detail in course
                        if course_detail.string is not None]
 
-            course_details.append(
-                {
-                    'subject': details[1] if details[1] else "Not Decided"
-                    'catalog_number': details[3] if details[3] else "Not Decided",
-                    'term': details[5].replace('\r\n\t', '') if details[5] else "Not Decided",
-                    'class_number': course.find('a').contents[0] if course.find('a').contents[0] else "Not Decided",
-                    'title': details[8] if details[8] else "Not Decided",
-                    'instructor': details[10] if details[10] else "Not Decided",
-                    'credits': details[12] if details[12] else "Not Decided"
-                }
-            )
+            # Only append details if the list is not empty
+            # If the subject code is incorrect, details will be NoneType
+            if details:
+                course_details.append(
+                    {
+                        'subject': details[1] if details[1] else "Not Decided",
+                        'catalog_number': details[3] if details[3] else "Not Decided",
+                        'term': details[5].replace('\r\n\t', '') if details[5] else "Not Decided",
+                        'class_number': course.find('a').contents[0] if course.find('a').contents[0] else "Not Decided",
+                        'title': details[8] if details[8] else "Not Decided",
+                        'instructor': details[10] if details[10] else "Not Decided",
+                        'credits': details[12] if details[12] else "Not Decided"
+                    }
+                )
 
-        # If there is an invalid arg, then all the values in course_details will
-        # Be 'Not Decided', and therefore the set will be size 1
-        values = set(course_details.values())
-        if len(values) > 1:
+        if not course_details:
             raise InvalidParameterException("The TERM or SUBJECT is invalid")
 
         return course_details
