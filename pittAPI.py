@@ -234,7 +234,7 @@ class LabAPI:
         lab_name = lab_name.upper()
         url = 'http://labinformation.cssd.pitt.edu/'
         page = urlopen(url)
-        soup = BeautifulSoup(page.read, 'html.parser')
+        soup = BeautifulSoup(page.read(), 'html.parser')
         labs = soup.span.contents[0].strip().split("  ")
 
         lab = labs[self.location_dict[lab_name]].split(':')
