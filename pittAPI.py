@@ -232,7 +232,7 @@ class LabAPI:
         """
 
         lab_name = lab_name.upper()
-        url = 'http://www.ewi-ssl.pitt.edu/labstats_txtmsg/'
+        url = 'http://labinformation.cssd.pitt.edu/'
         page = urlopen(url)
         soup = BeautifulSoup(page.read, 'html.parser')
         labs = soup.span.contents[0].strip().split("  ")
