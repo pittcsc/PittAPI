@@ -65,33 +65,24 @@ class CourseAPI:
         for course in courses:
             details = [course_detail.string.replace('&nbsp;', '').strip()
                        for course_detail in course
-                       if course_detail.string is not None
-                       and len(course_detail.string.strip()) > 2]
+                       if course_detail.string is not None]
 
-            if len(details) == 5:
+            # Only append details if the list is not empty
+            # If the subject code is incorrect, details will be NoneType
+            if details:
                 course_details.append(
                     {
-                        'catalog_number': details[0],
-                        'term': details[1].replace('\r\n\t', ''),
-                        'title': details[2],
-                        'class_number': course.find('a').contents[0],
-                        'instructor': details[3] if len(details[3]) > 0 else 'Not decided',
-                        'credits': details[4]
-                    }
-                )
-            else:
-                course_details.append(
-                    {
-                        'catalog_number': details[0],
-                        'term': details[1].replace('\r\n\t', ''),
-                        'title': details[2],
-                        'class_number': course.find('a').contents[0],
-                        'instructor': None,
-                        'credits': details[3]
+                        'subject': details[1] if details[1] else "Not Decided",
+                        'catalog_number': details[3] if details[3] else "Not Decided",
+                        'term': details[5].replace('\r\n\t', '') if details[5] else "Not Decided",
+                        'class_number': course.find('a').contents[0] if course.find('a').contents[0] else "Not Decided",
+                        'title': details[8] if details[8] else "Not Decided",
+                        'instructor': details[10] if details[10] else "Not Decided",
+                        'credits': details[12] if details[12] else "Not Decided"
                     }
                 )
 
-        if len(course_details) == 0:
+        if not course_details:
             raise InvalidParameterException("The TERM or SUBJECT is invalid")
 
         return course_details
