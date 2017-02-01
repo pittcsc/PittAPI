@@ -400,4 +400,19 @@ class PeopleAPI:
                 results.append("https://136.142.34.69" + response_str)
             response = response[response.index('}') :]
 
-        return results
+        persons_list = []
+        for url in results:
+            #results is url
+            personurl = str(''.join(url))
+            f = urlopen(personurl)
+            html = f.read()
+            person_dict = {}
+            soup = BeautifulSoup(html, 'html.parser')
+            name = soup.find('h1', attrs={'class' :'kgoui_detail_title'})
+            person_dict['name'] = name.get_text()
+            for item in soup.find_all('div', attrs={'class': 'kgoui_list_item_textblock'}):
+                if item is not None:
+                    person_dict[item.div.get_text()] = item.span.get_text()
+            persons_list.append(person_dict)
+        
+        return persons_list
