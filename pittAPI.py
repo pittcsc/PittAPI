@@ -27,7 +27,7 @@ import subprocess
 import re
 
 from bs4 import BeautifulSoup
-
+import ssl
 
 class InvalidParameterException(Exception):
     pass
@@ -375,7 +375,7 @@ class PeopleAPI:
     def __init__(self):
         pass
 
-    def get_person(self, query, maxPeople):
+    def get_person(self, query, maxPeople=10):
         '''
         Doesn't work completely for now. IT WORKS
         Returns a dict with URLs of user profiles. No scraping yet.
@@ -394,7 +394,7 @@ class PeopleAPI:
             response = subprocess.check_output(cmd, shell=True)
             if not response: #no more responses, so break
                 break
-            #print(response)
+
             results = []
             while("formatted" in response):
                 response = response[response.index('"formatted"'):]
@@ -409,7 +409,13 @@ class PeopleAPI:
             for url in results:
                 #results is url
                 personurl = str(''.join(url))
-                f = urlopen(personurl)
+
+                if personurl.lower().startswith("https://") and hasattr(ssl, '_create_unverified_context'):
+                    ct = ssl._create_unverified_context()
+                    f = urlopen(personurl, context=ct)
+                else:
+                    f = urlopen(personurl)
+
                 html = f.read()
                 person_dict = {}
                 soup = BeautifulSoup(html, 'html.parser')
