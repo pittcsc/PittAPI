@@ -27,7 +27,7 @@ import subprocess
 import re
 
 from bs4 import BeautifulSoup
-
+import ssl
 
 class InvalidParameterException(Exception):
     pass
@@ -375,29 +375,55 @@ class PeopleAPI:
     def __init__(self):
         pass
 
-    def get_person(self, query):
+    def get_person(self, query, maxPeople=10):
         '''
-        Doesn't work completely for now.
+        Doesn't work completely for now. IT WORKS
         Returns a dict with URLs of user profiles. No scraping yet.
         '''
 
         query = query.replace(' ', '+')
+        persons_list = []
+        tens = 0
+        while tens < maxPeople:
+            url = "https://136.142.34.69/people/search?search=Search&filter={}&_region=kgoui_Rcontent_I0_Rcontent_I0_Ritems"
+            url += '&_region_index_offset=' + str(tens) + '&feed=directory&start=' + str(tens)
+            cmd = 'curl -k -s ' + '"'  + url + '"'
 
-        cmd = """
-        curl -k -s "https://136.142.34.69/people/search?search=Search&filter={}&_region=kgoui_Rcontent_I0_Rcontent_I0_Ritems"
-        """.format(query)
 
-        response = subprocess.check_output(cmd, shell=True)
+            cmd = cmd.format(query)
+            response = subprocess.check_output(cmd, shell=True)
+            if not response: #no more responses, so break
+                break
 
-        results = []
-        while("formatted" in response):
-            response = response[response.index('"formatted"'):]
-            response = response[response.index(":") + 2:]
-            response_str = response[:response.index('}') - 1]
-            response_str = response_str.replace('\u0026', '&')
-            response_str = response_str.replace('\\', '')
-            if '&start=' not in response_str:
-                results.append("https://136.142.34.69" + response_str)
-            response = response[response.index('}') :]
+            results = []
+            while("formatted" in response):
+                response = response[response.index('"formatted"'):]
+                response = response[response.index(":") + 2:]
+                response_str = response[:response.index('}') - 1]
+                response_str = response_str.replace('\u0026', '&')
+                response_str = response_str.replace('\\', '')
+                if '&start=' not in response_str:
+                    results.append("https://136.142.34.69" + response_str)
 
-        return results
+                response = response[response.index('}') :]
+            for url in results:
+                #results is url
+                personurl = str(''.join(url))
+
+                if personurl.lower().startswith("https://") and hasattr(ssl, '_create_unverified_context'):
+                    ct = ssl._create_unverified_context()
+                    f = urlopen(personurl, context=ct)
+                else:
+                    f = urlopen(personurl)
+
+                html = f.read()
+                person_dict = {}
+                soup = BeautifulSoup(html, 'html.parser')
+                name = soup.find('h1', attrs={'class' :'kgoui_detail_title'})
+                person_dict['name'] = str(name.get_text())
+                for item in soup.find_all('div', attrs={'class': 'kgoui_list_item_textblock'}):
+                    if item is not None:
+                        person_dict[str(item.div.get_text())] = str(item.span.get_text())
+                persons_list.append(person_dict)
+            tens += 10
+        return persons_list
