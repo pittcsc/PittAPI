@@ -408,7 +408,10 @@ class DiningAPI:
     def __init__(self):
         pass
 
-    def get_dining_locations(self, status=None):
+    def get_dining_locations(self):
+        return self.get_dining_locations_by_status(status=None)
+    
+    def get_dining_locations_by_status(self, status=None):
         # status can be nil, open, or closed
         # None     - returns all dining locations
         # "all"    - same as None (or anything else)
@@ -421,8 +424,10 @@ class DiningAPI:
         dining_locations = []
         
         end_loop = False
+        load_more = False
         counter = 0
         while( not end_loop ):
+            load_more = False
             url = "https://m.pitt.edu/dining/index.json?_region=kgoui_Rcontent_I1_Ritems&_object_include_html=1&_object_js_config=1&_kgoui_page_state=eb95bc72eca310cbbe76a39964fc7143&feed=dining_locations&start=" + str(counter)
             data = json.load(urlopen(url))
             soup = BeautifulSoup(data['response']['html'], 'html.parser')
@@ -446,10 +451,24 @@ class DiningAPI:
                 else:
                     counter += 15
                     end_loop = False
-            end_loop = True
+                    load_more = True
+            if(not load_more):
+                end_loop = True
+
+        dict = {}
 
         return dining_locations
 
+    def get_dining_location_by_name(self, location):
+        return
     
     def get_market_menu(self, date):
+        return
+
+    @staticmethod
+    def _encode_dining_location(name):
+        return
+
+    @staticmethod
+    def _decode_dining_loation(name):
         return
