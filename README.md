@@ -28,9 +28,25 @@ lab = LabAPI()
 # Will return a dictionary with status of the lab, and amount
 # of machines with a certain OS
 small_dict = lab.get_status(lab_name="ALUMNI")
+
+### Dining
+dining = DiningAPI()
+# Will return a list of dictionaries containing each dining location
+# and its open/closed status
+# (at the moment it returns a list of lists)
+medium_dict = dining.get_dining_locations()
+medium_dict = dining.get_dining_locations(status="open")
+medium_dict = dining.get_dining_locations(status="closed")
+
 ```
 
 ### TODO  
 * ~~Make the laundry detailed method work~~  
 * ~~Test the computer lab status API and make it return a dictionary~~  
-* Try to get a dining API  
+* Working on the DiningAPI
+    * Have the DiningAPI return a dict instead of a list
+    * Have a separate method for `get_dining_locations_by_status` and `get_dining_locations`
+        * `get_dining_locations_by_status` is what is currently implemented
+        * `get_dining_locations` is the same as what is currently implemented with no arguments
+            * (but with a good-looking dictionary)
+    * Implement the `get_market_menu` method
