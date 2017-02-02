@@ -412,8 +412,7 @@ class PeopleAPI:
                 personurl = str(''.join(url))
 
                 if personurl.lower().startswith("https://") and hasattr(ssl, '_create_unverified_context'):
-                    ct = ssl._create_unverified_context()
-                    f = s.get(personurl, context=ct)
+                    f = s.get(personurl, verify=False)
                 else:
                     f = s.get(personurl)
 
