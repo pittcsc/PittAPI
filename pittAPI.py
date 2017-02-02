@@ -17,30 +17,31 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
 
-try:
-    # Python 3
-    from urllib.request import urlopen
-except ImportError:
-    # Python 2
-    from urllib2 import urlopen
+
+
 import subprocess
 import re
 
 from bs4 import BeautifulSoup
 import ssl
+import requests
+
+s = requests.session()
 
 class InvalidParameterException(Exception):
     pass
+
 
 
 class CourseAPI:
     def __init__(self):
         pass
 
+
     @staticmethod
     def _retrieve_from_url(url):
-        page = urlopen(url)
-        soup = BeautifulSoup(page.read(), 'html.parser')
+        page = s.get(url)
+        soup = BeautifulSoup(page.text, 'html.parser')
         courses = soup.findAll("tr", {"class": "odd"})
         courses_even = soup.findAll("tr", {"class": "even"})
         courses.extend(courses_even)
@@ -128,8 +129,8 @@ class CourseAPI:
         req = req.upper()
 
         url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ={}&TERM={}'.format(req, term)
-        page = urlopen(url)
-        soup = BeautifulSoup(page.read(), 'html.parser')
+        page = s.get(url)
+        soup = BeautifulSoup(page.text, 'html.parser')
         courses = soup.findAll("tr", {"class": "odd"})
         courses_even = soup.findAll("tr", {"class": "even"})
         courses.extend(courses_even)
@@ -186,8 +187,8 @@ class CourseAPI:
         """
 
         url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM={}&TERM={}'.format(class_number, term)
-        page = urlopen(url)
-        soup = BeautifulSoup(page.read(), 'html.parser')
+        page = s.get(url)
+        soup = BeautifulSoup(page.text, 'html.parser')
         table = soup.findChildren('table')[0]
         rows = table.findChildren('tr')
 
@@ -224,8 +225,8 @@ class LabAPI:
 
         lab_name = lab_name.upper()
         url = 'http://labinformation.cssd.pitt.edu/'
-        page = urlopen(url)
-        soup = BeautifulSoup(page.read(), 'html.parser')
+        page = s.get(url)
+        soup = BeautifulSoup(page.text, 'html.parser')
         labs = soup.span.contents[0].strip().split("  ")
 
         lab = labs[self.location_dict[lab_name]].split(':')
@@ -284,8 +285,8 @@ class LaundryAPI:
 
         building_name = building_name.upper()
         url = 'http://classic.laundryview.com/appliance_status_ajax.php?lr={}'.format(self.location_dict[building_name])
-        page = urlopen(url)
-        soup = BeautifulSoup(page.read(), 'html.parser')
+        page = s.get(url)
+        soup = BeautifulSoup(page.text, 'html.parser')
 
         re1 = ['(\\d+)', '(\\s+)', '(of)', '(\\s+)', '(\\d+)', '(\\s+)', '((?:[a-z][a-z]+))']
 
@@ -412,9 +413,9 @@ class PeopleAPI:
 
                 if personurl.lower().startswith("https://") and hasattr(ssl, '_create_unverified_context'):
                     ct = ssl._create_unverified_context()
-                    f = urlopen(personurl, context=ct)
+                    f = s.get(personurl, context=ct)
                 else:
-                    f = urlopen(personurl)
+                    f = s.get(personurl)
 
                 html = f.read()
                 person_dict = {}
