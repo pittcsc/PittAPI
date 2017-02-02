@@ -416,9 +416,8 @@ class PeopleAPI:
                 else:
                     f = s.get(personurl)
 
-                html = f.read()
                 person_dict = {}
-                soup = BeautifulSoup(html, 'html.parser')
+                soup = BeautifulSoup(f.text, 'html.parser')
                 name = soup.find('h1', attrs={'class' :'kgoui_detail_title'})
                 person_dict['name'] = str(name.get_text())
                 for item in soup.find_all('div', attrs={'class': 'kgoui_list_item_textblock'}):
