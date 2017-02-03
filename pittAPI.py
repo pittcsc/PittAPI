@@ -456,7 +456,7 @@ class DiningAPI:
         while not end_loop :
             load_more = False
             url = "https://m.pitt.edu/dining/index.json?_region=kgoui_Rcontent_I1_Ritems&_object_include_html=1&_object_js_config=1&_kgoui_page_state=eb95bc72eca310cbbe76a39964fc7143&feed=dining_locations&start=" + str(counter)
-            data = json.load(urlopen(url))
+            data = s.get(url).json()
             soup = BeautifulSoup(data['response']['html'], 'html.parser')
             res = soup.find_all("div", class_="kgoui_list_item_textblock")
 
@@ -495,7 +495,10 @@ class DiningAPI:
         return dining_locations
 
     def get_dining_location_by_name(self, location):
-        return self.get_dining_locations()[self._encode_dining_location(location)]
+        try:
+            return self.get_dining_locations()[self._encode_dining_location(location)]
+        except:
+            return {}
     
     def get_dining_location_menu(self, location=None, date=None):
         # location can only be market, market's subordinates, and cathedral cafe
