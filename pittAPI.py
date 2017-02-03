@@ -498,7 +498,7 @@ class DiningAPI:
         try:
             return self.get_dining_locations()[self._encode_dining_location(location)]
         except:
-            return {}
+            raise InvalidParameterException("The dining location is invalid")
     
     def get_dining_location_menu(self, location=None, date=None):
         # location can only be market, market's subordinates, and cathedral cafe
