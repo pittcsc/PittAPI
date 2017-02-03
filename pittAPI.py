@@ -17,17 +17,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
 
-try:
-    # Python 3
-    from urllib.request import urlopen
-except ImportError:
-    # Python 2
-    from urllib2 import urlopen
 import subprocess
 import re
 import json
 
 from bs4 import BeautifulSoup
+import requests
+
+# Disable InsecureRequestWarning
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+s = requests.session()
 
 
 class InvalidParameterException(Exception):
@@ -40,8 +41,8 @@ class CourseAPI:
 
     @staticmethod
     def _retrieve_from_url(url):
-        page = urlopen(url)
-        soup = BeautifulSoup(page.read(), 'html.parser')
+        page = s.get(url)
+        soup = BeautifulSoup(page.text, 'html.parser')
         courses = soup.findAll("tr", {"class": "odd"})
         courses_even = soup.findAll("tr", {"class": "even"})
         courses.extend(courses_even)
@@ -50,7 +51,8 @@ class CourseAPI:
     def get_courses(self, term, subject):
         # type: (str, str) -> List[Dict[str, str]]
         """
-        :returns: a list of dictionaries containing the data for all SUBJECT classes in TERM
+        :returns: a list of dictionaries containing the data for all
+        SUBJECT classes in TERM
 
         :param: term: String, term number
         :param: subject: String, course abbreviation
@@ -129,8 +131,8 @@ class CourseAPI:
         req = req.upper()
 
         url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ={}&TERM={}'.format(req, term)
-        page = urlopen(url)
-        soup = BeautifulSoup(page.read(), 'html.parser')
+        page = s.get(url)
+        soup = BeautifulSoup(page.text, 'html.parser')
         courses = soup.findAll("tr", {"class": "odd"})
         courses_even = soup.findAll("tr", {"class": "even"})
         courses.extend(courses_even)
@@ -187,8 +189,8 @@ class CourseAPI:
         """
 
         url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM={}&TERM={}'.format(class_number, term)
-        page = urlopen(url)
-        soup = BeautifulSoup(page.read(), 'html.parser')
+        page = s.get(url)
+        soup = BeautifulSoup(page.text, 'html.parser')
         table = soup.findChildren('table')[0]
         rows = table.findChildren('tr')
 
@@ -225,8 +227,8 @@ class LabAPI:
 
         lab_name = lab_name.upper()
         url = 'http://labinformation.cssd.pitt.edu/'
-        page = urlopen(url)
-        soup = BeautifulSoup(page.read(), 'html.parser')
+        page = s.get(url)
+        soup = BeautifulSoup(page.text, 'html.parser')
         labs = soup.span.contents[0].strip().split("  ")
 
         lab = labs[self.location_dict[lab_name]].split(':')
@@ -285,8 +287,8 @@ class LaundryAPI:
 
         building_name = building_name.upper()
         url = 'http://classic.laundryview.com/appliance_status_ajax.php?lr={}'.format(self.location_dict[building_name])
-        page = urlopen(url)
-        soup = BeautifulSoup(page.read(), 'html.parser')
+        page = s.get(url)
+        soup = BeautifulSoup(page.text, 'html.parser')
 
         re1 = ['(\\d+)', '(\\s+)', '(of)', '(\\s+)', '(\\d+)', '(\\s+)', '((?:[a-z][a-z]+))']
 
@@ -371,37 +373,62 @@ class LaundryAPI:
 
         return di
 
+
 class PeopleAPI:
 
     def __init__(self):
         pass
 
-    def get_person(self, query):
+    def get_person(self, query, maxPeople=10):
         '''
-        Doesn't work completely for now.
+        Doesn't work completely for now. IT WORKS
         Returns a dict with URLs of user profiles. No scraping yet.
         '''
 
         query = query.replace(' ', '+')
+        persons_list = []
+        tens = 0
+        while tens < maxPeople:
+            url = "https://136.142.34.69/people/search?search=Search&filter={}&_region=kgoui_Rcontent_I0_Rcontent_I0_Ritems"
+            url += '&_region_index_offset=' + str(tens) + '&feed=directory&start=' + str(tens)
+            cmd = 'curl -k -s ' + '"' + url + '"'
 
-        cmd = """
-        curl -k -s "https://136.142.34.69/people/search?search=Search&filter={}&_region=kgoui_Rcontent_I0_Rcontent_I0_Ritems"
-        """.format(query)
+            cmd = cmd.format(query)
+            response = subprocess.check_output(cmd, shell=True)
+            if not response:  # no more responses, so break
+                break
 
-        response = subprocess.check_output(cmd, shell=True)
+            results = []
+            while("formatted" in response):
+                response = response[response.index('"formatted"'):]
+                response = response[response.index(":") + 2:]
+                response_str = response[:response.index('}') - 1]
+                response_str = response_str.replace('\u0026', '&')
+                response_str = response_str.replace('\\', '')
+                if '&start=' not in response_str:
+                    results.append("https://136.142.34.69" + response_str)
 
-        results = []
-        while("formatted" in response):
-            response = response[response.index('"formatted"'):]
-            response = response[response.index(":") + 2:]
-            response_str = response[:response.index('}') - 1]
-            response_str = response_str.replace('\u0026', '&')
-            response_str = response_str.replace('\\', '')
-            if '&start=' not in response_str:
-                results.append("https://136.142.34.69" + response_str)
-            response = response[response.index('}') :]
+                response = response[response.index('}'):]
 
-        return results
+            for url in results:
+                # results is url
+                personurl = str(''.join(url))
+
+                if personurl.lower().startswith("https://"):
+                    f = s.get(personurl, verify=False)
+                else:
+                    f = s.get(personurl)
+
+                person_dict = {}
+                soup = BeautifulSoup(f.text, 'html.parser')
+                name = soup.find('h1', attrs={'class': 'kgoui_detail_title'})
+                person_dict['name'] = str(name.get_text())
+                for item in soup.find_all('div', attrs={'class': 'kgoui_list_item_textblock'}):
+                    if item is not None:
+                        person_dict[str(item.div.get_text())] = str(item.span.get_text())
+                persons_list.append(person_dict)
+            tens += 10
+        return persons_list
 
 
 class DiningAPI:
@@ -522,4 +549,3 @@ class DiningAPI:
         string = string.replace(" And", " and")
         string = string.replace(" Go", " GO")
         return string
-
