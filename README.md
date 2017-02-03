@@ -31,12 +31,13 @@ small_dict = lab.get_status(lab_name="ALUMNI")
 
 ### Dining
 dining = DiningAPI()
-# Will return a list of dictionaries containing each dining location
-# and its open/closed status
-# (at the moment it returns a list of lists)
+# Will return a dictionary of dictionaries containing each dining location,
+# with its name, its open/closed status, and open times (if it exists)
 medium_dict = dining.get_dining_locations()
 medium_dict = dining.get_dining_locations_by_status(status="open")
 medium_dict = dining.get_dining_locations_by_status(status="closed")
+# Will return a single dictionary of a dining location,
+# with its name, its open/closed status, and open times (if it exists)
 one = dining.get_dining_location_by_name(u"taco_bell-schenley_cafe")
 two = dining.get_dining_location_by_name(u"cup_&_chaucer-hillman")
 
