@@ -17,26 +17,26 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
 
-
-
 import subprocess
 import re
 
 from bs4 import BeautifulSoup
-import ssl
 import requests
 
+# Disable InsecureRequestWarning
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
 s = requests.session()
+
 
 class InvalidParameterException(Exception):
     pass
 
 
-
 class CourseAPI:
     def __init__(self):
         pass
-
 
     @staticmethod
     def _retrieve_from_url(url):
@@ -50,7 +50,8 @@ class CourseAPI:
     def get_courses(self, term, subject):
         # type: (str, str) -> List[Dict[str, str]]
         """
-        :returns: a list of dictionaries containing the data for all SUBJECT classes in TERM
+        :returns: a list of dictionaries containing the data for all
+        SUBJECT classes in TERM
 
         :param: term: String, term number
         :param: subject: String, course abbreviation
@@ -371,6 +372,7 @@ class LaundryAPI:
 
         return di
 
+
 class PeopleAPI:
 
     def __init__(self):
@@ -388,12 +390,11 @@ class PeopleAPI:
         while tens < maxPeople:
             url = "https://136.142.34.69/people/search?search=Search&filter={}&_region=kgoui_Rcontent_I0_Rcontent_I0_Ritems"
             url += '&_region_index_offset=' + str(tens) + '&feed=directory&start=' + str(tens)
-            cmd = 'curl -k -s ' + '"'  + url + '"'
-
+            cmd = 'curl -k -s ' + '"' + url + '"'
 
             cmd = cmd.format(query)
             response = subprocess.check_output(cmd, shell=True)
-            if not response: #no more responses, so break
+            if not response:  # no more responses, so break
                 break
 
             results = []
@@ -406,19 +407,20 @@ class PeopleAPI:
                 if '&start=' not in response_str:
                     results.append("https://136.142.34.69" + response_str)
 
-                response = response[response.index('}') :]
+                response = response[response.index('}'):]
+
             for url in results:
-                #results is url
+                # results is url
                 personurl = str(''.join(url))
 
-                if personurl.lower().startswith("https://") and hasattr(ssl, '_create_unverified_context'):
+                if personurl.lower().startswith("https://"):
                     f = s.get(personurl, verify=False)
                 else:
                     f = s.get(personurl)
 
                 person_dict = {}
                 soup = BeautifulSoup(f.text, 'html.parser')
-                name = soup.find('h1', attrs={'class' :'kgoui_detail_title'})
+                name = soup.find('h1', attrs={'class': 'kgoui_detail_title'})
                 person_dict['name'] = str(name.get_text())
                 for item in soup.find_all('div', attrs={'class': 'kgoui_list_item_textblock'}):
                     if item is not None:
