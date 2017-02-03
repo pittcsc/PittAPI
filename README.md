@@ -44,12 +44,12 @@ medium_dict = dining.get_dining_locations(status="closed")
 * ~~Make the laundry detailed method work~~  
 * ~~Test the computer lab status API and make it return a dictionary~~  
 * Working on the DiningAPI
-    * Have the DiningAPI return a dict instead of a list
+    * ~~Have the DiningAPI return a dict instead of a list~~
     * ~~Have a separate method for `get_dining_locations_by_status` and `get_dining_locations`~~
         * ~~`get_dining_locations_by_status` is what is currently implemented~~
         * ~~`get_dining_locations` is the same as what is currently implemented with no arguments~~
-            * (but with a good-looking dictionary)
+            * ~~(but with a good-looking dictionary)~~
     * Implement the `get_dining_location_by_name` method
     * Implement the `get_market_menu` method
-    * Implement the helper methods `_encode_dining_location` and `_decode_dining_location`
+    * ~~Implement the helper methods `_encode_dining_location` and `_decode_dining_location`~~
 * Čhange all dict keys to unicode
