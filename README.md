@@ -35,8 +35,10 @@ dining = DiningAPI()
 # and its open/closed status
 # (at the moment it returns a list of lists)
 medium_dict = dining.get_dining_locations()
-medium_dict = dining.get_dining_locations(status="open")
-medium_dict = dining.get_dining_locations(status="closed")
+medium_dict = dining.get_dining_locations_by_status(status="open")
+medium_dict = dining.get_dining_locations_by_status(status="closed")
+one = dining.get_dining_location_by_name(u"taco_bell-schenley_cafe")
+two = dining.get_dining_location_by_name(u"cup_&_chaucer-hillman")
 
 ```
 
@@ -49,7 +51,7 @@ medium_dict = dining.get_dining_locations(status="closed")
         * ~~`get_dining_locations_by_status` is what is currently implemented~~
         * ~~`get_dining_locations` is the same as what is currently implemented with no arguments~~
             * ~~(but with a good-looking dictionary)~~
-    * Implement the `get_dining_location_by_name` method
-    * Implement the `get_market_menu` method
+    * ~~Implement the `get_dining_location_by_name` method~~
+    * Implement the `get_dining_location_menu` method
     * ~~Implement the helper methods `_encode_dining_location` and `_decode_dining_location`~~
-* Čhange all dict keys to unicode
+* Change all string processing to unicode

@@ -468,9 +468,18 @@ class DiningAPI:
         return dining_locations
 
     def get_dining_location_by_name(self, location):
-        return
+        return self.get_dining_locations()[self._encode_dining_location(location)]
     
-    def get_market_menu(self, date):
+    def get_dining_location_menu(self, location=None, date=None):
+        # location can only be market, market's subordinates, and cathedral cafe
+        # if location is none, return all menus, and date will be ignored
+        # date has to be a day of the week, or if empty will return menus for all days of the week
+        #https://www.pc.pitt.edu/dining/menus/flyingStar.php
+        #https://www.pc.pitt.edu/dining/menus/bellaTrattoria.php
+        #https://www.pc.pitt.edu/dining/menus/basicKneads.php
+        #https://www.pc.pitt.edu/dining/menus/basicKneads.php
+        #https://www.pc.pitt.edu/dining/menus/magellans.php
+        #https://www.pc.pitt.edu/dining/locations/cathedralCafe.php
         return
 
     @staticmethod
