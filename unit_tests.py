@@ -1,9 +1,10 @@
-from pittAPI import CourseAPI, LaundryAPI, LabAPI, DiningAPI
+from pittAPI import CourseAPI, LaundryAPI, LabAPI, PeopleAPI, DiningAPI
 import pprint
 import unittest
 
 pp = pprint.PrettyPrinter(indent=2)
 
+course = CourseAPI()
 dining = DiningAPI()
 #medium_dict = dining.get_dining_locations(status="open")
 #pp.pprint(medium_dict)
@@ -13,6 +14,46 @@ dining = DiningAPI()
 #pp.pprint(medium_dict)
 
 class UnitTest(unittest.TestCase):
+    def test_courseapi_get_courses(self):
+        terms = ["2171", "2174", "2177"]
+        subjects = [
+            "AFRCNA", "ANTH", "ARABIC", "ASL", "ARCH",
+            "ARTSC", "ASTRON", "BIOETH", "BIOSC", "CHEM",
+            "CHLIT", "CHIN", "CLASS", "COMMRC", "CS",
+            "CLST", "EAS", "ECON", "ENGCMP", "ENGFLM",
+            "ENGLIT", "ENGWRT", "ENV", "FILMST", "FP",
+            "FR", "FTDA", "FTDB", "FTDC", "GEOL",
+            "GER", "GREEK", "GREEKM", "GSWS", "HINDI",
+            "HIST", "HPS", "HAA", "ISSP", "IRISH",
+            "ITAL", "JPNSE", "JS", "KOREAN", "LATIN",
+            "LCTL", "LING", "MATH", "MRST", "MUSIC",
+            "NROSCI", "PERS", "PHIL", "PEDC", "PHYS",
+            "POLISH", "PS", "PORT", "PSY", "QUECH",
+            "REL", "RELGST", "RUSS", "SERCRO", "SLAV",
+            "SLOVAK", "SOC", "SPAN", "STAT", "SA",
+            "SWAHIL", "SWE", "THEA", "TURKSH", "UKRAIN",
+            "URBNST", "VIET",
+            "BUSACC", "BUSECN", "BUSENV", "BUSFIN", "BUSHRM",
+            "BUSBIS", "BUSMIS", "BUSMKT", "BUSORG", "BUSQOM",
+            "BUSERV", "BUSSPP", "BUSSCM",
+            "WWW", "HYBRID", "SELF", "CGSDAY", "CGSSAT",
+            "BCCC", "ADMJ", "BUSERV", "CDACCT", "CGS",
+            "LDRSHP", "LEGLST", "NPHS", "PUBSRV",
+            "AFROTC", "INFSCI", "MILS", "UHC",
+            'BIOENG', 'CEE', 'CHE', 'COE', 'COEE',
+            'ECE', 'EE', 'ENGR', 'ENGRPH', 'ENRES',
+            'FTDH', 'IE', 'ME', 'MEMS', 'MSE',
+            'MSEP', 'PETE', 'PWEA'
+        ]
+        for t in terms:
+            for s in subjects:
+                results = course.get_courses(term=t, subject=s)
+                for result in results:
+                    res1 = u'pass' if t in result[u'term'] else u'fail'
+                    res2 = u'pass' if s in result[u'subject'] else u'fail'
+                    self.assertEqual(res1, u'pass')
+                    self.assertEqual(res2, u'pass')
+    
     def test_diningapi_encode_dining_location(self):
         self.assertEqual(DiningAPI._encode_dining_location('Cup & Chaucer - Hilman Library'), 'cup_&_chaucer-hillman')
         self.assertEqual(DiningAPI._encode_dining_location('Hill Top Grille - Sutherland Hall'), 'hill_top_grille-sutherland')
