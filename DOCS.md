@@ -15,7 +15,7 @@
   - `subject`: Course abbreviation
 
 #### **Returns**:
-A list of dictionaries containg the data for all SUBJECT classes in TERM
+Returns a list of dictionaries containg the data for all SUBJECT classes in TERM
 
 ---
 
@@ -26,7 +26,7 @@ A list of dictionaries containg the data for all SUBJECT classes in TERM
   - `req`: Requirement abbreviation
 
 #### **Returns**:
-A list of dictionaries containing the data for all SUBJECT classes in TERM
+Returns a list of dictionaries containing the data for all SUBJECT classes in TERM
 
 ---
 
@@ -37,7 +37,7 @@ A list of dictionaries containing the data for all SUBJECT classes in TERM
   - `term`: Term number
 
 #### **Returns**:
-A string that is the description for `class_number` in `term`.
+Returns the description for `class_number` in `term`.
 
 ---
 
@@ -59,20 +59,44 @@ A string that is the description for `class_number` in `term`.
 
 # Lab API
 
+### **location_dict**
+  - Alumni Hall: `"ALUMNI"`
+  - Benedum Hall: `"BENEDUM"`
+  - Cathedral G26: `"CATH_G26"`
+  - Cathedral G27: `"CATH_G27"`
+  - David Lawrence Hall: `"LAWRENCE"`
+  - Hillman Library: `"HILLMAN"`
+  - Sutherland Hall: `"SUTH"`
+
+---
+
 ### **get_status(lab_name)**
 
 #### **Parameters**:
-  - `lab_name`: Lab name
+  - `lab_name`: Lab name (comes from LabAPI's **location_dict**)
 
 #### **Returns**:
-A dictionary with status and amount of OS machines.
+Returns a dictionary with status and amount of OS machines.
 
 # Laundry API
+
+### **location_dict**
+- Litchfield Towers: `"TOWERS"`
+- Brackenridge Hall: `"BRACKENRIDGE"`
+- Holland Hall: `"HOLLAND"`
+- Lothrop Hall: `"LOTHROP"`
+- McCormick Hall: `"MCCORMICK"`
+- Sutherland Hall: `"SUTH_WEST"`
+- Sutherland Hall: `"SUTH_EAST"`
+- Forbes Hall: `"FORBES_CRAIG"`
+
+---
 
 ### **get_status_simple(building_name)**
 
 #### **Parameters**:
-  - `building_name`: Building name
+  - `building_name`: Building name (comes from LaundryAPI's **location_dict**)
+
 
 #### **Returns**:
 A dictionary with free washers and dryers as well as total washers and dryers for a given building.
@@ -82,7 +106,7 @@ A dictionary with free washers and dryers as well as total washers and dryers fo
 ### **get_status_detailed(building_name)**
 
 #### **Parameters**:
-  - `building_name`: Building name
+  - `building_name`: Building name (comes from LaundryAPI's **location_dict**)
 
 #### **Returns**:
 
@@ -92,7 +116,7 @@ A dictionary with free washers and dryers as well as total washers and dryers fo
 
 #### **Parameters**:
   - `query`:
-  - `maxPeople`:
+  - `max_people`:
 
 #### **Returns**:
 Returns a dictionary with URLs of user profiles
@@ -109,7 +133,10 @@ Returns all dining locations
 ### **get_dining_locations_by_status(status=None)**
 
 #### **Parameters**:
-  - `status`: Status of locations (`all`, `open`, `closed`)
+  - `status`: Status of locations (default is all)
+    - All locations: `None` or `"all"`
+    - Open locations: `"open"`
+    - Closed locations: `"closed"`
 
 #### **Returns**:
 Returns dining halls based on status
@@ -129,7 +156,7 @@ Returns dining halls based on status
 
 #### **Parameters**:
   - `location`: Dining location
-  - `date`: Data
+  - `date`: Date
 
 #### **Returns**:
 ---
