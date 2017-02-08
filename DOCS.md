@@ -38,6 +38,7 @@ A list of dictionaries containing the data for all SUBJECT classes in TERM
 
 #### **Returns**:
 A string that is the description for `class_number` in `term`.
+
 ---
 
 ### **_get_course_dict(details)**
@@ -52,7 +53,7 @@ A string that is the description for `class_number` in `term`.
 ### **_retrieve_from_url(url)**
 
 #### **Parameters**:
-    - `url`:
+  - `url`:
 
 #### **Returns**:
 
@@ -75,6 +76,7 @@ A dictionary with status and amount of OS machines.
 
 #### **Returns**:
 A dictionary with free washers and dryers as well as total washers and dryers for a given building.
+
 ---
 
 ### **get_status_detailed(building_name)**
