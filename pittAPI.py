@@ -444,7 +444,7 @@ class DiningAPI:
         # "open"   - returns open dining locations
         # "closed" - returns closed dining locations
 
-        #sample_url = "https://m.pitt.edu/dining/index.json?_region=kgoui_Rcontent_I1_Ritems&_object_include_html=1&_object_js_config=1&_kgoui_page_state=eb95bc72eca310cbbe76a39964fc7143&_region_index_offset=15&feed=dining_locations&start=15"
+        # sample_url = "https://m.pitt.edu/dining/index.json?_region=kgoui_Rcontent_I1_Ritems&_object_include_html=1&_object_js_config=1&_kgoui_page_state=eb95bc72eca310cbbe76a39964fc7143&_region_index_offset=15&feed=dining_locations&start=15"
         # the _region_index_offset is optional
         # -- seems like it's only for the id of the li for the html
         dining_locations = {}
@@ -452,7 +452,7 @@ class DiningAPI:
         end_loop = False
         load_more = False
         counter = 0
-        while not end_loop :
+        while not end_loop:
             load_more = False
             url = "https://m.pitt.edu/dining/index.json?_region=kgoui_Rcontent_I1_Ritems&_object_include_html=1&_object_js_config=1&_kgoui_page_state=eb95bc72eca310cbbe76a39964fc7143&feed=dining_locations&start=" + str(counter)
             data = s.get(url).json()
@@ -460,24 +460,16 @@ class DiningAPI:
             res = soup.find_all("div", class_="kgoui_list_item_textblock")
 
             for i in res:
-                if i.find("span").getText() != "Load more..." :
-                    if i.find("div") != None :
-                        if( (('Next:'     in i.find("div").getText()) and status != "open"   ) or
-                            (('Next:' not in i.find("div").getText()) and status != "closed" ) ):
-                            #dining_locations.append([
-                            #    #str(i.find("span").getText()),
-                            #    #str(i.find("div").getText().replace(u'\u2013', '-').replace('\n', ''))
-                            #    i.find("span").getText(),
-                            #    i.find("div").getText().replace(u'\u2013', '-').replace('\n', '')
-                            #])
+                if i.find("span").getText() != "Load more...":
+                    if i.find("div") is not None:
+                        if (('Next:' in i.find("div").getText()) and status != "open") or (('Next:' not in i.find("div").getText()) and status != "closed"):
                             dining_locations[self._encode_dining_location(i.find("span").getText())] = {
                                 "name": i.find("span").getText(),
                                 "hours": i.find("div").getText().replace('\u2013', '-').replace('\n', '').replace('Next: ', ''),
                                 "status": "closed" if "Next:" in i.find("div").getText() else "open"
                             }
                             end_loop = True
-                    elif status != "open" :
-                        #dining_locations.append([i.find("span").getText(), ""])
+                    elif status != "open":
                         dining_locations[self._encode_dining_location(i.find("span").getText())] = {
                             "name": i.find("span").getText(),
                             "hours": "",
@@ -488,7 +480,7 @@ class DiningAPI:
                     counter += 15
                     end_loop = False
                     load_more = True
-            if not load_more :
+            if not load_more:
                 end_loop = True
 
         return dining_locations
@@ -503,12 +495,13 @@ class DiningAPI:
         # location can only be market, market's subordinates, and cathedral cafe
         # if location is none, return all menus, and date will be ignored
         # date has to be a day of the week, or if empty will return menus for all days of the week
-        #https://www.pc.pitt.edu/dining/menus/flyingStar.php
-        #https://www.pc.pitt.edu/dining/menus/bellaTrattoria.php
-        #https://www.pc.pitt.edu/dining/menus/basicKneads.php
-        #https://www.pc.pitt.edu/dining/menus/basicKneads.php
-        #https://www.pc.pitt.edu/dining/menus/magellans.php
-        #https://www.pc.pitt.edu/dining/locations/cathedralCafe.php
+        #
+        # https://www.pc.pitt.edu/dining/menus/flyingStar.php
+        # https://www.pc.pitt.edu/dining/menus/bellaTrattoria.php
+        # https://www.pc.pitt.edu/dining/menus/basicKneads.php
+        # https://www.pc.pitt.edu/dining/menus/basicKneads.php
+        # https://www.pc.pitt.edu/dining/menus/magellans.php
+        # https://www.pc.pitt.edu/dining/locations/cathedralCafe.php
         return
 
     @staticmethod
