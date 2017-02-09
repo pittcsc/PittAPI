@@ -1,60 +1,118 @@
-from pittAPI import CourseAPI, LaundryAPI, LabAPI, PeopleAPI, DiningAPI
+from pittAPI import CourseAPI, LaundryAPI, LabAPI, PeopleAPI, DiningAPI, InvalidParameterException
 import pprint
 import unittest
 
 pp = pprint.PrettyPrinter(indent=2)
 
-course = CourseAPI()
-dining = DiningAPI()
-#medium_dict = dining.get_dining_locations(status="open")
-#pp.pprint(medium_dict)
-#medium_dict = dining.get_dining_locations(status="closed")
-#pp.pprint(medium_dict)
-#medium_dict = dining.get_dining_locations()
-#pp.pprint(medium_dict)
+course  = CourseAPI()
+lab     = LabAPI()
+laundry = LaundryAPI()
+people  = PeopleAPI()
+dining  = DiningAPI()
+
+terms = ["2171", "2174", "2177"]
+subjects = [
+    "AFRCNA", "ANTH", "ARABIC", "ASL", "ARCH",
+    "ARTSC", "ASTRON", "BIOETH", "BIOSC", "CHEM",
+    "CHLIT", "CHIN", "CLASS", "COMMRC", "CS",
+    "CLST", "EAS", "ECON", "ENGCMP", "ENGFLM",
+    "ENGLIT", "ENGWRT", "ENV", "FILMST", "FP",
+    "FR", "FTDA", "FTDB", "FTDC", "GEOL",
+    "GER", "GREEK", "GREEKM", "GSWS", "HINDI",
+    "HIST", "HPS", "HAA", "ISSP", "IRISH",
+    "ITAL", "JPNSE", "JS", "KOREAN", "LATIN",
+    "LCTL", "LING", "MATH", "MRST", "MUSIC",
+    "NROSCI", "PERS", "PHIL", "PEDC", "PHYS",
+    "POLISH", "PS", "PORT", "PSY", "QUECH",
+    "REL", "RELGST", "RUSS", "SERCRO", "SLAV",
+    "SLOVAK", "SOC", "SPAN", "STAT", "SA",
+    "SWAHIL", "SWE", "THEA", "TURKSH", "UKRAIN",
+    "URBNST", "VIET",
+    "BUSACC", "BUSECN", "BUSENV", "BUSFIN", "BUSHRM",
+    "BUSBIS", "BUSMIS", "BUSMKT", "BUSORG", "BUSQOM",
+    "BUSERV", "BUSSPP", "BUSSCM",
+    "WWW", "HYBRID", "SELF", "CGSDAY", "CGSSAT",
+    "BCCC", "ADMJ", "BUSERV", "CDACCT", "CGS",
+    "LDRSHP", "LEGLST", "NPHS", "PUBSRV",
+    "AFROTC", "INFSCI", "MILS", "UHC",
+    'BIOENG', 'CEE', 'CHE', 'COE', 'COEE',
+    'ECE', 'EE', 'ENGR', 'ENGRPH', 'ENRES',
+    'FTDH', 'IE', 'ME', 'MEMS', 'MSE',
+    'MSEP', 'PETE', 'PWEA'
+]
+
 
 class UnitTest(unittest.TestCase):
+    def setUp(self):
+        pass
+    
     def test_courseapi_get_courses(self):
-        terms = ["2171", "2174", "2177"]
-        subjects = [
-            "AFRCNA", "ANTH", "ARABIC", "ASL", "ARCH",
-            "ARTSC", "ASTRON", "BIOETH", "BIOSC", "CHEM",
-            "CHLIT", "CHIN", "CLASS", "COMMRC", "CS",
-            "CLST", "EAS", "ECON", "ENGCMP", "ENGFLM",
-            "ENGLIT", "ENGWRT", "ENV", "FILMST", "FP",
-            "FR", "FTDA", "FTDB", "FTDC", "GEOL",
-            "GER", "GREEK", "GREEKM", "GSWS", "HINDI",
-            "HIST", "HPS", "HAA", "ISSP", "IRISH",
-            "ITAL", "JPNSE", "JS", "KOREAN", "LATIN",
-            "LCTL", "LING", "MATH", "MRST", "MUSIC",
-            "NROSCI", "PERS", "PHIL", "PEDC", "PHYS",
-            "POLISH", "PS", "PORT", "PSY", "QUECH",
-            "REL", "RELGST", "RUSS", "SERCRO", "SLAV",
-            "SLOVAK", "SOC", "SPAN", "STAT", "SA",
-            "SWAHIL", "SWE", "THEA", "TURKSH", "UKRAIN",
-            "URBNST", "VIET",
-            "BUSACC", "BUSECN", "BUSENV", "BUSFIN", "BUSHRM",
-            "BUSBIS", "BUSMIS", "BUSMKT", "BUSORG", "BUSQOM",
-            "BUSERV", "BUSSPP", "BUSSCM",
-            "WWW", "HYBRID", "SELF", "CGSDAY", "CGSSAT",
-            "BCCC", "ADMJ", "BUSERV", "CDACCT", "CGS",
-            "LDRSHP", "LEGLST", "NPHS", "PUBSRV",
-            "AFROTC", "INFSCI", "MILS", "UHC",
-            'BIOENG', 'CEE', 'CHE', 'COE', 'COEE',
-            'ECE', 'EE', 'ENGR', 'ENGRPH', 'ENRES',
-            'FTDH', 'IE', 'ME', 'MEMS', 'MSE',
-            'MSEP', 'PETE', 'PWEA'
-        ]
+        # need to rewrite this test to aaccomodate the case where no courses are offered
         for t in terms:
             for s in subjects:
-                results = course.get_courses(term=t, subject=s)
-                for result in results:
-                    res1 = u'pass' if t in result[u'term'] else u'fail'
-                    res2 = u'pass' if s in result[u'subject'] else u'fail'
+                pp.pprint(s)
+                try:
+                    results = course.get_courses(term=t, subject=s)
+                    for result in results:
+                        res1 = u'pass' if t in result[u'term'] else u'fail'
+                        res2 = u'pass' if s in result[u'subject'] else u'fail'
+                        self.assertEqual(res1, u'pass')
+                        self.assertEqual(res2, u'pass')
+                except InvalidParameterException:
+                    pass
+
+    def test_courseapi_retrieve_from_url(self):
+        # staticmethod
+        # need to rewrite this test to accomodate the case where no courses are offered
+        for t in terms:
+            for s in subjects:
+                url = url = 'http://www.courses.as.pitt.edu/results-subja.asp?TERM={}&SUBJ={}'.format(t, s)
+                courses = CourseAPI._retrieve_from_url()
+                res = u'pass' if len(courses) > 0 else u'fail'
+                self.assertEqual(res, u'pass')
+                for course in courses:
+                    res1 = u'pass' if t in unicode(str(course), u'utf-8') else u'fail'
+                    res2 = u'pass' if s in unicode(str(course), u'utf-8') else u'fail'
                     self.assertEqual(res1, u'pass')
                     self.assertEqual(res2, u'pass')
-    
+
+    def test_courseapi_get_course_dict(self):
+        # staticmethod
+        self.assertTrue(True)
+
+    def test_courseapi_get_courses_by_req(self):
+        self.assertTrue(True)
+
+    def test_courseapi_get_class_description(self):
+        #staticmethod
+        self.assertTrue(True)
+
+    def test_labapi_get_status(self):
+        self.assertTrue(True)
+
+    def test_laundryapi_get_status_simple(self):
+        self.assertTrue(True)
+
+    def test_laundryapi_get_status_detailed(self):
+        self.assertTrue(True)
+
+    def test_peopleapi_get_person(self):
+        self.assertTrue(True)
+
+    def test_diningapi_get_dining_locations(self):
+        self.assertTrue(True)
+
+    def test_diningapi_get_dining_locations_by_status(self):
+        self.assertTrue(True)
+
+    def test_diningapi_get_dining_location_by_name(self):
+        self.assertTrue(True)
+
+    def test_diningapi_get_dining_location_menu(self):
+        self.assertTrue(True)
+
     def test_diningapi_encode_dining_location(self):
+        # staticmethod
         self.assertEqual(DiningAPI._encode_dining_location('Cup & Chaucer - Hilman Library'), 'cup_&_chaucer-hillman')
         self.assertEqual(DiningAPI._encode_dining_location('Hill Top Grille - Sutherland Hall'), 'hill_top_grille-sutherland')
         self.assertEqual(DiningAPI._encode_dining_location('Market Central - Litchfield Towers'), 'market_central-towers')
@@ -88,6 +146,7 @@ class UnitTest(unittest.TestCase):
         self.assertEqual(DiningAPI._encode_dining_location('Thirst & Ten - Panther Hall'), 'thirst_&_ten-panther')
 
     def test_diningapi_decode_dining_location(self):
+        # staticmethod
         self.assertEqual(DiningAPI._decode_dining_location('cup_&_chaucer-hillman'), 'Cup & Chaucer - Hilman Library')
         self.assertEqual(DiningAPI._decode_dining_location('hill_top_grille-sutherland'), 'Hill Top Grille - Sutherland Hall')
         self.assertEqual(DiningAPI._decode_dining_location('market_central-towers'), 'Market Central - Litchfield Towers')
@@ -120,3 +179,5 @@ class UnitTest(unittest.TestCase):
         self.assertEqual(DiningAPI._decode_dining_location('the_side_bar-barco'), 'The Side Bar - Barco Law Building')
         self.assertEqual(DiningAPI._decode_dining_location('thirst_&_ten-panther'), 'Thirst & Ten - Panther Hall')
 
+if __name__ == '__main__':
+    unittest.main()
