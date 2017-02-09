@@ -39,24 +39,6 @@ Returns a list of dictionaries containing the data for all SUBJECT classes in TE
 #### **Returns**:
 Returns the description for `class_number` in `term`.
 
----
-
-### **_get_course_dict(details)**
-
-#### **Parameters**:
-  - `details`:
-
-#### **Returns**:
-
----
-
-### **_retrieve_from_url(url)**
-
-#### **Parameters**:
-  - `url`:
-
-#### **Returns**:
-
 # Lab API
 
 ### **location_dict**
@@ -159,20 +141,4 @@ Returns dining halls based on status
   - `date`: Date
 
 #### **Returns**:
----
 
-### **_encode_dining_location(string)**
-
-#### **Parameters**:
-  - `string`: Text
-
-#### **Returns**:
-
----
-
-### **_decode_dining_location(string)**
-
-#### **Parameters**:
-  - `string`: Text
-
-#### **Returns**:
