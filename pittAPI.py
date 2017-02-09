@@ -148,7 +148,7 @@ class CourseAPI:
                 except (TypeError, AttributeError) as e:
                     pass
 
-            temp = map(lambda x: x.replace('&nbsp;', ''), temp)
+            temp = [x.replace('&nbsp;', '') for x in temp]
 
             if len(temp) == 6:
                 course_details.append(
@@ -337,14 +337,14 @@ class LaundryAPI:
             except IndexError:
                 pass
 
-            machine_split = map(lambda x: x.split(':'), machine_split)
+            machine_split = [x.split(':') for x in machine_split]
             cleaned_resp.append(machine_split[0])
             try:
                 cleaned_resp.append(machine_split[1])
             except IndexError:
                 pass
 
-        cleaned_resp = filter(lambda x: len(x) == 10, cleaned_resp)
+        cleaned_resp = [x for x in cleaned_resp if len(x) == 10]
 
         di = []
         for machine in cleaned_resp:
@@ -402,7 +402,7 @@ class PeopleAPI:
                 response = response[response.index('"formatted"'):]
                 response = response[response.index(":") + 2:]
                 response_str = response[:response.index('}') - 1]
-                response_str = response_str.replace('\u0026', '&')
+                response_str = response_str.replace('\\u0026', '&')
                 response_str = response_str.replace('\\', '')
                 if '&start=' not in response_str:
                     results.append("https://136.142.34.69" + response_str)
@@ -472,7 +472,7 @@ class DiningAPI:
                             #])
                             dining_locations[self._encode_dining_location(i.find("span").getText())] = {
                                 "name": i.find("span").getText(),
-                                "hours": i.find("div").getText().replace(u'\u2013', '-').replace('\n', '').replace('Next: ', ''),
+                                "hours": i.find("div").getText().replace('\u2013', '-').replace('\n', '').replace('Next: ', ''),
                                 "status": "closed" if "Next:" in i.find("div").getText() else "open"
                             }
                             end_loop = True
@@ -521,7 +521,7 @@ class DiningAPI:
         string = string.replace("_library", "")
         string = string.replace("_hall", "")
         string = string.replace("litchfield_", "")
-        string = string.replace(u'\xe9', "e")
+        string = string.replace('\xe9', "e")
         string = string.replace("_science_center", "")
         string = string.replace("_events_center_food_court", "")
         string = string.replace("wesley_w._posvar,_second_floor", "posvar")
@@ -534,8 +534,8 @@ class DiningAPI:
         string = string.replace("-", " - ")
         string = string.title()
         string = string.replace("'S", "'s")
-        string = string.replace("Cafe", u'Caf\xe9')
-        string = string.replace(u"Schenley Caf\xe9", "Schenley Cafe")
+        string = string.replace("Cafe", 'Caf\xe9')
+        string = string.replace("Schenley Caf\xe9", "Schenley Cafe")
         string = string.replace("Hillman", "Hilman Library")
         string = string.replace("Towers", "Litchfield Towers")
         string = string.replace("Chevron", "Chevron Science Center")
