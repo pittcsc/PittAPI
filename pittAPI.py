@@ -465,7 +465,7 @@ class DiningAPI:
                         if (('Next:' in i.find("div").getText()) and status != "open") or (('Next:' not in i.find("div").getText()) and status != "closed"):
                             dining_locations[self._encode_dining_location(i.find("span").getText())] = {
                                 "name": i.find("span").getText(),
-                                "hours": i.find("div").getText().replace('\u2013', '-').replace('\n', '').replace('Next: ', ''),
+                                "hours": i.find("div").getText().replace('\\u2013', '-').replace('\n', '').replace('Next: ', ''),
                                 "status": "closed" if "Next:" in i.find("div").getText() else "open"
                             }
                             end_loop = True
