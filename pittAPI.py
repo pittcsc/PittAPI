@@ -393,7 +393,7 @@ class PeopleAPI:
             cmd = 'curl -k -s ' + '"' + url + '"'
 
             cmd = cmd.format(query)
-            response = subprocess.check_output(cmd, shell=True)
+            response = subprocess.check_output(cmd, shell=True).decode("UTF-8")
             if not response:  # no more responses, so break
                 break
 
