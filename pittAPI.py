@@ -148,8 +148,7 @@ class CourseAPI:
                 except (TypeError, AttributeError) as e:
                     pass
 
-            for i in range(len(temp)):
-                temp[i] = temp[i].replace('&nbsp;', '')
+            temp = map(lambda x: x.replace('&nbsp;', ''), temp)
 
             if len(temp) == 6:
                 course_details.append(
@@ -170,7 +169,7 @@ class CourseAPI:
                         'term': temp[1].strip().replace('\r\n\t', ' '),
                         'title': temp[2].replace('\r\n\t', ' '),
                         'instructor': 'Not decided' if len(temp[3].strip()) == 0 else temp[3].strip(),
-                        'credits': temp[4].strip()
+                        'credits': temp[4].strip() if len(temp) == 5 else -1
                     }
                 )
 
@@ -437,19 +436,19 @@ class DiningAPI:
 
     def get_dining_locations(self):
         return self.get_dining_locations_by_status(status=None)
-    
+
     def get_dining_locations_by_status(self, status=None):
         # status can be nil, open, or closed
         # None     - returns all dining locations
         # "all"    - same as None (or anything else)
         # "open"   - returns open dining locations
         # "closed" - returns closed dining locations
-        
+
         #sample_url = "https://m.pitt.edu/dining/index.json?_region=kgoui_Rcontent_I1_Ritems&_object_include_html=1&_object_js_config=1&_kgoui_page_state=eb95bc72eca310cbbe76a39964fc7143&_region_index_offset=15&feed=dining_locations&start=15"
         # the _region_index_offset is optional
         # -- seems like it's only for the id of the li for the html
         dining_locations = {}
-        
+
         end_loop = False
         load_more = False
         counter = 0
@@ -499,7 +498,7 @@ class DiningAPI:
             return self.get_dining_locations()[self._encode_dining_location(location)]
         except:
             raise InvalidParameterException("The dining location is invalid")
-    
+
     def get_dining_location_menu(self, location=None, date=None):
         # location can only be market, market's subordinates, and cathedral cafe
         # if location is none, return all menus, and date will be ignored
