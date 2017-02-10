@@ -18,36 +18,28 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 '''
 
 import subprocess
-
+import math
 import requests
+import grequests
 from bs4 import BeautifulSoup
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
-session = requests.session()
-
+requests.packages.urllib3.disable_warnings()
 
 def get_person(query, max_people=10):
-    '''
-    Doesn't work completely for now. IT WORKS
-    Returns a dict with URLs of user profiles. No scraping yet.
-    '''
 
     query = query.replace(' ', '+')
-    persons_list = []
-    tens = 0
-    while tens < max_people:
+    url_list = []
+
+    for i in range(int(math.ceil(max_people/10.0))):
+
         url = "https://136.142.34.69/people/search?search=Search&filter={}&_region=kgoui_Rcontent_I0_Rcontent_I0_Ritems"
-        url += '&_region_index_offset=' + str(tens) + '&feed=directory&start=' + str(tens)
+        url += '&_region_index_offset=' + str(i*10) + '&feed=directory&start=' + str(i*10)
         cmd = 'curl -k -s ' + '"' + url + '"'
 
         cmd = cmd.format(query)
         response = subprocess.check_output(cmd, shell=True).decode("UTF-8")
-        if not response:  # no more responses, so break
+        if not response:
             break
 
-        results = []
         while ("formatted" in response):
             response = response[response.index('"formatted"'):]
             response = response[response.index(":") + 2:]
@@ -55,26 +47,21 @@ def get_person(query, max_people=10):
             response_str = response_str.replace('\\u0026', '&')
             response_str = response_str.replace('\\', '')
             if '&start=' not in response_str:
-                results.append("https://136.142.34.69" + response_str)
+                url_list.append("https://136.142.34.69" + response_str)
 
             response = response[response.index('}'):]
-
-        for url in results:
-            # results is url
-            personurl = str(''.join(url))
-
-            if personurl.lower().startswith("https://"):
-                f = session.get(personurl, verify=False)
-            else:
-                f = session.get(personurl)
-
-            person_dict = {}
-            soup = BeautifulSoup(f.text, 'html.parser')
-            name = soup.find('h1', attrs={'class': 'kgoui_detail_title'})
-            person_dict['name'] = str(name.get_text())
-            for item in soup.find_all('div', attrs={'class': 'kgoui_list_item_textblock'}):
-                if item is not None:
-                    person_dict[str(item.div.get_text())] = str(item.span.get_text())
-            persons_list.append(person_dict)
-        tens += 10
+    results = [grequests.get(u, verify=False) for u in url_list]
+    people_info = grequests.imap(results)   # make requests
+    persons_list = []
+    for person in people_info:
+        person_dict = {}
+        soup = BeautifulSoup(person.text, 'html.parser')
+        name = soup.find('h1', attrs={'class': 'kgoui_detail_title'})
+        person_dict['name'] = str(name.get_text())
+        for item in soup.find_all('div', attrs={'class': 'kgoui_list_item_textblock'}):
+            if item is not None:
+                person_dict[str(item.div.get_text())] = str(item.span.get_text())
+        persons_list.append(person_dict)
+        if len(persons_list) >= max_people:
+            return persons_list   # only return up to amount specified
     return persons_list
