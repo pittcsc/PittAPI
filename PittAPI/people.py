@@ -21,31 +21,37 @@ import subprocess
 import math
 import requests
 import grequests
-import multiprocessing
 
-from joblib import Parallel, delayed
 from bs4 import BeautifulSoup
 
 
 requests.packages.urllib3.disable_warnings()
 
 
-def _get_person_url(query, i):
-    url = "https://m.pitt.edu/people/search.json?search=Search&filter={0}&_region=kgoui_Rcontent_I0_Rcontent_I0_Ritems&_object_include_html=1&_object_js_config=1&_kgoui_page_state=8c6ef035807a2a969576d6d78d211c78&_region_index_offset={1}&feed=directory&start={2}".format(query, str(i*10), str(i*10))
-    response_obj = requests.get(url, verify=False)
-    response = response_obj.json()["response"]["contents"]
+def _get_person_url(query, max_people):
+    to_query = []
+    for i in range(int(math.ceil(max_people / 10.0))):
+        to_query.append("https://m.pitt.edu/people/search.json?search=Search&filter={0}&_region=kgoui_Rcontent_I0_Rcontent_I0_Ritems&_object_include_html=1&_object_js_config=1&_kgoui_page_state=8c6ef035807a2a969576d6d78d211c78&_region_index_offset={1}&feed=directory&start={2}".format(query, str(i*10), str(i*10)))
 
-    local_url_list = [x["fields"]["url"]["formatted"] for x in response]
-    local_url_list = ["https://m.pitt.edu" + x.replace("\\", "") for x in local_url_list if "&start" not in x]
+    request_objs = [grequests.get(url) for url in to_query]
+    responses = grequests.imap(request_objs)
 
-    return local_url_list
+    url_list = []
+    for response_obj in responses:
+        response = response_obj.json()["response"]["contents"]
+
+        local_url_list = [x["fields"]["url"]["formatted"] for x in response]
+        local_url_list = ["https://m.pitt.edu" + x.replace("\\", "") for x in local_url_list if "&start" not in x]
+        url_list.append(local_url_list)
+
+    return url_list
 
 
 def get_person(query, max_people=10):
     n_cores = multiprocessing.cpu_count()
 
     query = query.replace(' ', '+')
-    url_list = Parallel(n_jobs=n_cores)(delayed(_get_person_url)(query, i) for i in range(int(math.ceil(max_people/10.0))))
+    url_list = _get_person_url(query, max_people)
     url_list = [item for l_list in url_list for item in l_list]  # flatmap
 
     results = [grequests.get(u, verify=False) for u in url_list]
