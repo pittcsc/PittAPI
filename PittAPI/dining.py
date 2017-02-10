@@ -112,11 +112,12 @@ def _encode_dining_location(string):
     string = string.replace("_library", "")
     string = string.replace("_hall", "")
     string = string.replace("litchfield_", "")
-    string = string.replace('\xe9', "e")
+    string = string.replace(u'\xe9', "e")
     string = string.replace("_science_center", "")
     string = string.replace("_events_center_food_court", "")
     string = string.replace("wesley_w._posvar,_second_floor", "posvar")
     string = string.replace("_law_building", "")
+    string = unicode(str(string), u'utf-8')
     return string
 
 
@@ -125,8 +126,8 @@ def _decode_dining_location(string):
     string = string.replace("-", " - ")
     string = string.title()
     string = string.replace("'S", "'s")
-    string = string.replace("Cafe", 'Caf\xe9')
-    string = string.replace("Schenley Caf\xe9", "Schenley Cafe")
+    string = string.replace("Cafe", u'Caf\xe9')
+    string = string.replace(u"Schenley Caf\xe9", "Schenley Cafe")
     string = string.replace("Hillman", "Hilman Library")
     string = string.replace("Towers", "Litchfield Towers")
     string = string.replace("Chevron", "Chevron Science Center")
@@ -141,4 +142,5 @@ def _decode_dining_location(string):
     string = string.replace(" At The", " at the")
     string = string.replace(" And", " and")
     string = string.replace(" Go", " GO")
+    string = unicode(str(string), u'utf-8')
     return string
