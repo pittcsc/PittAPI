@@ -1,3 +1,4 @@
 BeautifulSoup4
 Requests
 grequests
+joblib
