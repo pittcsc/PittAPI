@@ -6,10 +6,9 @@ This project is licensed under the terms of the GPLv2 license.
 ### Usage examples  
 
 ```python
-from pittAPI import CourseAPI, LaundryAPI, LabAPI
+from PittAPI import course, laundry, lab, dining
 
 ### Courses
-course = CourseAPI()
 # Will return a list of dictionaries containing courses in subject
 big_dict = course.get_courses(term="2161", subject="CS")
 # Will return a list of dictionaries containing courses that fulfill req
@@ -18,19 +17,16 @@ big_dict = course.get_courses_by_req(term="2161", req="Q")
 description = course.get_class_description(class_number="10163", term="2161")
 
 ### Laundry
-laundry = LaundryAPI()
 # Will return a dictionary with amount of washers and dryers
 # in use vs. total washers and dryers at building
 small_dict = laundry.get_status_simple(building_name="TOWERS")
 
 ### Computer Lab
-lab = LabAPI()
 # Will return a dictionary with status of the lab, and amount
 # of machines with a certain OS
 small_dict = lab.get_status(lab_name="ALUMNI")
 
 ### Dining
-dining = DiningAPI()
 # Will return a dictionary of dictionaries containing each dining location,
 # with its name, its open/closed status, and open times (if it exists)
 medium_dict = dining.get_dining_locations()
