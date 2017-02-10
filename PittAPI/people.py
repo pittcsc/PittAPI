@@ -21,36 +21,40 @@ import subprocess
 import math
 import requests
 import grequests
+
 from bs4 import BeautifulSoup
+
+
 requests.packages.urllib3.disable_warnings()
 
+
+def _get_person_url(query, max_people):
+    to_query = []
+    for i in range(int(math.ceil(max_people / 10.0))):
+        to_query.append("https://m.pitt.edu/people/search.json?search=Search&filter={0}&_region=kgoui_Rcontent_I0_Rcontent_I0_Ritems&_object_include_html=1&_object_js_config=1&_kgoui_page_state=8c6ef035807a2a969576d6d78d211c78&_region_index_offset={1}&feed=directory&start={2}".format(query, str(i*10), str(i*10)))
+
+    request_objs = [grequests.get(url) for url in to_query]
+    responses = grequests.imap(request_objs)
+
+    url_list = []
+    for response_obj in responses:
+        response = response_obj.json()["response"]["contents"]
+
+        local_url_list = [x["fields"]["url"]["formatted"] for x in response]
+        local_url_list = ["https://m.pitt.edu" + x.replace("\\", "") for x in local_url_list if "&start" not in x]
+        url_list.append(local_url_list)
+
+    return url_list
+
+
 def get_person(query, max_people=10):
+    n_cores = multiprocessing.cpu_count()
 
     query = query.replace(' ', '+')
-    url_list = []
+    url_list = _get_person_url(query, max_people)
+    url_list = [item for l_list in url_list for item in l_list]  # flatmap
 
-    for i in range(int(math.ceil(max_people/10.0))):
-
-        url = "https://136.142.34.69/people/search?search=Search&filter={}&_region=kgoui_Rcontent_I0_Rcontent_I0_Ritems"
-        url += '&_region_index_offset=' + str(i*10) + '&feed=directory&start=' + str(i*10)
-        cmd = 'curl -k -s ' + '"' + url + '"'
-
-        cmd = cmd.format(query)
-        response = subprocess.check_output(cmd, shell=True).decode("UTF-8")
-        if not response:
-            break
-
-        while ("formatted" in response):
-            response = response[response.index('"formatted"'):]
-            response = response[response.index(":") + 2:]
-            response_str = response[:response.index('}') - 1]
-            response_str = response_str.replace('\\u0026', '&')
-            response_str = response_str.replace('\\', '')
-            if '&start=' not in response_str:
-                url_list.append("https://136.142.34.69" + response_str)
-
-            response = response[response.index('}'):]
-    results = [grequests.get(u, verify=False) for u in url_list]
+    results = [grequests.get(url) for url in url_list]
     people_info = grequests.imap(results)   # make requests
     persons_list = []
     for person in people_info:
