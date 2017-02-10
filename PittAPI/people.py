@@ -54,7 +54,7 @@ def get_person(query, max_people=10):
     url_list = _get_person_url(query, max_people)
     url_list = [item for l_list in url_list for item in l_list]  # flatmap
 
-    results = [grequests.get(u, verify=False) for u in url_list]
+    results = [grequests.get(url) for url in url_list]
     people_info = grequests.imap(results)   # make requests
     persons_list = []
     for person in people_info:
