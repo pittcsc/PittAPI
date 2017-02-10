@@ -18,22 +18,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 '''
 
 import subprocess
-
+import math
 import requests
 import grequests
 from bs4 import BeautifulSoup
-from requests.packages.urllib3.exceptions import InsecureRequestWarning, InsecurePlatformWarning
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-requests.packages.urllib3.disable_warnings(InsecurePlatformWarning)
-session = requests.session()
-
+requests.packages.urllib3.disable_warnings()
 
 def get_person(query, max_people=10):
 
     query = query.replace(' ', '+')
     url_list = []
-    for i in range(int((max_people+9)/10)): #could replace with math.ceil, but this works and avoids importing math for one thing. int() cast for python 3
+
+    for i in range(int(math.ceil(max_people/10.0))):
 
         url = "https://136.142.34.69/people/search?search=Search&filter={}&_region=kgoui_Rcontent_I0_Rcontent_I0_Ritems"
         url += '&_region_index_offset=' + str(i*10) + '&feed=directory&start=' + str(i*10)
@@ -55,7 +51,7 @@ def get_person(query, max_people=10):
 
             response = response[response.index('}'):]
     results = [grequests.get(u, verify=False) for u in url_list]
-    people_info = grequests.map(results)#make requests
+    people_info = grequests.imap(results)   # make requests
     persons_list = []
     for person in people_info:
         person_dict = {}
@@ -66,6 +62,6 @@ def get_person(query, max_people=10):
             if item is not None:
                 person_dict[str(item.div.get_text())] = str(item.span.get_text())
         persons_list.append(person_dict)
-        if len(persons_list) == max_people:
-            return persons_list #only return up to amount specified
+        if len(persons_list) >= max_people:
+            return persons_list   # only return up to amount specified
     return persons_list
