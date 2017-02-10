@@ -48,8 +48,6 @@ def _get_person_url(query, max_people):
 
 
 def get_person(query, max_people=10):
-    n_cores = multiprocessing.cpu_count()
-
     query = query.replace(' ', '+')
     url_list = _get_person_url(query, max_people)
     url_list = [item for l_list in url_list for item in l_list]  # flatmap
