@@ -142,5 +142,5 @@ def _decode_dining_location(string):
     string = string.replace(" At The", " at the")
     string = string.replace(" And", " and")
     string = string.replace(" Go", " GO")
-    string = unicode(str(string), u'utf-8')
+    #string = unicode(str(string), u'utf-8')
     return string

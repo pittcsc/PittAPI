@@ -49,11 +49,11 @@ class UnitTest(unittest.TestCase):
                 try:
                     results = course.get_courses(term=t, subject=s)
                     for result in results:
-                        res1 = u'pass' if t in result[u'term'] else u'fail'
-                        res2 = u'pass' if s in result[u'subject'] else u'fail'
+                        res1 = u'pass' if t in result[u'term']    else s + u'_' + t + u'_' + u'fail'
+                        res2 = u'pass' if s in result[u'subject'] else s + u'_' + t + u'_' + u'fail'
                         self.assertEqual(res1, u'pass')
                         self.assertEqual(res2, u'pass')
-                except InvalidParameterException:
+                except ValueError:
                     pass
 
     def test_courseapi_retrieve_from_url(self):
@@ -61,13 +61,13 @@ class UnitTest(unittest.TestCase):
         # need to rewrite this test to accomodate the case where no courses are offered
         for t in terms:
             for s in subjects:
-                url = url = 'http://www.courses.as.pitt.edu/results-subja.asp?TERM={}&SUBJ={}'.format(t, s)
-                courses = CourseAPI._retrieve_from_url()
-                res = u'pass' if len(courses) > 0 else u'fail'
+                url = 'http://www.courses.as.pitt.edu/results-subja.asp?TERM={}&SUBJ={}'.format(t, s)
+                courses = course._retrieve_from_url(url)
+                res = u'pass' if len(courses) > 0 else u'empty course list: fail'
                 self.assertEqual(res, u'pass')
-                for course in courses:
-                    res1 = u'pass' if t in unicode(str(course), u'utf-8') else u'fail'
-                    res2 = u'pass' if s in unicode(str(course), u'utf-8') else u'fail'
+                for c in courses:
+                    res1 = u'pass' if t in unicode(str(c), u'utf-8') else s + u'_' + t + u'_' + u'fail'
+                    res2 = u'pass' if s in unicode(str(c), u'utf-8') else s + u'_' + t + u'_' + u'fail'
                     self.assertEqual(res1, u'pass')
                     self.assertEqual(res2, u'pass')
 
