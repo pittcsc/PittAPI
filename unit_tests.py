@@ -72,3 +72,5 @@ class UnitTest(unittest.TestCase):
         self.assertEqual(dining._decode_dining_location('the_side_bar-barco'), 'The Side Bar - Barco Law Building')
         self.assertEqual(dining._decode_dining_location('thirst_&_ten-panther'), 'Thirst & Ten - Panther Hall')
 
+if __name__ == '__main__':
+    unittest.main()
