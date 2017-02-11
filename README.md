@@ -53,7 +53,7 @@ two = dining.get_dining_location_by_name(u"cup_&_chaucer-hillman")
     * [x] Implement the `get_dining_location_by_name` method
     * [ ] Implement the `get_dining_location_menu` method
     * [x] Implement the helper methods `_encode_dining_location` and `_decode_dining_location`
-* [ ] Change all string processing to unicode
+* [x] Change all string processing to unicode (dropped Py2.7 support, fixed :smile:)
 
 ## License
 
