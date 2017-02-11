@@ -60,7 +60,7 @@ class UnitTest(unittest.TestCase):
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
     def test_course_get_class_description(self):
-        self.assertIsInstance(course.get_class_description("2177", "30045"), str)
+        self.assertIsInstance(course.get_class_description("2177", "10045"), str)
 
 if __name__ == '__main__':
     unittest.main()

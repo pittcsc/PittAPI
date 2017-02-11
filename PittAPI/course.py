@@ -138,7 +138,7 @@ def get_class_description(term, class_number):
 
     url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM={}&TERM={}'.format(class_number, term)
     page = requests.get(url)
-    soup = BeautifulSoup(page.text, 'lxml')
+    soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
     table = soup.findChildren('table')[0]
     rows = table.findChildren('tr')
 
