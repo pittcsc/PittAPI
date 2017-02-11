@@ -58,14 +58,14 @@ def get_dining_locations_by_status(status=None):
             if i.find('span').getText() != 'Load more...':
                 if i.find('div') is not None:
                     if (('Next:' in i.find('div').getText()) and status != 'open') or (('Next:' not in i.find('div').getText()) and status != 'closed'):
-                        dining_locations[_encode_dining_location(i.find('span').getText())] = {
+                        dining_locations[i.find('span').getText()] = {
                             'name': i.find('span').getText(),
                             'hours': i.find('div').getText().replace('\n', '').replace('Next: ', ''),
                             'status': 'closed' if 'Next:' in i.find('div').getText() else 'open'
                         }
                         end_loop = True
                 elif status != 'open':
-                    dining_locations[_encode_dining_location(i.find('span').getText())] = {
+                    dining_locations[i.find('span').getText()] = {
                         'name': i.find('span').getText(),
                         'hours': '',
                         'status': 'closed'
@@ -83,7 +83,7 @@ def get_dining_locations_by_status(status=None):
 
 def get_dining_location_by_name(location):
     try:
-        return get_dining_locations()[_encode_dining_location(location)]
+        return get_dining_locations()[location]
     except:
         raise ValueError('The dining location is invalid')
 
@@ -118,26 +118,3 @@ def _encode_dining_location(string):
     string = string.replace('_law_building', '')
     return string
 
-
-def _decode_dining_location(string):
-    string = string.replace('_', ' ')
-    string = string.replace('-', ' - ')
-    string = string.title()
-    string = string.replace('\'S', '\'s')
-    string = string.replace('Cafe', 'Caf\xe9')
-    string = string.replace('Schenley Caf\xe9', 'Schenley Cafe')
-    string = string.replace('Hillman', 'Hilman Library')
-    string = string.replace('Towers', 'Litchfield Towers')
-    string = string.replace('Chevron', 'Chevron Science Center')
-    string = string.replace('Barco', 'Barco Law Building')
-    string = string.replace('Panther', 'Panther Hall')
-    string = string.replace('Sutherland', 'Sutherland Hall')
-    string = string.replace('Petersen', 'Petersen Events Center Food Court')
-    string = string.replace('Posvar', 'Wesley W. Posvar, Second Floor')
-    string = string.replace('Benedum', 'Benedum Hall')
-    string = string.replace('Langley', 'Langley Hall')
-    string = string.replace('Amos', 'Amos Hall')
-    string = string.replace(' At The', ' at the')
-    string = string.replace(' And', ' and')
-    string = string.replace(' Go', ' GO')
-    return string
