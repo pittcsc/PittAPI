@@ -38,35 +38,35 @@ location_dict = {
 
 
 def get_status(lab_name):
-    """
+    '''
     :returns: a dictionary with status and amount of OS machines.
 
     :param: lab_name: Lab name
-    """
+    '''
 
     lab_name = lab_name.upper()
     url = 'http://labinformation.cssd.pitt.edu/'
     page = session.get(url)
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
-    labs = soup.span.contents[0].strip().split("  ")
+    soup = BeautifulSoup(page.text.decode('UTF-8'), 'lxml', parse_only=strainer)
+    labs = soup.span.contents[0].strip().split('  ')
 
     lab = labs[location_dict[lab_name]].split(':')
-    di = {}
+    status_dict = {}
     if len(lab) > 1:
         lab = [x.strip() for x in lab[1].split(',')]
         machines = [int(x[:x.index(' ')]) for x in lab]
-        di = {
-            'status': 'open',
-            'windows': machines[0],
-            'mac': machines[1],
-            'linux': machines[2]
+        status_dict = {
+            u'status': u'open',
+            u'windows': machines[0],
+            u'mac': machines[1],
+            u'linux': machines[2]
         }
     else:
-        di = {
-            'status': 'closed',
-            'windows': 0,
-            'mac': 0,
-            'linux': 0
+        status_dict = {
+            u'status': u'closed',
+            u'windows': 0,
+            u'mac': 0,
+            u'linux': 0
         }
 
-    return di
+    return status_dict
