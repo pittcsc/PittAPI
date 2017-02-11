@@ -80,17 +80,17 @@ class UnitTest(unittest.TestCase):
     def test_dining_get_dining_locations(self):
         self.assertIsInstance(dining.get_dining_locations(), dict)
 
-    @timeout_decorator.timeout(5, timeout_exception=PittServerDownException)
+    @timeout_decorator.timeout(10, timeout_exception=PittServerDownException)
     def test_course_get_courses(self):
-        self.assertIsInstance(course.get_courses("2177", "CS"), dict)
+        self.assertIsInstance(course.get_courses("2177", "CS"), list)
 
-    @timeout_decorator.timeout(5, timeout_exception=PittServerDownException)
+    @timeout_decorator.timeout(10, timeout_exception=PittServerDownException)
     def test_course_get_courses_by_req(self):
-        self.assertIsInstance(course.get_courses_by_req("2177", "Q"), dict)
+        self.assertIsInstance(course.get_courses_by_req("2177", "Q"), list)
 
-    @timeout_decorator.timeout(5, timeout_exception=PittServerDownException)
+    @timeout_decorator.timeout(10, timeout_exception=PittServerDownException)
     def test_course_get_class_description(self):
-        self.assertIsInstance(course.get_class_description("10045", "2177"), unicode)
+        self.assertIsInstance(course.get_class_description("2177", "10045"), str)
 
 if __name__ == '__main__':
     unittest.main()
