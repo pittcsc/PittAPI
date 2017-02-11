@@ -18,7 +18,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 '''
 
 import re
-import subprocess
 
 import requests
 from bs4 import BeautifulSoup
@@ -69,11 +68,11 @@ def get_status_simple(building_name):
     search = rg.findall(str(soup))
 
     di = {
-        'building': building_name,
-        'free_washers': search[0][0],
-        'total_washers': search[0][4],
-        'free_dryers': search[1][0],
-        'total_dryers': search[1][4]
+        u'building': building_name,
+        u'free_washers': search[0][0],
+        u'total_washers': search[0][4],
+        u'free_dryers': search[1][0],
+        u'total_dryers': search[1][4]
     }
 
     return di
@@ -83,19 +82,14 @@ def get_status_detailed(building_name):
     building_name = building_name.upper()
 
     # Get a cookie
-    cookie_cmd = "curl -I -s \"http://www.laundryview.com/laundry_room.php?view=c&lr={}\"".format(
-        location_dict[building_name])
-
-    response = subprocess.check_output(cookie_cmd, shell=True)
-    response = response[response.index('Set-Cookie'):]
-    cookie = response[response.index('=') + 1:response.index(';')]
+    response = requests.get("http://www.laundryview.com/laundry_room.php?view=c&lr={}".format(location_dict[building_name]))
+    cookie = response.headers["Set-Cookie"]
+    cookie = cookie[cookie.index("=") + 1:cookie.index(";")]
 
     # Get the weird laundry data
-    cmd = """
-    curl -s "http://www.laundryview.com/dynamicRoomData.php?location={}" -H "Cookie: PHPSESSID={}" --compressed
-    """.format(location_dict[building_name], cookie)
-
-    response = subprocess.check_output(cmd, shell=True)
+    headers = {"Cookie": "PHPSESSID={}".format(cookie)}
+    response = requests.get("http://www.laundryview.com/dynamicRoomData.php?location={}".format(
+        location_dict[building_name]), headers=headers).text
     resp_split = response.split('&')[3:]
 
     cleaned_resp = []
@@ -127,21 +121,21 @@ def get_status_detailed(building_name):
         machine_status = ""
 
         if machine[0] is '1':
-            machine_status = 'Free'
+            machine_status = u'Free'
         else:
             if machine[6] is '':
-                machine_status = 'Out of service'
+                machine_status = u'Out of service'
             else:
-                machine_status = 'In use'
+                machine_status = u'In use'
 
-        if machine_status is 'In use':
+        if machine_status is u'In use':
             time_left = int(machine[1])
         else:
             time_left = -1 if machine[6] is '' else machine[6]
         di.append({
-            'machine_name': machine_name,
-            'machine_status': machine_status,
-            'time_left': time_left
+            u'machine_name': machine_name,
+            u'machine_status': machine_status,
+            u'time_left': time_left
         })
 
     return di
