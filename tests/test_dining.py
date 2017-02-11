@@ -2,7 +2,7 @@ import pprint
 import unittest
 import timeout_decorator
 
-from PittAPI import dining, course, shuttle
+from PittAPI import dining
 
 
 pp = pprint.PrettyPrinter(indent=2)
@@ -12,7 +12,7 @@ class PittServerDownException(Exception):
     """Raise when a Pitt server is down or timing out"""
 
 
-class UnitTest(unittest.TestCase):
+class DiningTest(unittest.TestCase):
     def test_dining_encode_dining_location(self):
         self.assertEqual(dining._encode_dining_location('Cup & Chaucer - Hilman Library'), 'cup_&_chaucer-hillman')
         self.assertEqual(dining._encode_dining_location('Hill Top Grille - Sutherland Hall'), 'hill_top_grille-sutherland')
@@ -49,30 +49,6 @@ class UnitTest(unittest.TestCase):
     @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
     def test_dining_get_dining_locations(self):
         self.assertIsInstance(dining.get_dining_locations(), dict)
-
-    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
-    def test_course_get_courses(self):
-        self.assertIsInstance(course.get_courses("2177", "CS"), list)
-
-    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
-    def test_course_get_courses_by_req(self):
-        self.assertIsInstance(course.get_courses_by_req("2177", "Q"), list)
-
-    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
-    def test_course_get_class_description(self):
-        self.assertIsInstance(course.get_class_description("2177", "10045"), str)
-
-    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
-    def test_shuttle_get_map_vehicle_points(self):
-        self.assertIsInstance(shuttle.get_map_vehicle_points(), list)
-
-    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
-    def test_shuttle_get_route_stop_arrivals(self):
-        self.assertIsInstance(shuttle.get_route_stop_arrivals(), list)
-
-    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
-    def test_shuttle_get_routes(self):
-        self.assertIsInstance(shuttle.get_routes(), list)
 
 if __name__ == '__main__':
     unittest.main()

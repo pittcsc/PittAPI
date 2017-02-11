@@ -9,6 +9,8 @@ install:
     "pip install -r requirements.txt"
 # command to run tests
 script:
-    python unit_tests.py
+  - python tests/test_course.py
+  - python tests/test_dining.py
+  - python tests/test_shuttle.py
 notifications:
     email: false
