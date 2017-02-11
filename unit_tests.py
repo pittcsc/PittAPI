@@ -1,19 +1,120 @@
 import pprint
 import unittest
 
-from PittAPI import dining
+from PittAPI import course, lab, laundry, people, dining
 
 pp = pprint.PrettyPrinter(indent=2)
 
+terms = ["2171", "2174", "2177"]
+subjects = [
+    "AFRCNA", "ANTH", "ARABIC", "ASL", "ARCH",
+    "ARTSC", "ASTRON", "BIOETH", "BIOSC", "CHEM",
+    "CHLIT", "CHIN", "CLASS", "COMMRC", "CS",
+    "CLST", "EAS", "ECON", "ENGCMP", "ENGFLM",
+    "ENGLIT", "ENGWRT", "ENV", "FILMST", "FP",
+    "FR", "FTDA", "FTDB", "FTDC", "GEOL",
+    "GER", "GREEK", "GREEKM", "GSWS", "HINDI",
+    "HIST", "HPS", "HAA", "ISSP", "IRISH",
+    "ITAL", "JPNSE", "JS", "KOREAN", "LATIN",
+    "LCTL", "LING", "MATH", "MRST", "MUSIC",
+    "NROSCI", "PERS", "PHIL", "PEDC", "PHYS",
+    "POLISH", "PS", "PORT", "PSY", "QUECH",
+    "REL", "RELGST", "RUSS", "SERCRO", "SLAV",
+    "SLOVAK", "SOC", "SPAN", "STAT", "SA",
+    "SWAHIL", "SWE", "THEA", "TURKSH", "UKRAIN",
+    "URBNST", "VIET",
+    "BUSACC", "BUSECN", "BUSENV", "BUSFIN", "BUSHRM",
+    "BUSBIS", "BUSMIS", "BUSMKT", "BUSORG", "BUSQOM",
+    "BUSERV", "BUSSPP", "BUSSCM",
+    "WWW", "HYBRID", "SELF", "CGSDAY", "CGSSAT",
+    "BCCC", "ADMJ", "BUSERV", "CDACCT", "CGS",
+    "LDRSHP", "LEGLST", "NPHS", "PUBSRV",
+    "AFROTC", "INFSCI", "MILS", "UHC",
+    'BIOENG', 'CEE', 'CHE', 'COE', 'COEE',
+    'ECE', 'EE', 'ENGR', 'ENGRPH', 'ENRES',
+    'FTDH', 'IE', 'ME', 'MEMS', 'MSE',
+    'MSEP', 'PETE', 'PWEA'
+]
+
+
 class UnitTest(unittest.TestCase):
-    def test_dining_encode_dining_location(self):
+    def setUp(self):
+        pass
+    
+    def test_courseapi_get_courses(self):
+        # need to rewrite this test to accomodate the case where no courses are offered
+        for t in terms:
+            for s in subjects:
+                pp.pprint(s)
+                try:
+                    results = course.get_courses(term=t, subject=s)
+                    for result in results:
+                        res1 = u'pass' if t in result[u'term']    else s + u'_' + t + u'_' + u'fail'
+                        res2 = u'pass' if s in result[u'subject'] else s + u'_' + t + u'_' + u'fail'
+                        self.assertEqual(res1, u'pass')
+                        self.assertEqual(res2, u'pass')
+                except ValueError:
+                    pass
+
+    def test_courseapi_retrieve_from_url(self):
+        # staticmethod
+        # need to rewrite this test to accomodate the case where no courses are offered
+        for t in terms:
+            for s in subjects:
+                url = 'http://www.courses.as.pitt.edu/results-subja.asp?TERM={}&SUBJ={}'.format(t, s)
+                courses = course._retrieve_from_url(url)
+                res = u'pass' if len(courses) > 0 else u'empty course list: fail'
+                self.assertEqual(res, u'pass')
+                for c in courses:
+                    res1 = u'pass' if t in unicode(str(c), u'utf-8') else s + u'_' + t + u'_' + u'fail'
+                    res2 = u'pass' if s in unicode(str(c), u'utf-8') else s + u'_' + t + u'_' + u'fail'
+                    self.assertEqual(res1, u'pass')
+                    self.assertEqual(res2, u'pass')
+
+    def test_courseapi_get_course_dict(self):
+        # staticmethod
+        self.assertTrue(True)
+
+    def test_courseapi_get_courses_by_req(self):
+        self.assertTrue(True)
+
+    def test_courseapi_get_class_description(self):
+        #staticmethod
+        self.assertTrue(True)
+
+    def test_labapi_get_status(self):
+        self.assertTrue(True)
+
+    def test_laundryapi_get_status_simple(self):
+        self.assertTrue(True)
+
+    def test_laundryapi_get_status_detailed(self):
+        self.assertTrue(True)
+
+    def test_peopleapi_get_person(self):
+        self.assertTrue(True)
+
+    def test_diningapi_get_dining_locations(self):
+        self.assertTrue(True)
+
+    def test_diningapi_get_dining_locations_by_status(self):
+        self.assertTrue(True)
+
+    def test_diningapi_get_dining_location_by_name(self):
+        self.assertTrue(True)
+
+    def test_diningapi_get_dining_location_menu(self):
+        self.assertTrue(True)
+
+    def test_diningapi_encode_dining_location(self):
+        # staticmethod
         self.assertEqual(dining._encode_dining_location('Cup & Chaucer - Hilman Library'), 'cup_&_chaucer-hillman')
         self.assertEqual(dining._encode_dining_location('Hill Top Grille - Sutherland Hall'), 'hill_top_grille-sutherland')
         self.assertEqual(dining._encode_dining_location('Market Central - Litchfield Towers'), 'market_central-towers')
         self.assertEqual(dining._encode_dining_location("Mato's - Sutherland Hall"), 'mato\'s-sutherland')
         self.assertEqual(dining._encode_dining_location('Quick Zone - Sutherland Hall'), 'quick_zone-sutherland')
         self.assertEqual(dining._encode_dining_location('Red Hot Chef - Sutherland Hall'), 'red_hot_chef-sutherland')
-        self.assertEqual(dining._encode_dining_location(u'Bookstore Caf\xe9'), 'bookstore_cafe')
+        self.assertEqual(dining._encode_dining_location(u'Bookstore Caf\xe9'), u'bookstore_cafe')
         self.assertEqual(dining._encode_dining_location('Bunsen Brewer - Chevron Science Center'), 'bunsen_brewer-chevron')
         self.assertEqual(dining._encode_dining_location('Burger King - Petersen Events Center Food Court'), 'burger_king-petersen')
         self.assertEqual(dining._encode_dining_location(u'Caf\xe9 at the Pete - Petersen Events Center Food Court'), 'cafe_at_the_pete-petersen')
@@ -39,14 +140,15 @@ class UnitTest(unittest.TestCase):
         self.assertEqual(dining._encode_dining_location('The Side Bar - Barco Law Building'), 'the_side_bar-barco')
         self.assertEqual(dining._encode_dining_location('Thirst & Ten - Panther Hall'), 'thirst_&_ten-panther')
 
-    def test_dining_decode_dining_location(self):
+    def test_diningapi_decode_dining_location(self):
+        # staticmethod
         self.assertEqual(dining._decode_dining_location('cup_&_chaucer-hillman'), 'Cup & Chaucer - Hilman Library')
         self.assertEqual(dining._decode_dining_location('hill_top_grille-sutherland'), 'Hill Top Grille - Sutherland Hall')
         self.assertEqual(dining._decode_dining_location('market_central-towers'), 'Market Central - Litchfield Towers')
         self.assertEqual(dining._decode_dining_location('mato\'s-sutherland'), "Mato's - Sutherland Hall")
         self.assertEqual(dining._decode_dining_location('quick_zone-sutherland'), 'Quick Zone - Sutherland Hall')
         self.assertEqual(dining._decode_dining_location('red_hot_chef-sutherland'), 'Red Hot Chef - Sutherland Hall')
-        self.assertEqual(dining._decode_dining_location('bookstore_cafe'), u'Bookstore Caf\xe9')
+        self.assertEqual(dining._decode_dining_location(u'bookstore_cafe'), u'Bookstore Caf\xe9')
         self.assertEqual(dining._decode_dining_location('bunsen_brewer-chevron'), 'Bunsen Brewer - Chevron Science Center')
         self.assertEqual(dining._decode_dining_location('burger_king-petersen'), 'Burger King - Petersen Events Center Food Court')
         self.assertEqual(dining._decode_dining_location('cafe_at_the_pete-petersen'), u'Caf\xe9 at the Pete - Petersen Events Center Food Court')
