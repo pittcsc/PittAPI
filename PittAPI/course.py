@@ -18,12 +18,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 '''
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, SoupStrainer
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 session = requests.session()
+strainer = SoupStrainer(['table', 'tr'])
 
 
 def get_courses(term, subject):
@@ -81,7 +82,7 @@ def get_courses_by_req(term, req):
 
     url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ={}&TERM={}'.format(req, term)
     page = session.get(url)
-    soup = BeautifulSoup(page.text, 'lxml')
+    soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
     courses = soup.findAll("tr", {"class": "odd"})
     courses_even = soup.findAll("tr", {"class": "even"})
     courses.extend(courses_even)
@@ -183,7 +184,7 @@ def _get_course_dict(details):
 
 def _retrieve_from_url(url):
     page = session.get(url)
-    soup = BeautifulSoup(page.text, 'lxml')
+    soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
     courses = soup.findAll("tr", {"class": "odd"})
     courses_even = soup.findAll("tr", {"class": "even"})
     courses.extend(courses_even)
