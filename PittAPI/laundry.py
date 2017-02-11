@@ -62,6 +62,7 @@ def get_status_simple(building_name):
     page = session.get(url)
     soup = BeautifulSoup(page.text, 'lxml')
 
+    # What was I doing...
     re1 = ['(\\d+)', '(\\s+)', '(of)', '(\\s+)', '(\\d+)', '(\\s+)', '((?:[a-z][a-z]+))']
 
     rg = re.compile(''.join(re1), re.IGNORECASE | re.DOTALL)
