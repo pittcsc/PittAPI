@@ -1,9 +1,13 @@
 import pprint
 import unittest
+import timeout_decorator
 
-from PittAPI import dining
+from PittAPI import dining, course
 
 pp = pprint.PrettyPrinter(indent=2)
+
+class PittServerDownException(Exception):
+    """Raise when a Pitt server is down or timing out"""
 
 class UnitTest(unittest.TestCase):
     def test_dining_encode_dining_location(self):
@@ -71,6 +75,22 @@ class UnitTest(unittest.TestCase):
         self.assertEqual(dining._decode_dining_location('the_pennsylvania_perk'), 'The Pennsylvania Perk')
         self.assertEqual(dining._decode_dining_location('the_side_bar-barco'), 'The Side Bar - Barco Law Building')
         self.assertEqual(dining._decode_dining_location('thirst_&_ten-panther'), 'Thirst & Ten - Panther Hall')
+
+    @timeout_decorator.timeout(15, timeout_exception=PittServerDownException)
+    def test_dining_get_dining_locations(self):
+        self.assertIsInstance(dining.get_dining_locations(), dict)
+
+    @timeout_decorator.timeout(5, timeout_exception=PittServerDownException)
+    def test_course_get_courses(self):
+        self.assertIsInstance(course.get_courses("2177", "CS"), dict)
+
+    @timeout_decorator.timeout(5, timeout_exception=PittServerDownException)
+    def test_course_get_courses_by_req(self):
+        self.assertIsInstance(course.get_courses_by_req("2177", "Q"), dict)
+
+    @timeout_decorator.timeout(5, timeout_exception=PittServerDownException)
+    def test_course_get_class_description(self):
+        self.assertIsInstance(course.get_class_description("10045", "2177"), unicode)
 
 if __name__ == '__main__':
     unittest.main()
