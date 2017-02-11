@@ -70,5 +70,9 @@ class UnitTest(unittest.TestCase):
     def test_shuttle_get_route_stop_arrivals(self):
         self.assertIsInstance(shuttle.get_route_stop_arrivals(), list)
 
+    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
+    def test_shuttle_get_routes(self):
+        self.assertIsInstance(shuttle.get_routes(), list)
+
 if __name__ == '__main__':
     unittest.main()

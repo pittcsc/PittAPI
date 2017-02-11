@@ -26,18 +26,28 @@ sess = requests.session()
 
 
 def get_map_vehicle_points(api_key="8882812681"):
+    """Return the map location for all active vehicles."""
     payload = {"ApiKey": api_key}
     response = sess.get("http://www.pittshuttle.com/Services/JSONPRelay.svc/GetMapVehiclePoints", params=payload)
     return response.json()
 
 
 def get_route_stop_arrivals(api_key="8882812681", times_per_stop=1):
+    """Return stop arrival times for all vehicles."""
     payload = {"ApiKey": api_key, "TimesPerStopString": times_per_stop}
     response = sess.get("http://www.pittshuttle.com/Services/JSONPRelay.svc/GetRouteStopArrivals", params=payload)
     return response.json()
 
 
 def get_vehicle_route_stop_estimates(vehicle_id, quantity=2):
+    """Return {quantity} stop estimates for all active vehicles."""
     payload = {"vehicleIdStrings": vehicle_id, "quantity": quantity}
     response = sess.get("http://www.pittshuttle.com/Services/JSONPRelay.svc/GetVehicleRouteStopEstimates", params=payload)
+    return response.json()
+
+
+def get_routes(api_key="8882812681"):
+    """Return the routes with Vehicle Route Name, Vehicle ID, and all stops, etc."""
+    payload = {"ApiKey": api_key}
+    response = sess.get("http://www.pittshuttle.com/Services/JSONPRelay.svc/GetRoutesForMap", params=payload)
     return response.json()
