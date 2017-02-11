@@ -81,7 +81,7 @@ def get_courses_by_req(term, req):
 
     url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ={}&TERM={}'.format(req, term)
     page = session.get(url)
-    soup = BeautifulSoup(page.text, 'html.parser')
+    soup = BeautifulSoup(page.text, 'lxml')
     courses = soup.findAll("tr", {"class": "odd"})
     courses_even = soup.findAll("tr", {"class": "even"})
     courses.extend(courses_even)
@@ -138,7 +138,7 @@ def get_class_description(class_number, term):
 
     url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM={}&TERM={}'.format(class_number, term)
     page = session.get(url)
-    soup = BeautifulSoup(page.text, 'html.parser')
+    soup = BeautifulSoup(page.text, 'lxml')
     table = soup.findChildren('table')[0]
     rows = table.findChildren('tr')
 
@@ -183,7 +183,7 @@ def _get_course_dict(details):
 
 def _retrieve_from_url(url):
     page = session.get(url)
-    soup = BeautifulSoup(page.text, 'html.parser')
+    soup = BeautifulSoup(page.text, 'lxml')
     courses = soup.findAll("tr", {"class": "odd"})
     courses_even = soup.findAll("tr", {"class": "even"})
     courses.extend(courses_even)

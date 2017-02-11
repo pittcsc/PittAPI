@@ -46,7 +46,7 @@ def get_status(lab_name):
     lab_name = lab_name.upper()
     url = 'http://labinformation.cssd.pitt.edu/'
     page = session.get(url)
-    soup = BeautifulSoup(page.text, 'html.parser')
+    soup = BeautifulSoup(page.text, 'lxml')
     labs = soup.span.contents[0].strip().split("  ")
 
     lab = labs[location_dict[lab_name]].split(':')

@@ -50,7 +50,7 @@ def get_dining_locations_by_status(status=None):
         url = "https://m.pitt.edu/dining/index.json?_region=kgoui_Rcontent_I1_Ritems&_object_include_html=1&_object_js_config=1&_kgoui_page_state=eb95bc72eca310cbbe76a39964fc7143&feed=dining_locations&start=" + str(
             counter)
         data = s.get(url).json()
-        soup = BeautifulSoup(data['response']['html'], 'html.parser')
+        soup = BeautifulSoup(data['response']['html'], 'lxml')
         res = soup.find_all("div", class_="kgoui_list_item_textblock")
 
         for i in res:

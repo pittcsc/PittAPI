@@ -60,7 +60,7 @@ def get_status_simple(building_name):
     building_name = building_name.upper()
     url = 'http://classic.laundryview.com/appliance_status_ajax.php?lr={}'.format(location_dict[building_name])
     page = session.get(url)
-    soup = BeautifulSoup(page.text, 'html.parser')
+    soup = BeautifulSoup(page.text, 'lxml')
 
     re1 = ['(\\d+)', '(\\s+)', '(of)', '(\\s+)', '(\\d+)', '(\\s+)', '((?:[a-z][a-z]+))']
 
