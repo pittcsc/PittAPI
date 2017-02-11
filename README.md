@@ -43,12 +43,12 @@ two = dining.get_dining_location_by_name(u"cup_&_chaucer-hillman")
 * [x] Make the laundry detailed method work
 * [x] Test the computer lab status API and make it return a dictionary
 * [ ] Working on the DiningAPI
-    * [x] Have the DiningAPI return a dict instead of a list
-    * [x] Have a separate method for `get_dining_locations_by_status` and `get_dining_locations`
-        * [x] `get_dining_locations_by_status` is what is currently implemented
-        * [x] `get_dining_locations` is the same as what is currently implemented with no arguments
-            * [x] (but with a good-looking dictionary)
-    * [x] Implement the `get_dining_location_by_name` method
-    * [ ] Implement the `get_dining_location_menu` method
-    * [x] Implement the helper methods `_encode_dining_location` and `_decode_dining_location`
+  * [x] Have the DiningAPI return a dict instead of a list
+  * [x] Have a separate method for `get_dining_locations_by_status` and `get_dining_locations`
+    * [x] `get_dining_locations_by_status` is what is currently implemented
+    * [x] `get_dining_locations` is the same as what is currently implemented with no arguments
+      * [x] (but with a good-looking dictionary)
+  * [x] Implement the `get_dining_location_by_name` method
+  * [ ] Implement the `get_dining_location_menu` method
+  * [x] Implement the helper methods `_encode_dining_location` and `_decode_dining_location`
 * [ ] Change all string processing to unicode
