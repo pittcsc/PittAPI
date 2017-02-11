@@ -35,7 +35,7 @@ def _get_person_url(query, max_people):
         to_query.append('https://m.pitt.edu/people/search.json?search=Search&filter={0}&_region=kgoui_Rcontent_I0_Rcontent_I0_Ritems&_object_include_html=1&_object_js_config=1&_kgoui_page_state=8c6ef035807a2a969576d6d78d211c78&_region_index_offset={1}&feed=directory&start={2}'.format(query, str(i*10), str(i*10)))
 
     request_objs = [grequests.get(url, session=s) for url in to_query]
-    responses = grequests.imap(request_objs)
+    responses = grequests.imap(request_objs, size=10)
 
     url_list = []
     for response_obj in responses:
@@ -53,7 +53,7 @@ def get_person(query, max_people=10):
     url_list = [item for l_list in url_list for item in l_list]  # flatmap
 
     results = [grequests.get(url, session=s) for url in url_list]
-    people_info = grequests.imap(results)   # make requests
+    people_info = grequests.imap(results, size=10)   # make requests
     persons_list = []
     strainer = SoupStrainer('div',
             {'class': lambda x: 'kgoui_detail_header' in x.split() or 'kgoui_list_item_textblock' in x.split()})
