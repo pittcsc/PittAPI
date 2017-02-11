@@ -1,6 +1,6 @@
 # Pitt API
 [![License GPLv2](https://img.shields.io/badge/license-GPLv2-blue.svg)](LICENSE)
-![Python 2.7, 3.4, 3.5](https://img.shields.io/badge/python-2.7%2C%203.4%2C%203.5-green.svg)
+![Python 3.4, 3.5](https://img.shields.io/badge/python-3.4%2C%203.5-green.svg)
 [![Build Status](https://travis-ci.org/Pitt-CSC/PittAPI.svg?branch=master)](https://travis-ci.org/Pitt-CSC/PittAPI)
 
 Made by Ritwik Gupta at the University of Pittsburgh in an effort to get more open data from Pitt. 
