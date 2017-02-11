@@ -45,9 +45,9 @@ def get_courses(term, subject):
     course_details = []
 
     for course in courses:
-        details = [course_detail.string.replace('&nbsp;', '').strip()
+        details = [course_detail.string.decode("UTF-8").replace('&nbsp;', '').strip()
                    for course_detail in course
-                   if course_detail.string is not None]
+                   if course_detail.string.decode("UTF-8") is not None]
 
         # Only append details if the list is not empty
         # If the subject code is incorrect, details will be NoneType
@@ -184,7 +184,7 @@ def _get_course_dict(details):
 
 def _retrieve_from_url(url):
     page = session.get(url)
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
+    soup = BeautifulSoup(page.text.decode("UTF-8"), 'lxml', parse_only=strainer)
     courses = soup.findAll("tr", {"class": "odd"})
     courses_even = soup.findAll("tr", {"class": "even"})
     courses.extend(courses_even)
