@@ -1,9 +1,14 @@
-language: python
+language:
+    python
 python:
   - "2.7"
   - "3.4"
   - "3.5"
 # command to install dependencies
-install: "pip install -r requirements.txt"
+install:
+    "pip install -r requirements.txt"
 # command to run tests
-script: python unit_tests.py
+script:
+    python unit_tests.py
+notifications:
+    email: false
