@@ -45,8 +45,8 @@ two = dining.get_dining_location_by_name(u"cup_&_chaucer-hillman")
 * [ ] Working on the DiningAPI
   * [x] Have the DiningAPI return a dict instead of a list
   * [x] Have a separate method for `get_dining_locations_by_status` and `get_dining_locations`
-    * [x] `get_dining_locations_by_status` is what is currently implemented
-    * [x] `get_dining_locations` is the same as what is currently implemented with no arguments
+    * [x] `get_dining_locations_by_status` is what is currently implemented  
+    * [x] `get_dining_locations` is the same as what is currently implemented with no arguments  
       * [x] (but with a good-looking dictionary)
   * [x] Implement the `get_dining_location_by_name` method
   * [ ] Implement the `get_dining_location_menu` method
