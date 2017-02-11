@@ -87,8 +87,8 @@ course.get_courses_by_req(term="2171", req="Q")
 ### **get_class_description(class_number, term)**
 
 #### **Parameters**:
-  - `class_number`: Class Number | Example: `"18047"`
   - `term`: Term number | Example: `"2171"`
+  - `class_number`: Class Number | Example: `"18047"`
 
 #### **Returns**:
 Returns the description for `class_number` in `term`.
@@ -97,7 +97,7 @@ Returns the description for `class_number` in `term`.
 
 ###### **Code**:
 ```python
-course.get_class_description(class_number="18047", term="2171")
+course.get_class_description(term="2171", class_number="18047")
 ```
 
 ###### **Sample Output**:

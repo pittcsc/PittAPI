@@ -129,7 +129,7 @@ def get_courses_by_req(term, req):
     return course_details
 
 
-def get_class_description(class_number, term):
+def get_class_description(term, class_number):
     """
     :returns: a string that is the description for CLASS_NUMBER in term TERM
 
@@ -148,7 +148,7 @@ def get_class_description(class_number, term):
         cells = row.findChildren('td')
         for cell in cells:
             if has_description:
-                return cell.string.strip()
+                return cell.string.strip().decode("UTF-8")
             if len(cell.contents) > 0 and str(cell.contents[0].encode('UTF-8')) == '<strong>Description</strong>':
                 has_description = True
 
