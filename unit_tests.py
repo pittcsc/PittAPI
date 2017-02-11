@@ -46,21 +46,21 @@ class UnitTest(unittest.TestCase):
         self.assertEqual(dining._encode_dining_location('The Side Bar - Barco Law Building'), 'the_side_bar-barco')
         self.assertEqual(dining._encode_dining_location('Thirst & Ten - Panther Hall'), 'thirst_&_ten-panther')
 
-    @timeout_decorator.timeout(15, timeout_exception=PittServerDownException)
+    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
     def test_dining_get_dining_locations(self):
         self.assertIsInstance(dining.get_dining_locations(), dict)
 
-    @timeout_decorator.timeout(10, timeout_exception=PittServerDownException)
+    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
     def test_course_get_courses(self):
         self.assertIsInstance(course.get_courses("2177", "CS"), list)
 
-    @timeout_decorator.timeout(10, timeout_exception=PittServerDownException)
+    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
     def test_course_get_courses_by_req(self):
         self.assertIsInstance(course.get_courses_by_req("2177", "Q"), list)
 
-    @timeout_decorator.timeout(10, timeout_exception=PittServerDownException)
+    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
     def test_course_get_class_description(self):
-        self.assertIsInstance(course.get_class_description("2177", "10045"), str)
+        self.assertIsInstance(course.get_class_description("2177", "30045"), str)
 
 if __name__ == '__main__':
     unittest.main()
