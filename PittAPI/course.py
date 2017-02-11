@@ -23,7 +23,6 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-session = requests.session()
 strainer = SoupStrainer(['table', 'tr'])
 
 
@@ -45,9 +44,9 @@ def get_courses(term, subject):
     course_details = []
 
     for course in courses:
-        details = [course_detail.string.decode("UTF-8").replace('&nbsp;', '').strip()
+        details = [course_detail.string.replace('&nbsp;', '').strip()
                    for course_detail in course
-                   if course_detail.string.decode("UTF-8") is not None]
+                   if course_detail.string is not None]
 
         # Only append details if the list is not empty
         # If the subject code is incorrect, details will be NoneType
@@ -81,7 +80,7 @@ def get_courses_by_req(term, req):
     req = req.upper()
 
     url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ={}&TERM={}'.format(req, term)
-    page = session.get(url)
+    page = requests.get(url)
     soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
     courses = soup.findAll("tr", {"class": "odd"})
     courses_even = soup.findAll("tr", {"class": "even"})
@@ -138,7 +137,7 @@ def get_class_description(term, class_number):
     """
 
     url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM={}&TERM={}'.format(class_number, term)
-    page = session.get(url)
+    page = requests.get(url)
     soup = BeautifulSoup(page.text, 'lxml')
     table = soup.findChildren('table')[0]
     rows = table.findChildren('tr')
@@ -148,8 +147,8 @@ def get_class_description(term, class_number):
         cells = row.findChildren('td')
         for cell in cells:
             if has_description:
-                return cell.string.strip().decode("UTF-8")
-            if len(cell.contents) > 0 and str(cell.contents[0].encode('UTF-8')) == '<strong>Description</strong>':
+                return cell.string.strip()
+            if len(cell.contents) > 0 and str(cell.contents[0]) == '<strong>Description</strong>':
                 has_description = True
 
 
@@ -183,8 +182,8 @@ def _get_course_dict(details):
 
 
 def _retrieve_from_url(url):
-    page = session.get(url)
-    soup = BeautifulSoup(page.text.decode("UTF-8"), 'lxml', parse_only=strainer)
+    page = requests.get(url)
+    soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
     courses = soup.findAll("tr", {"class": "odd"})
     courses_even = soup.findAll("tr", {"class": "even"})
     courses.extend(courses_even)
