@@ -1,9 +1,10 @@
-### Pitt API  
+# Pitt API
+[![License GPLv2](https://img.shields.io/badge/license-GPLv2-blue.svg)](LICENSE)
+![Python 2.7, 3.4, 3.5](https://img.shields.io/badge/python-2.7%2C%203.4%2C%203.5-green.svg)
 
 Made by Ritwik Gupta at the University of Pittsburgh in an effort to get more open data from Pitt. 
-This project is licensed under the terms of the GPLv2 license.   
 
-### Usage examples  
+## Usage examples
 
 ```python
 from PittAPI import course, laundry, lab, dining
@@ -39,16 +40,20 @@ two = dining.get_dining_location_by_name(u"cup_&_chaucer-hillman")
 
 ```
 
-### TODO  
+## TODO
 * [x] Make the laundry detailed method work
 * [x] Test the computer lab status API and make it return a dictionary
 * [ ] Working on the DiningAPI
-  * [x] Have the DiningAPI return a dict instead of a list
-  * [x] Have a separate method for `get_dining_locations_by_status` and `get_dining_locations`
-    * [x] `get_dining_locations_by_status` is what is currently implemented  
-    * [x] `get_dining_locations` is the same as what is currently implemented with no arguments  
-      * [x] (but with a good-looking dictionary)
-  * [x] Implement the `get_dining_location_by_name` method
-  * [ ] Implement the `get_dining_location_menu` method
-  * [x] Implement the helper methods `_encode_dining_location` and `_decode_dining_location`
+    * [x] Have the DiningAPI return a dict instead of a list
+    * [x] Have a separate method for `get_dining_locations_by_status` and `get_dining_locations`
+        * [x] `get_dining_locations_by_status` is what is currently implemented
+        * [x] `get_dining_locations` is the same as what is currently implemented with no arguments
+            * [x] but with a good-looking dictionary
+    * [x] Implement the `get_dining_location_by_name` method
+    * [ ] Implement the `get_dining_location_menu` method
+    * [x] Implement the helper methods `_encode_dining_location` and `_decode_dining_location`
 * [ ] Change all string processing to unicode
+
+## License
+
+This project is licensed under the terms of the [GPLv2 license](LICENSE).
