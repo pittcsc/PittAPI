@@ -2,7 +2,7 @@ import pprint
 import unittest
 import timeout_decorator
 
-from PittAPI import dining, course
+from PittAPI import dining, course, shuttle
 
 
 pp = pprint.PrettyPrinter(indent=2)
@@ -61,6 +61,14 @@ class UnitTest(unittest.TestCase):
     @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
     def test_course_get_class_description(self):
         self.assertIsInstance(course.get_class_description("2177", "10045"), str)
+
+    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
+    def test_shuttle_get_map_vehicle_points(self):
+        self.assertIsInstance(shuttle.get_map_vehicle_points(), list)
+
+    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
+    def test_shuttle_get_route_stop_arrivals(self):
+        self.assertIsInstance(shuttle.get_route_stop_arrivals(), list)
 
 if __name__ == '__main__':
     unittest.main()
