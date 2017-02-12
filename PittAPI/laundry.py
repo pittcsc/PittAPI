@@ -94,6 +94,8 @@ def get_status_detailed(building_name):
 
     cleaned_resp = []
     for status_string in resp_split:
+        if "machine" not in status_string:
+            continue
         machine_name = status_string[:status_string.index('=')].replace('Status', '')
         status_string = status_string[status_string.index('=') + 1:].strip()
 
