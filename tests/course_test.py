@@ -5,9 +5,6 @@ import timeout_decorator
 from PittAPI import course
 
 
-pp = pprint.PrettyPrinter(indent=2)
-
-
 class PittServerDownException(Exception):
     """Raise when a Pitt server is down or timing out"""
 
@@ -24,4 +21,3 @@ class CourseTest(unittest.TestCase):
     @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
     def test_course_get_class_description(self):
         self.assertIsInstance(course.get_class_description("2177", "10045"), str)
-

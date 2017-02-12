@@ -5,9 +5,6 @@ import timeout_decorator
 from PittAPI import dining
 
 
-pp = pprint.PrettyPrinter(indent=2)
-
-
 class PittServerDownException(Exception):
     """Raise when a Pitt server is down or timing out"""
 
@@ -49,4 +46,3 @@ class DiningTest(unittest.TestCase):
     @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
     def test_dining_get_dining_locations(self):
         self.assertIsInstance(dining.get_dining_locations(), dict)
-
