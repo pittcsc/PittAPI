@@ -27,30 +27,41 @@ from . import PittServerError
 class CourseTest(unittest.TestCase):
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
     def test_get_courses(self):
-        self.assertIsInstance(course.get_courses("2177", "CS"), list)
+        self.assertIsInstance(course.get_courses('2177', 'CS'), list)
+
+    @timeout_decorator.timeout(60, timeout_exception=PittServerError)
+    def test_get_courses_subject_query(self):
+        term = '2177'
+        subjects = ['CS', 'BIOSC', 'ECON']
+
+        for s in subjects:
+            try:
+                results = course.get_courses(term=term, subject=s)
+            except ValueError:
+                self.fail(msg='Term {} and/or Subject {} is not valid.'.format(term, s))
+
+            for result in results:
+                self.assertIn(term, result['term'])
+                self.assertIn(s, result['subject'])
+
+    @timeout_decorator.timeout(60, timeout_exception=PittServerError)
+    def test_get_courses_programs_query(self):
+        pass
+
+    @timeout_decorator.timeout(60, timeout_exception=PittServerError)
+    def test_get_courses_off_campus_query(self):
+        pass
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
     def test_get_courses_by_req(self):
-        self.assertIsInstance(course.get_courses_by_req("2177", "Q"), list)
+        self.assertIsInstance(course.get_courses_by_req('2177', 'Q'), list)
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
     def test_get_class_description(self):
-        self.assertIsInstance(course.get_class_description("2177", "10045"), str)
+        self.assertIsInstance(course.get_class_description('2177', '10045'), str)
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
     def test_invalid_subject(self):
-        test_term, test_subjects = "2171", ['AAA', 'BBB', "CCC"]
+        test_term, test_subjects = '2177', ['AAA', 'BBB', 'CCC']
         for subject in test_subjects:
             self.assertRaises(ValueError, course.get_courses, test_term, subject)
-
-    @timeout_decorator.timeout(60, timeout_exception=PittServerError)
-    def test_all_subject(self):
-        pass
-
-    @timeout_decorator.timeout(60, timeout_exception=PittServerError)
-    def test_all_programs(self):
-        pass
-
-    @timeout_decorator.timeout(60, timeout_exception=PittServerError)
-    def test_all_off_campus(self):
-        pass

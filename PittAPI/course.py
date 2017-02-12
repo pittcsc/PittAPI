@@ -45,26 +45,10 @@ def get_courses(term, subject):
     courses = _retrieve_courses_from_url(url)
 
     course_details = []
+    table_header = ['subject', 'catalog', 'term', 'class_number', 'title', 'instructor', 'credits']
 
     for course in courses:
-        details = [course_detail.string.replace('&nbsp;', '').strip()
-                   for course_detail in course
-                   if course_detail.string is not None]
-
-        # Only append details if the list is not empty
-        # If the subject code is incorrect, details will be NoneType
-        if details:
-            course_details.append(
-                {
-                    'subject': details[1] if details[1] else "Not Decided",
-                    'catalog_number': details[3] if details[3] else "Not Decided",
-                    'term': details[5].replace('\r\n\t', '') if details[5] else "Not Decided",
-                    'class_number': course.find('a').contents[0] if course.find('a').contents[0] else "Not Decided",
-                    'title': details[8] if details[8] else "Not Decided",
-                    'instructor': details[10] if details[10] else "Not Decided",
-                    'credits': details[12] if details[12] else "Not Decided"
-                }
-            )
+        course_details.append(_extract_course_data(table_header, course))
 
     return course_details
 
@@ -140,6 +124,16 @@ def get_class_description(term, class_number):
                 return cell.string.strip()
             if len(cell.contents) > 0 and str(cell.contents[0]) == '<strong>Description</strong>':
                 has_description = True
+
+
+def _extract_course_data(header, course):
+    """ """
+    data = {}
+    for item, value in zip(header, course.findAll('td')):
+        data[item] = value.text.strip()
+        if len(data[item]) == 0:
+            data[item] = 'Not Decided'
+    return data
 
 
 def _retrieve_courses_from_url(url):
