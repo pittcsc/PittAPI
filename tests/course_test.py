@@ -45,7 +45,7 @@ class CourseTest(unittest.TestCase):
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
     def test_get_courses_by_req(self):
-        self.assertIsInstance(course.get_courses_by_req(TERM, 'Q'), list)
+        self.assertIsInstance(course.get_courses(TERM, 'Q'), list)
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
     def test_get_class_description(self):

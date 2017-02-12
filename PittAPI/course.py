@@ -29,18 +29,11 @@ strainer = SoupStrainer(['table', 'tr', 'th'])
 
 URL = 'http://www.courses.as.pitt.edu/'
 
-def get_courses(term, subject):
-    """Returns a list of dictionaries containing the data for all a subjects classes in a term"""
-    col_headers, courses = _retrieve_courses_from_url(URL + _get_query(subject, term))
+
+def get_courses(term, code):
+    """Returns a list of dictionaries containing all courses queried from code."""
+    col_headers, courses = _retrieve_courses_from_url(URL + _get_query(code, term))
     return [_extract_course_data(col_headers, course) for course in courses]
-
-
-def get_courses_by_req(term, req):
-    """Returns a list of dictionaries containing the data for all SUBJECT classes in TERM"""
-    if req in REQUIREMENTS:
-        return get_courses(term, req)
-    else:
-        raise ValueError("Not a requirement")
 
 
 def get_class_description(term, class_number):
