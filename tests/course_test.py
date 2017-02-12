@@ -16,16 +16,12 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
-
-import pprint
 import unittest
 
 import timeout_decorator
 
 from PittAPI import course
 from . import PittServerError
-
-pp = pprint.PrettyPrinter(indent=2)
 
 
 class CourseTest(unittest.TestCase):
@@ -41,3 +37,20 @@ class CourseTest(unittest.TestCase):
     def test_get_class_description(self):
         self.assertIsInstance(course.get_class_description("2177", "10045"), str)
 
+    @timeout_decorator.timeout(30, timeout_exception=PittServerError)
+    def test_invalid_subject(self):
+        test_term, test_subjects = "2171", ['AAA', 'BBB', "CCC"]
+        for subject in test_subjects:
+            self.assertRaises(ValueError, course.get_courses, test_term, subject)
+
+    @timeout_decorator.timeout(60, timeout_exception=PittServerError)
+    def test_all_subject(self):
+        pass
+
+    @timeout_decorator.timeout(60, timeout_exception=PittServerError)
+    def test_all_programs(self):
+        pass
+
+    @timeout_decorator.timeout(60, timeout_exception=PittServerError)
+    def test_all_off_campus(self):
+        pass
