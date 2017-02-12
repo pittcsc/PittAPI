@@ -21,7 +21,7 @@ import requests
 from bs4 import BeautifulSoup, SoupStrainer
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-from PittAPI import SUBJECTS, HONORS, PROGRAMS
+from PittAPI import SUBJECTS, HONORS, PROGRAMS, ONLINE_PROGRAMS, OFF_CAMPUS
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -29,25 +29,20 @@ strainer = SoupStrainer(['table', 'tr'])
 
 
 def get_courses(term, subject):
-    # type: (str, str) -> List[Dict[str, str]]
-    """
-    :returns: a list of dictionaries containing the data for all
-    SUBJECT classes in TERM
-
-    :param: term: String, term number
-    :param: subject: String, course abbreviation
-    """
+    """Returns a list of dictionaries containing the data for all a subjects classes in a term"""
     subject = subject.upper()
     url = 'http://www.courses.as.pitt.edu/'
 
-    if subject in SUBJECTS + HONORS:
+    if subject in SUBJECTS + HONORS + ONLINE_PROGRAMS:
         url += 'results-subja.asp?TERM={}&SUBJ={}'.format(term, subject)
     elif subject in PROGRAMS:
         url += 'results-subjspeciala.asp?TERM={}&SUBJ={}'.format(term, subject)
+    elif subject in OFF_CAMPUS:
+        url += '/results-offcamp.asp?TERM={}&CAMP={}'.format(term, subject)
     else:
         raise ValueError("Invalid subject")
 
-    courses = _retrieve_from_url(url)
+    courses = _retrieve_courses_from_url(url)
 
     course_details = []
 
@@ -70,16 +65,12 @@ def get_courses(term, subject):
                     'credits': details[12] if details[12] else "Not Decided"
                 }
             )
+
     return course_details
 
 
 def get_courses_by_req(term, req):
-    """
-    :returns: a list of dictionaries containing the data for all SUBJECT classes in TERM
-
-    :param: term: String, term number
-    :param: req: String, requirement abbreviation
-    """
+    """Returns a list of dictionaries containing the data for all SUBJECT classes in TERM"""
 
     req = req.upper()
 
@@ -133,12 +124,7 @@ def get_courses_by_req(term, req):
 
 
 def get_class_description(term, class_number):
-    """
-    :returns: a string that is the description for CLASS_NUMBER in term TERM
-
-    :param: class_number: String, class number
-    :param: term: String, term number
-    """
+    """Return a string that is the description for class in a term"""
 
     url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM={}&TERM={}'.format(class_number, term)
     page = requests.get(url)
@@ -156,36 +142,8 @@ def get_class_description(term, class_number):
                 has_description = True
 
 
-def _get_course_dict(details):
-    course_details = []
-
-    if len(details) == 6:
-        course_details.append(
-            {
-                'subject': details[0],
-                'catalog_number': details[1],
-                'term': details[2].replace('\r\n\t', ' '),
-                'title': details[3],
-                'instructor': details[4] if len(details[4]) > 0 else 'Not decided',
-                'credits': details[5]
-            }
-        )
-    else:
-        course_details.append(
-            {
-                'subject': 'Not available',
-                'catalog_number': details[0],
-                'term': details[1].replace('\r\n\t', ' '),
-                'title': details[2].replace('\r\n\t', ' '),
-                'instructor': details[3] if len(details[3]) > 0 else 'Not decided',
-                'credits': details[4]
-            }
-        )
-
-    return course_details
-
-
-def _retrieve_from_url(url):
+def _retrieve_courses_from_url(url):
+    """Returns a list of all classes from and html table given a url"""
     page = requests.get(url)
     soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
     courses = soup.findAll("tr", {"class": "odd"}) \
