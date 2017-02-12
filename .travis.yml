@@ -6,11 +6,11 @@ python:
   - "3.6"
 # command to install dependencies
 install:
-    "pip install -r requirements.txt"
+  - "pip install -r requirements.txt"
+  - "virtualenv venv"
+  - ". venv/bin/activate"
 # command to run tests
 script:
-  - python tests/test_course.py
-  - python tests/test_dining.py
-  - python tests/test_shuttle.py
+  - python -m "nose" --with-cov --cov . --with-timer tests/*
 notifications:
     email: false

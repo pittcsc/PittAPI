@@ -50,5 +50,3 @@ class DiningTest(unittest.TestCase):
     def test_dining_get_dining_locations(self):
         self.assertIsInstance(dining.get_dining_locations(), dict)
 
-if __name__ == '__main__':
-    unittest.main()

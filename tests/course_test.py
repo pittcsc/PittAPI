@@ -25,5 +25,3 @@ class CourseTest(unittest.TestCase):
     def test_course_get_class_description(self):
         self.assertIsInstance(course.get_class_description("2177", "10045"), str)
 
-if __name__ == '__main__':
-    unittest.main()

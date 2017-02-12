@@ -25,5 +25,3 @@ class ShuttleTest(unittest.TestCase):
     def test_shuttle_get_routes(self):
         self.assertIsInstance(shuttle.get_routes(), list)
 
-if __name__ == '__main__':
-    unittest.main()
