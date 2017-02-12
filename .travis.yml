@@ -6,9 +6,10 @@ python:
   - "3.6"
 # command to install dependencies
 install:
-  - "virtualenv venv"
+  - "pip3 install virtualenv"
+  - "python3 -m \"virtualenv\" venv"
   - ". venv/bin/activate"
-  - "pip install -r requirements.txt"
+  - "pip3 install -r requirements.txt"
 # command to run tests
 script:
   - python3 -m "nose" --with-cov --cov . --with-timer tests/*
