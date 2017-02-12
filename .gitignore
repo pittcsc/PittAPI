@@ -2,3 +2,5 @@
 test.py
 *~
 sample.py
+
+.coverage
