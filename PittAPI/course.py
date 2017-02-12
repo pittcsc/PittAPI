@@ -25,7 +25,7 @@ from PittAPI import SUBJECTS, HONORS, PROGRAMS, ONLINE_PROGRAMS, OFF_CAMPUS
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-strainer = SoupStrainer(['table', 'tr'])
+strainer = SoupStrainer(['table', 'tr', 'th'])
 
 
 def get_courses(term, subject):
@@ -42,11 +42,9 @@ def get_courses(term, subject):
     else:
         raise ValueError("Invalid subject")
 
-    courses = _retrieve_courses_from_url(url)
+    table_header, courses = _retrieve_courses_from_url(url)
 
     course_details = []
-    table_header = ['subject', 'catalog', 'term', 'class_number', 'title', 'instructor', 'credits']
-
     for course in courses:
         course_details.append(_extract_course_data(table_header, course))
 
@@ -127,19 +125,35 @@ def get_class_description(term, class_number):
 
 
 def _extract_course_data(header, course):
-    """ """
+    """
+    Constructs a dictionary from table header labels(subject, class number, etc.) and course data.
+    This works off that as long as the header provide is in the same order as the course data it will line up.
+    """
     data = {}
     for item, value in zip(header, course.findAll('td')):
-        data[item] = value.text.strip()
+        data[item] = value.text.strip().replace('\r\n\t', '')
         if not data[item]:
             data[item] = 'Not Decided'
     return data
 
 
+def _extract_header(data):
+    """Extracts table header and converts into keys for future dictionary"""
+    header = []
+    for tag in data:
+        key = tag.text.strip().lower()
+        key = key.replace(' ', '').replace('#', '_number')
+        if key.find('/') != - 1:
+            key = key[:key.index('/')]
+        header.append(key)
+    return header
+
+
 def _retrieve_courses_from_url(url):
-    """Returns a list of all classes from and html table given a url"""
+    """Returns a tuple of all classes from and html table and header keys"""
     page = requests.get(url)
     soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
+    header = _extract_header(soup.findAll('th'))
     courses = soup.findAll("tr", {"class": "odd"}) \
         + soup.findAll("tr", {"class": "even"})
-    return courses
+    return header, courses
