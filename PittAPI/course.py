@@ -21,7 +21,7 @@ import requests
 from bs4 import BeautifulSoup, SoupStrainer
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-from PittAPI import CODES, PROGRAMS, REQUIREMENTS, DAY_PROGRAMS, SAT_PROGRAMS
+from PittAPI import CODES, PROGRAMS, REQUIREMENTS, DAY_PROGRAMS, SAT_PROGRAMS, TERMS
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -51,8 +51,8 @@ def get_class_description(term, class_number):
 
 
 def _get_subject_query(code, term):
-    """ """
-    code = code.upper()
+    """Builds query based on code entered."""
+    code, term = code.upper(), _validate_term(term)
     if code in CODES:
         return 'results-subja.asp?TERM={}&SUBJ={}'.format(term, code)
     elif code in PROGRAMS:
@@ -60,18 +60,26 @@ def _get_subject_query(code, term):
     elif code in REQUIREMENTS:
         return 'results-genedreqa.asp?TERM={}&REQ={}'.format(term, code)
     elif code in DAY_PROGRAMS:
-        return ''.format()
+        return '/results-dayCGSa.asp?TERM={}'.format(term)
     elif code in SAT_PROGRAMS:
-        return ''.format()
-    else:
-        raise ValueError("Invalid subject")
+        return '/results-satCGSa.asp?TERM={}'.format(term)
+    raise ValueError("Invalid subject")
+
+
+def _validate_term(term, valid_terms=TERMS):
+    """Validates term is a string and check if it is valid."""
+    if not isinstance(term, str):
+        term = str(term)
+    if term in valid_terms:
+        return term
+    raise ValueError("Invalid term")
 
 
 def _extract_course_data(header, course):
     """Constructs a dictionary from column header labels(subject, class number, etc.) and course data."""
     data = {}
     for item, value in zip(header, course.findAll('td')):
-        data[item] = value.text.strip().replace('\r\n\t', '')
+        data[item] = value.text.strip().translate({'\r': '', '\n': '', '\t': ''}).replace('\xa0', '')
         if not data[item]:
             data[item] = 'Not Decided'
     try:
@@ -82,7 +90,7 @@ def _extract_course_data(header, course):
 
 
 def _extract_header(data):
-    """Extracts column headers and converts it into keys for a future dictionary"""
+    """Extracts column headers and converts it into keys for a future dictionary."""
     header = []
     for tag in data:
         key = tag.text.strip().lower()\
@@ -94,7 +102,7 @@ def _extract_header(data):
 
 
 def _retrieve_courses_from_url(url):
-    """Returns a tuple of column header keys and list of course data"""
+    """Returns a tuple of column header keys and list of course data."""
     page = requests.get(url)
     soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['table', 'tr', 'th']))
     return _extract_header(soup.findAll('th')), soup.findAll("tr", {"class": ["odd", "even"]})

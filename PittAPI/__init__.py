@@ -29,3 +29,6 @@ CODES = [
 REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', 'IF', 'IFN', 'I', 'A']
 PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST',  'URBNST', 'SELF', 'GSWS']
 DAY_PROGRAMS, SAT_PROGRAMS = 'CGSDAY', 'CGSSAT'
+
+# TODO(azharichenko): Create function to fetch this data directly from the course website to make it consistent.
+TERMS = ['2171', '2174', '2177']
