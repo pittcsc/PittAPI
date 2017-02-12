@@ -37,53 +37,10 @@ def get_courses(term, subject):
 
 def get_courses_by_req(term, req):
     """Returns a list of dictionaries containing the data for all SUBJECT classes in TERM"""
-
-    page = requests.get(URL + _get_query(req, term))
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
-    courses = soup.findAll("tr", {"class": "odd"})
-    courses_even = soup.findAll("tr", {"class": "even"})
-    courses.extend(courses_even)
-
-    course_details = []
-
-    for course in courses:
-        temp = []
-        for i in course:
-            try:
-                if len(i.string.strip()) > 2:
-                    temp.append(i.string.strip())
-            except (TypeError, AttributeError) as e:
-                pass
-
-        temp = [x.replace('&nbsp;', '') for x in temp]
-
-        if len(temp) == 6:
-            course_details.append(
-                {
-                    'subject': temp[0].strip(),
-                    'catalog_number': temp[1].strip(),
-                    'term': temp[2].replace('\r\n\t', ' '),
-                    'title': temp[3].strip(),
-                    'instructor': 'Not decided' if len(temp[4].strip()) == 0 else temp[4].strip(),
-                    'credits': temp[5].strip()
-                }
-            )
-        else:
-            course_details.append(
-                {
-                    'subject': 'Not available',
-                    'catalog_number': temp[0].strip(),
-                    'term': temp[1].strip().replace('\r\n\t', ' '),
-                    'title': temp[2].replace('\r\n\t', ' '),
-                    'instructor': 'Not decided' if len(temp[3].strip()) == 0 else temp[3].strip(),
-                    'credits': temp[4].strip() if len(temp) == 5 else -1
-                }
-            )
-
-    if len(course_details) == 0:
-        raise ValueError("The TERM or REQ is invalid")
-
-    return course_details
+    if req in REQUIREMENTS:
+        return get_courses(term, req)
+    else:
+        raise ValueError("Not a requirement")
 
 
 def get_class_description(term, class_number):
@@ -130,7 +87,7 @@ def _extract_course_data(header, course):
 
 
 def _extract_header(data):
-    """Extracts table header and converts into keys for future dictionary"""
+    """Extracts column headers and converts it into keys for a future dictionary"""
     header = []
     for tag in data:
         key = tag.text.strip().lower()
