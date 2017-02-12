@@ -17,29 +17,31 @@ Returns a dictionary with data of user profiles.
 
 ###### **Code**:
 ```python
-people.get_person('Smith')
+people.get_person('Jane')
 ```
 
 ###### **Sample Output**:
 ```python
 [
   {
-    'name': 'John Smith',
-    'unit': 'Pittsburgh' },
+    "name": "Jane Doe",
+    "fields": [
+      {
+        "unit": "Dietrich Sch Arts and Sciences"
+      }
+    ]
+  },
   {
-    'name': 'Matt Coopersmith',
-    'unit': 'Pittsburgh',
-    'email': 'fgi345@pitt.edu'},
-  {
-    'email': 'cde234@pitt.edu',
-    'unit': 'Pharmacy and Therapeutics',
-    'name': 'Nicole Smith',
-    'phone': '(412)555-5555 ',
-    'address': '123 PITT'},
-  {
-    'email': 'aaa123@pitt.edu',
-    'name': 'Joe Blacksmith',
-    'unit': 'Biological Sciences',
-    'address': '0000 PITT' }
+    "name": "Janedo Smith",
+    "fields": [
+      {
+        "email": "doesnotexist@pitt.edu"
+      },
+      {
+        "unit": "School of Dental Medicine"
+      }
+    ]
+  },
+  ...
 ]
 ```
