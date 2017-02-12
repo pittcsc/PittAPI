@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
-SUBJECTS = [
+CODES = [
     'ADMPS', 'AFRCNA', 'ANTH', 'ARABIC', 'ASL', 'ARTSC', 'ASTRON', 'BIOETH', 'BIOSC', 'CHEM', 'CHLIT', 'CHIN', 'CLASS',
     'COMMRC', 'CS', 'EAS', 'ECON', 'ENGCMP', 'ENGFLM', 'ENGLIT', 'ENGWRT', 'FP', 'FR', 'FTDA', 'FTDB', 'FTDC', 'GEOL',
     'GER', 'GREEK', 'GREEKM',  'HINDI', 'HIST', 'HPS', 'HAA', 'ISSP', 'IRISH', 'ITAL', 'JPNSE', 'JS', 'KOREAN', 'LATIN',
@@ -25,12 +25,8 @@ SUBJECTS = [
     'UKRAIN', 'VIET', 'BUSACC', 'BUSECN', 'BUSENV', 'BUSFIN', 'BUSHRM', 'BUSBIS', 'BUSMIS', 'BUSMKT', 'BUSORG',
     'BUSQOM', 'BUSERV', 'BUSSPP', 'BUSSCM', 'ADMJ', 'BUSERV', 'CDACCT', 'CGS', 'LDRSHP', 'LEGLST', 'NPHS', 'PUBSRV',
     'AFROTC', 'INFSCI', 'MILS', 'BIOENG', 'CEE', 'CHE', 'COE', 'COEE', 'ECE', 'EE', 'ENGR', 'ENGRPH', 'ENRES',
-    'FTDH', 'IE', 'ME', 'MEMS', 'MSE', 'MSEP', 'PETE', 'PWEA'
-]
-ONLINE_PROGRAMS = ['WWW', 'HYBRID']
-HONORS = ['UHC']
+    'FTDH', 'IE', 'ME', 'MEMS', 'MSE', 'MSEP', 'PETE', 'PWEA', 'WWW', 'HYBRID', 'UHC', 'BCCC']
 PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST',  'URBNST', 'SELF', 'GSWS']
 DAY_PROGRAMS = ['CGSDAY']
 SAT_PROGRAMS = ['CGSSAT']
-OFF_CAMPUS = ['BCCC']
-REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', 'IF', 'IFN']
+REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', 'IF', 'IFN', 'I', 'A']

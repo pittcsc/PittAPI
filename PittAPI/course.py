@@ -21,7 +21,7 @@ import requests
 from bs4 import BeautifulSoup, SoupStrainer
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-from PittAPI import SUBJECTS, HONORS, PROGRAMS, ONLINE_PROGRAMS, OFF_CAMPUS, REQUIREMENTS
+from PittAPI import CODES, PROGRAMS, REQUIREMENTS
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -56,13 +56,12 @@ def get_class_description(term, class_number):
 
 
 def _get_query(code, term):
+    """ """
     code = code.upper()
-    if code in SUBJECTS + HONORS + ONLINE_PROGRAMS:
+    if code in CODES:
         return 'results-subja.asp?TERM={}&SUBJ={}'.format(term, code)
     elif code in PROGRAMS:
         return 'results-subjspeciala.asp?TERM={}&SUBJ={}'.format(term, code)
-    elif code in OFF_CAMPUS:
-        return 'results-offcamp.asp?TERM={}&CAMP={}'.format(term, code)
     elif code in REQUIREMENTS:
         return 'results-genedreqa.asp?TERM={}&REQ={}'.format(term, code)
     else:
@@ -76,7 +75,11 @@ def _extract_course_data(header, course):
         data[item] = value.text.strip().replace('\r\n\t', '')
         if not data[item]:
             data[item] = 'Not Decided'
-    return data
+    try:
+        # TODO: Look into why there is an empty column header
+        del data['']
+    finally:
+        return data
 
 
 def _extract_header(data):
@@ -96,6 +99,5 @@ def _retrieve_courses_from_url(url):
     page = requests.get(url)
     soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
     header = _extract_header(soup.findAll('th'))
-    courses = soup.findAll("tr", {"class": "odd"}) \
-        + soup.findAll("tr", {"class": "even"})
+    courses = soup.findAll("tr", {"class": "odd"}) + soup.findAll("tr", {"class": "even"})
     return header, courses
