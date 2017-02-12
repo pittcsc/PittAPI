@@ -33,4 +33,4 @@ PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST',  'URBNST', 'SELF', 'GSWS']
 DAY_PROGRAMS = ['CGSDAY']
 SAT_PROGRAMS = ['CGSSAT']
 OFF_CAMPUS = ['BCCC']
-
+REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', 'IF', 'IFN']

@@ -21,43 +21,24 @@ import requests
 from bs4 import BeautifulSoup, SoupStrainer
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-from PittAPI import SUBJECTS, HONORS, PROGRAMS, ONLINE_PROGRAMS, OFF_CAMPUS
+from PittAPI import SUBJECTS, HONORS, PROGRAMS, ONLINE_PROGRAMS, OFF_CAMPUS, REQUIREMENTS
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 strainer = SoupStrainer(['table', 'tr', 'th'])
 
+URL = 'http://www.courses.as.pitt.edu/'
 
 def get_courses(term, subject):
     """Returns a list of dictionaries containing the data for all a subjects classes in a term"""
-    subject = subject.upper()
-    url = 'http://www.courses.as.pitt.edu/'
-
-    if subject in SUBJECTS + HONORS + ONLINE_PROGRAMS:
-        url += 'results-subja.asp?TERM={}&SUBJ={}'.format(term, subject)
-    elif subject in PROGRAMS:
-        url += 'results-subjspeciala.asp?TERM={}&SUBJ={}'.format(term, subject)
-    elif subject in OFF_CAMPUS:
-        url += 'results-offcamp.asp?TERM={}&CAMP={}'.format(term, subject)
-    else:
-        raise ValueError("Invalid subject")
-
-    table_header, courses = _retrieve_courses_from_url(url)
-
-    course_details = []
-    for course in courses:
-        course_details.append(_extract_course_data(table_header, course))
-
-    return course_details
+    col_headers, courses = _retrieve_courses_from_url(URL + _get_query(subject, term))
+    return [_extract_course_data(col_headers, course) for course in courses]
 
 
 def get_courses_by_req(term, req):
     """Returns a list of dictionaries containing the data for all SUBJECT classes in TERM"""
 
-    req = req.upper()
-
-    url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ={}&TERM={}'.format(req, term)
-    page = requests.get(url)
+    page = requests.get(URL + _get_query(req, term))
     soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
     courses = soup.findAll("tr", {"class": "odd"})
     courses_even = soup.findAll("tr", {"class": "even"})
@@ -124,11 +105,22 @@ def get_class_description(term, class_number):
                 has_description = True
 
 
+def _get_query(code, term):
+    code = code.upper()
+    if code in SUBJECTS + HONORS + ONLINE_PROGRAMS:
+        return 'results-subja.asp?TERM={}&SUBJ={}'.format(term, code)
+    elif code in PROGRAMS:
+        return 'results-subjspeciala.asp?TERM={}&SUBJ={}'.format(term, code)
+    elif code in OFF_CAMPUS:
+        return 'results-offcamp.asp?TERM={}&CAMP={}'.format(term, code)
+    elif code in REQUIREMENTS:
+        return 'results-genedreqa.asp?TERM={}&REQ={}'.format(term, code)
+    else:
+        raise ValueError("Invalid subject")
+
+
 def _extract_course_data(header, course):
-    """
-    Constructs a dictionary from table header labels(subject, class number, etc.) and course data.
-    This works off that as long as the header provide is in the same order as the course data it will line up.
-    """
+    """Constructs a dictionary from column header labels(subject, class number, etc.) and course data."""
     data = {}
     for item, value in zip(header, course.findAll('td')):
         data[item] = value.text.strip().replace('\r\n\t', '')
@@ -150,7 +142,7 @@ def _extract_header(data):
 
 
 def _retrieve_courses_from_url(url):
-    """Returns a tuple of all classes from and html table and header keys"""
+    """Returns a tuple of column header keys and list of course data"""
     page = requests.get(url)
     soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
     header = _extract_header(soup.findAll('th'))
