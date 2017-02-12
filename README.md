@@ -41,6 +41,10 @@ two = dining.get_dining_location_by_name(u"cup_&_chaucer-hillman")
 
 ```
 
+## Tests
+Run tests with `python3 -m "nose" --with-cov --cov PittAPI --with-timer tests/*`.  
+If your `python -v` is 3+, replace `python3` with `python`.
+
 ## TODO
 * [x] Make the laundry detailed method work
 * [x] Test the computer lab status API and make it return a dictionary
