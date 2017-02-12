@@ -21,29 +21,24 @@ import requests
 from bs4 import BeautifulSoup, SoupStrainer
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-from PittAPI import CODES, PROGRAMS, REQUIREMENTS
+from PittAPI import CODES, PROGRAMS, REQUIREMENTS, DAY_PROGRAMS, SAT_PROGRAMS
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
-strainer = SoupStrainer(['table', 'tr', 'th'])
 
 URL = 'http://www.courses.as.pitt.edu/'
 
 
 def get_courses(term, code):
     """Returns a list of dictionaries containing all courses queried from code."""
-    col_headers, courses = _retrieve_courses_from_url(URL + _get_query(code, term))
+    col_headers, courses = _retrieve_courses_from_url(URL + _get_subject_query(code, term))
     return [_extract_course_data(col_headers, course) for course in courses]
 
 
 def get_class_description(term, class_number):
     """Return a string that is the description for class in a term"""
-
-    url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM={}&TERM={}'.format(class_number, term)
-    page = requests.get(url)
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
-    table = soup.findChildren('table')[0]
-    rows = table.findChildren('tr')
+    page = requests.get(URL + 'detail.asp?CLASSNUM={}&TERM={}'.format(class_number, term))
+    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['table', 'tr']))
+    rows = soup.findChildren('table')[0].findChildren('tr')
 
     has_description = False
     for row in rows:
@@ -55,7 +50,7 @@ def get_class_description(term, class_number):
                 has_description = True
 
 
-def _get_query(code, term):
+def _get_subject_query(code, term):
     """ """
     code = code.upper()
     if code in CODES:
@@ -64,6 +59,10 @@ def _get_query(code, term):
         return 'results-subjspeciala.asp?TERM={}&SUBJ={}'.format(term, code)
     elif code in REQUIREMENTS:
         return 'results-genedreqa.asp?TERM={}&REQ={}'.format(term, code)
+    elif code in DAY_PROGRAMS:
+        return ''.format()
+    elif code in SAT_PROGRAMS:
+        return ''.format()
     else:
         raise ValueError("Invalid subject")
 
@@ -86,8 +85,8 @@ def _extract_header(data):
     """Extracts column headers and converts it into keys for a future dictionary"""
     header = []
     for tag in data:
-        key = tag.text.strip().lower()
-        key = key.replace(' ', '').replace('#', '_number')
+        key = tag.text.strip().lower()\
+            .replace(' ', '').replace('#', '_number')
         if key.find('/') != - 1:
             key = key[:key.index('/')]
         header.append(key)
@@ -97,7 +96,5 @@ def _extract_header(data):
 def _retrieve_courses_from_url(url):
     """Returns a tuple of column header keys and list of course data"""
     page = requests.get(url)
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
-    header = _extract_header(soup.findAll('th'))
-    courses = soup.findAll("tr", {"class": "odd"}) + soup.findAll("tr", {"class": "even"})
-    return header, courses
+    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['table', 'tr', 'th']))
+    return _extract_header(soup.findAll('th')), soup.findAll("tr", {"class": ["odd", "even"]})

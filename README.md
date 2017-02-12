@@ -1,7 +1,7 @@
 # Pitt API
+[![Build Status](https://travis-ci.org/Pitt-CSC/PittAPI.svg?branch=master)](https://travis-ci.org/Pitt-CSC/PittAPI)
 [![License GPLv2](https://img.shields.io/badge/license-GPLv2-blue.svg)](LICENSE)
 ![Python 3.4, 3.5, 3.6](https://img.shields.io/badge/python-3.4%2C%203.5%2C%203.6-green.svg)
-[![Build Status](https://travis-ci.org/Pitt-CSC/PittAPI.svg?branch=master)](https://travis-ci.org/Pitt-CSC/PittAPI)
 
 Made by Ritwik Gupta at the University of Pittsburgh in an effort to get more open data from Pitt. 
 
@@ -12,11 +12,11 @@ from PittAPI import course, laundry, lab, dining
 
 ### Courses
 # Will return a list of dictionaries containing courses in subject
-big_dict = course.get_courses(term="2161", subject="CS")
-# Will return a list of dictionaries containing courses that fulfill req
-big_dict = course.get_courses_by_req(term="2161", req="Q")
+big_dict = course.get_courses(term="2177", code="CS")
+# Will return a list of dictionaries containing courses that fulfill requirement
+big_dict = course.get_course(term="2177", code="Q")
 # Will return a string, which is the description of the course
-description = course.get_class_description(term="2161", class_number="10163")
+description = course.get_class_description(term="2177", class_number="10163")
 
 ### Laundry
 # Will return a dictionary with amount of washers and dryers
@@ -38,7 +38,6 @@ medium_dict = dining.get_dining_locations_by_status(status="closed")
 # with its name, its open/closed status, and open times (if it exists)
 one = dining.get_dining_location_by_name(u"taco_bell-schenley_cafe")
 two = dining.get_dining_location_by_name(u"cup_&_chaucer-hillman")
-
 ```
 
 ## Tests
