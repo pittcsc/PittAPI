@@ -21,6 +21,8 @@ import requests
 from bs4 import BeautifulSoup, SoupStrainer
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
+from PittAPI import SUBJECTS, HONORS, PROGRAMS
+
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 strainer = SoupStrainer(['table', 'tr'])
@@ -35,10 +37,16 @@ def get_courses(term, subject):
     :param: term: String, term number
     :param: subject: String, course abbreviation
     """
-
     subject = subject.upper()
+    url = 'http://www.courses.as.pitt.edu/'
 
-    url = 'http://www.courses.as.pitt.edu/results-subja.asp?TERM={}&SUBJ={}'.format(term, subject)
+    if subject in SUBJECTS + HONORS:
+        url += 'results-subja.asp?TERM={}&SUBJ={}'.format(term, subject)
+    elif subject in PROGRAMS:
+        url += 'results-subjspeciala.asp?TERM={}&SUBJ={}'.format(term, subject)
+    else:
+        raise ValueError("Invalid subject")
+
     courses = _retrieve_from_url(url)
 
     course_details = []
@@ -62,10 +70,6 @@ def get_courses(term, subject):
                     'credits': details[12] if details[12] else "Not Decided"
                 }
             )
-
-    if not course_details:
-        raise ValueError("The TERM or SUBJECT is invalid")
-
     return course_details
 
 
@@ -184,7 +188,6 @@ def _get_course_dict(details):
 def _retrieve_from_url(url):
     page = requests.get(url)
     soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
-    courses = soup.findAll("tr", {"class": "odd"})
-    courses_even = soup.findAll("tr", {"class": "even"})
-    courses.extend(courses_even)
+    courses = soup.findAll("tr", {"class": "odd"}) \
+        + soup.findAll("tr", {"class": "even"})
     return courses
