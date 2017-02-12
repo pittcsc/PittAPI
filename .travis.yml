@@ -3,7 +3,6 @@ language:
 python:
   - "3.4"
   - "3.5"
-  - "3.6"
 # command to install dependencies
 install:
   - "pip3 install virtualenv"
