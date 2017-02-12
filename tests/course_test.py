@@ -34,23 +34,39 @@ class CourseTest(unittest.TestCase):
         term = '2177'
         subjects = ['CS', 'BIOSC', 'ECON']
 
-        for s in subjects:
+        for subject in subjects:
             try:
-                results = course.get_courses(term=term, subject=s)
+                results = course.get_courses(term, subject)
+                self.assertIsInstance(results, list)
             except ValueError:
-                self.fail(msg='Term {} and/or Subject {} is not valid.'.format(term, s))
+                self.fail(msg='Term {} and/or Subject {} is not valid.'.format(term, subject))
 
             for result in results:
                 self.assertIn(term, result['term'])
-                self.assertIn(s, result['subject'])
+                self.assertIn(subject, result['subject'])
 
     @timeout_decorator.timeout(60, timeout_exception=PittServerError)
     def test_get_courses_programs_query(self):
-        pass
+        term = '2177'
+        programs = ['CLST', 'ENV', 'FILMST']
+
+        for program in programs:
+            try:
+                self.assertIsInstance(course.get_courses(term, program), list)
+            except ValueError:
+                self.fail(msg='Term {} and/or Program {} is not valid.'.format(term, program))
+
 
     @timeout_decorator.timeout(60, timeout_exception=PittServerError)
     def test_get_courses_off_campus_query(self):
-        pass
+        term = '2177'
+        off_camp = ['BCCC']
+
+        for campus in off_camp:
+            try:
+                self.assertIsInstance(course.get_courses(term, campus), list)
+            except ValueError:
+                self.fail(msg='Term {} and/or Campus {} is not valid.'.format(term, campus))
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
     def test_get_courses_by_req(self):

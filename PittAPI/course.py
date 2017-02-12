@@ -38,7 +38,7 @@ def get_courses(term, subject):
     elif subject in PROGRAMS:
         url += 'results-subjspeciala.asp?TERM={}&SUBJ={}'.format(term, subject)
     elif subject in OFF_CAMPUS:
-        url += '/results-offcamp.asp?TERM={}&CAMP={}'.format(term, subject)
+        url += 'results-offcamp.asp?TERM={}&CAMP={}'.format(term, subject)
     else:
         raise ValueError("Invalid subject")
 
@@ -131,7 +131,7 @@ def _extract_course_data(header, course):
     data = {}
     for item, value in zip(header, course.findAll('td')):
         data[item] = value.text.strip()
-        if len(data[item]) == 0:
+        if not data[item]:
             data[item] = 'Not Decided'
     return data
 
