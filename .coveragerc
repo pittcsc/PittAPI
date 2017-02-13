@@ -1,0 +1,13 @@
+[run]
+branch = True
+omit =
+    /usr/local/lib/*
+    venv/*
+    version.py
+    tests/*
+    /Library/Frameworks/*
+concurrency =
+    gevent
+
+[report]
+show_missing = True
