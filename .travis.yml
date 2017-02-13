@@ -14,3 +14,6 @@ script:
   - python3 -m "nose" --with-coverage --cov PittAPI/ --with-timer tests/*
 notifications:
     email: false
+os:
+  - linux
+  - osx

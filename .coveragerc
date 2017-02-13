@@ -1,7 +1,7 @@
 [run]
 branch = True
 omit =
-    /usr/local/lib/*
+    /usr/*
     venv/*
     version.py
     tests/*
