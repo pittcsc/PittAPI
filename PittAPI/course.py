@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
+import warnings
 
 import requests
 from bs4 import BeautifulSoup, SoupStrainer
@@ -23,168 +24,99 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-strainer = SoupStrainer(['table', 'tr'])
+URL = 'http://www.courses.as.pitt.edu/'
+
+CODES = [
+    'ADMPS', 'AFRCNA', 'ANTH', 'ARABIC', 'ASL', 'ARTSC', 'ASTRON', 'BIOETH', 'BIOSC', 'CHEM', 'CHLIT', 'CHIN', 'CLASS',
+    'COMMRC', 'CS', 'EAS', 'ECON', 'ENGCMP', 'ENGFLM', 'ENGLIT', 'ENGWRT', 'FP', 'FR', 'FTDA', 'FTDB', 'FTDC', 'GEOL',
+    'GER', 'GREEK', 'GREEKM', 'HINDI', 'HIST', 'HPS', 'HAA', 'ISSP', 'IRISH', 'ITAL', 'JPNSE', 'JS', 'KOREAN', 'LATIN',
+    'LCTL', 'LING', 'MATH', 'MUSIC', 'NROSCI', 'PERS', 'PHIL', 'PEDC', 'PHYS', 'POLISH', 'PS', 'PORT', 'PSY', 'QUECH',
+    'REL', 'RELGST', 'RUSS', 'SERCRO', 'SLAV', 'SLOVAK', 'SOC', 'SPAN', 'STAT', 'SA', 'SWAHIL', 'SWE', 'THEA', 'TURKSH',
+    'UKRAIN', 'VIET', 'BUSACC', 'BUSECN', 'BUSENV', 'BUSFIN', 'BUSHRM', 'BUSBIS', 'BUSMIS', 'BUSMKT', 'BUSORG',
+    'BUSQOM', 'BUSERV', 'BUSSPP', 'BUSSCM', 'ADMJ', 'BUSERV', 'CDACCT', 'CGS', 'LDRSHP', 'LEGLST', 'NPHS', 'PUBSRV',
+    'AFROTC', 'INFSCI', 'MILS', 'BIOENG', 'CEE', 'CHE', 'COE', 'COEE', 'ECE', 'EE', 'ENGR', 'ENGRPH', 'ENRES', 'FTDH',
+    'IE', 'ME', 'MEMS', 'MSE', 'MSEP', 'PETE', 'PWEA', 'WWW', 'HYBRID', 'UHC', 'BCCC']
+REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', 'IF', 'IFN', 'I', 'A']
+PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST', 'URBNST', 'SELF', 'GSWS']
+DAY_PROGRAM, SAT_PROGRAM = 'CGSDAY', 'CGSSAT'
+
+# TODO(azharichenko): Create function to fetch this data directly from the course website to make it consistent.
+TERMS = ['2171', '2174', '2177']
 
 
-def get_courses(term, subject):
-    # type: (str, str) -> List[Dict[str, str]]
-    """
-    :returns: a list of dictionaries containing the data for all
-    SUBJECT classes in TERM
-
-    :param: term: String, term number
-    :param: subject: String, course abbreviation
-    """
-
-    subject = subject.upper()
-
-    url = 'http://www.courses.as.pitt.edu/results-subja.asp?TERM={}&SUBJ={}'.format(term, subject)
-    courses = _retrieve_from_url(url)
-
-    course_details = []
-
-    for course in courses:
-        details = [course_detail.string.replace('&nbsp;', '').strip()
-                   for course_detail in course
-                   if course_detail.string is not None]
-
-        # Only append details if the list is not empty
-        # If the subject code is incorrect, details will be NoneType
-        if details:
-            course_details.append(
-                {
-                    'subject': details[1] if details[1] else "Not Decided",
-                    'catalog_number': details[3] if details[3] else "Not Decided",
-                    'term': details[5].replace('\r\n\t', '') if details[5] else "Not Decided",
-                    'class_number': course.find('a').contents[0] if course.find('a').contents[0] else "Not Decided",
-                    'title': details[8] if details[8] else "Not Decided",
-                    'instructor': details[10] if details[10] else "Not Decided",
-                    'credits': details[12] if details[12] else "Not Decided"
-                }
-            )
-
-    if not course_details:
-        raise ValueError("The TERM or SUBJECT is invalid")
-
-    return course_details
+def get_courses(term, code):
+    """Returns a list of dictionaries containing all courses queried from code."""
+    col_headers, courses = _retrieve_courses_from_url(URL + _get_subject_query(code, term))
+    return [_extract_course_data(col_headers, course) for course in courses]
 
 
-def get_courses_by_req(term, req):
-    """
-    :returns: a list of dictionaries containing the data for all SUBJECT classes in TERM
+def _get_subject_query(code, term):
+    """Builds query based on code entered."""
+    code, term = code.upper(), _validate_term(term)
+    if code in CODES:
+        return 'results-subja.asp?TERM={}&SUBJ={}'.format(term, code)
+    elif code in PROGRAMS:
+        return 'results-subjspeciala.asp?TERM={}&SUBJ={}'.format(term, code)
+    elif code in REQUIREMENTS:
+        return 'results-genedreqa.asp?TERM={}&REQ={}'.format(term, code)
+    elif code in DAY_PROGRAM:
+        return '/results-dayCGSa.asp?TERM={}'.format(term)
+    elif code in SAT_PROGRAM:
+        return '/results-satCGSa.asp?TERM={}'.format(term)
+    raise ValueError("Invalid subject")
 
-    :param: term: String, term number
-    :param: req: String, requirement abbreviation
-    """
 
-    req = req.upper()
+def _validate_term(term):
+    """Validates term is a string and check if it is valid."""
+    if not isinstance(term, str):
+        warnings.warn('Term value should be a string.')
+        term = str(term)
+    if term in TERMS:
+        return term
+    raise ValueError("Invalid term")
 
-    url = 'http://www.courses.as.pitt.edu/results-genedreqa.asp?REQ={}&TERM={}'.format(req, term)
+
+def _retrieve_courses_from_url(url):
+    """Returns a tuple of column header keys and list of course data."""
     page = requests.get(url)
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
-    courses = soup.findAll("tr", {"class": "odd"})
-    courses_even = soup.findAll("tr", {"class": "even"})
-    courses.extend(courses_even)
+    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['table', 'tr', 'th']))
+    return _extract_header(soup.findAll('th')), soup.findAll("tr", {"class": ["odd", "even"]})
 
-    course_details = []
 
-    for course in courses:
-        temp = []
-        for i in course:
-            try:
-                if len(i.string.strip()) > 2:
-                    temp.append(i.string.strip())
-            except (TypeError, AttributeError) as e:
-                pass
+def _extract_header(data):
+    """Extracts column headers and converts it into keys for a future dictionary."""
+    header = []
+    for tag in data:
+        key = tag.text.strip().lower() \
+            .replace(' ', '').replace('#', '_number')
+        if key.find('/') != - 1:
+            key = key[:key.index('/')]
+        header.append(key)
+    return header
 
-        temp = [x.replace('&nbsp;', '') for x in temp]
 
-        if len(temp) == 6:
-            course_details.append(
-                {
-                    'subject': temp[0].strip(),
-                    'catalog_number': temp[1].strip(),
-                    'term': temp[2].replace('\r\n\t', ' '),
-                    'title': temp[3].strip(),
-                    'instructor': 'Not decided' if len(temp[4].strip()) == 0 else temp[4].strip(),
-                    'credits': temp[5].strip()
-                }
-            )
-        else:
-            course_details.append(
-                {
-                    'subject': 'Not available',
-                    'catalog_number': temp[0].strip(),
-                    'term': temp[1].strip().replace('\r\n\t', ' '),
-                    'title': temp[2].replace('\r\n\t', ' '),
-                    'instructor': 'Not decided' if len(temp[3].strip()) == 0 else temp[3].strip(),
-                    'credits': temp[4].strip() if len(temp) == 5 else -1
-                }
-            )
-
-    if len(course_details) == 0:
-        raise ValueError("The TERM or REQ is invalid")
-
-    return course_details
+def _extract_course_data(header, course):
+    """Constructs a dictionary from column header labels(subject, class number, etc.) and course data."""
+    data = {}
+    for item, value in zip(header, course.findAll('td')):
+        data[item] = value.text.strip().translate({'\r': '', '\n': '', '\t': ''}).replace('\xa0', '')
+        if not data[item]:
+            data[item] = 'Not Decided'
+    try:
+        # TODO(azharichenko): Look into why there is an empty column header
+        del data['']
+    finally:
+        return data
 
 
 def get_class_description(term, class_number):
-    """
-    :returns: a string that is the description for CLASS_NUMBER in term TERM
-
-    :param: class_number: String, class number
-    :param: term: String, term number
-    """
-
-    url = 'http://www.courses.as.pitt.edu/detail.asp?CLASSNUM={}&TERM={}'.format(class_number, term)
-    page = requests.get(url)
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
-    table = soup.findChildren('table')[0]
-    rows = table.findChildren('tr')
-
-    has_description = False
-    for row in rows:
-        cells = row.findChildren('td')
-        for cell in cells:
-            if has_description:
-                return cell.string.strip()
-            if len(cell.contents) > 0 and str(cell.contents[0]) == '<strong>Description</strong>':
-                has_description = True
-
-
-def _get_course_dict(details):
-    course_details = []
-
-    if len(details) == 6:
-        course_details.append(
-            {
-                'subject': details[0],
-                'catalog_number': details[1],
-                'term': details[2].replace('\r\n\t', ' '),
-                'title': details[3],
-                'instructor': details[4] if len(details[4]) > 0 else 'Not decided',
-                'credits': details[5]
-            }
-        )
-    else:
-        course_details.append(
-            {
-                'subject': 'Not available',
-                'catalog_number': details[0],
-                'term': details[1].replace('\r\n\t', ' '),
-                'title': details[2].replace('\r\n\t', ' '),
-                'instructor': details[3] if len(details[3]) > 0 else 'Not decided',
-                'credits': details[4]
-            }
-        )
-
-    return course_details
-
-
-def _retrieve_from_url(url):
-    page = requests.get(url)
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
-    courses = soup.findAll("tr", {"class": "odd"})
-    courses_even = soup.findAll("tr", {"class": "even"})
-    courses.extend(courses_even)
-    return courses
+    """Return a string that is the description for class in a term"""
+    payload = {
+        'TERM': _validate_term(term),
+        'CLASSNUM': class_number
+    }
+    page = requests.get(URL + 'detail.asp', params=payload)
+    if 'no courses by' in page.text or 'Search by subject' in page.text:
+        raise ValueError('Invalid class number.')
+    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['td']))
+    return soup.findAll('td', {'colspan': '9'})[1].text

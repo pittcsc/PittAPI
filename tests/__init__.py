@@ -16,3 +16,14 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
+
+import warnings
+
+warnings.simplefilter('ignore')
+
+DEFAULT_TIMEOUT = 30
+
+
+class PittServerError(TimeoutError):
+    """Raise when a Pitt server is down or timing out"""
+    pass

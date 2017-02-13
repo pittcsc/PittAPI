@@ -1,16 +1,32 @@
-import pprint
+'''
+The Pitt API, to access workable data of the University of Pittsburgh
+Copyright (C) 2015 Ritwik Gupta
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+'''
+
 import unittest
+
 import timeout_decorator
 
 from PittAPI import dining
-
-
-class PittServerDownException(Exception):
-    """Raise when a Pitt server is down or timing out"""
+from . import PittServerError
 
 
 class DiningTest(unittest.TestCase):
-    def test_dining_encode_dining_location(self):
+    def test_encode_dining_location(self):
         self.assertEqual(dining._encode_dining_location('Cup & Chaucer - Hilman Library'), 'cup_&_chaucer-hillman')
         self.assertEqual(dining._encode_dining_location('Hill Top Grille - Sutherland Hall'), 'hill_top_grille-sutherland')
         self.assertEqual(dining._encode_dining_location('Market Central - Litchfield Towers'), 'market_central-towers')
@@ -43,6 +59,6 @@ class DiningTest(unittest.TestCase):
         self.assertEqual(dining._encode_dining_location('The Side Bar - Barco Law Building'), 'the_side_bar-barco')
         self.assertEqual(dining._encode_dining_location('Thirst & Ten - Panther Hall'), 'thirst_&_ten-panther')
 
-    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
-    def test_dining_get_dining_locations(self):
+    @timeout_decorator.timeout(30, timeout_exception=PittServerError)
+    def test_get_dining_locations(self):
         self.assertIsInstance(dining.get_dining_locations(), dict)
