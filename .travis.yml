@@ -11,6 +11,6 @@ install:
   - "pip3 install -r requirements.txt"
 # command to run tests
 script:
-  - python3 -m "nose" --with-cov --cov PittAPI/ --with-timer tests/*
+  - python3 -m "nose" --with-coverage --cov PittAPI/ --with-timer tests/*
 notifications:
     email: false
