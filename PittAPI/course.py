@@ -112,6 +112,7 @@ def _extract_course_data(header, course):
 def get_class_description(term, class_number):
     """Return a string that is the description for class in a term"""
     page = requests.get(URL + 'detail.asp?TERM={}&CLASSNUM={}'.format(_validate_term(term), class_number))
-    if 'There are no courses by that number.' in page.text: raise ValueError('Invalid class number.')
+    if 'no courses by' in page.text or 'Search by subject' in page.text:
+        raise ValueError('Invalid class number.')
     soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['td']))
     return soup.findAll('td', {'colspan': '9'})[1].text
