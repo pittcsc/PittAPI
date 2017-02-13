@@ -37,4 +37,3 @@ class ShuttleTest(unittest.TestCase):
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
     def test_get_routes(self):
         self.assertIsInstance(shuttle.get_routes(), list)
-

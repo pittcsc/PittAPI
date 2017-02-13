@@ -20,9 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import math
 import requests
 import grequests
-
-from bs4 import BeautifulSoup, SoupStrainer
-
+import urllib.parse
 
 requests.packages.urllib3.disable_warnings()
 
@@ -49,9 +47,10 @@ def _get_person_url(query, max_people):
     url_list = []
     for response_obj in responses:
         response = response_obj.json()['response']['contents']
-        local_url_list = [x['fields']['url']['formatted'] for x in response]
-        local_url_list = [x.replace('\\', '').split('&')[-1].replace('id=', '')
-                          for x in local_url_list if '&start' not in x]
+        local_url_list = (x['fields']['url']['formatted'] for x in response)
+        local_url_list = (x.replace('\\', '').split('&')[-1].replace('id=', '')
+                          for x in local_url_list if '&start' not in x)
+        local_url_list = (urllib.parse.unquote(x) for x in local_url_list)
         url_list.append(local_url_list)
 
     return url_list
@@ -65,8 +64,13 @@ def get_person(query, max_people=10):
     results = set()
     detail_url = "https://m.pitt.edu/people/detail.json"
     for url in url_list:
-        detail_url = "https://m.pitt.edu/people/detail.json?id=" + url + "&_object=kgoui_Rcontent_I0_Rcontent_I1&_object_include_html=1"
-        results.add(grequests.get(detail_url))
+        payload = (
+            ("id", url),
+            ("_object", "kgoui_Rcontent_I0_Rcontent_I1"),
+            ("_object_include_html", 1)
+        )
+        payload_str = "&".join("{}={}".format(x[0], x[1]) for x in payload)
+        results.add(grequests.get(detail_url, params=payload_str))
 
     people_info = grequests.map(results)   # make requests
     people_info = [resp.json()["response"] for resp in people_info]

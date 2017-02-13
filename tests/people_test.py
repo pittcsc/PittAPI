@@ -5,9 +5,6 @@ import timeout_decorator
 from PittAPI import people
 
 
-pp = pprint.PrettyPrinter(indent=2)
-
-
 class PittServerDownException(Exception):
     """Raise when a Pitt server is down or timing out"""
 

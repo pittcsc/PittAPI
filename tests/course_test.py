@@ -27,7 +27,6 @@ from . import PittServerError, DEFAULT_TIMEOUT
 TERM = '2177'
 HEADER_DATA = '<th width="9%">Subject</th><th>Catalog #</th><th>Credits/Units</th>'
 
-
 class CourseTest(unittest.TestCase):
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_courses(self):
