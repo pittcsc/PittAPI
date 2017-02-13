@@ -3,7 +3,7 @@ branch = True
 omit =
     /usr/*
     venv/*
-    /home/travis/virtualenv/*
+    /opt/*
     version.py
     tests/*
     /Library/Frameworks/*
