@@ -111,17 +111,7 @@ def _extract_course_data(header, course):
 
 def get_class_description(term, class_number):
     """Return a string that is the description for class in a term"""
-    page = requests.get(URL + 'detail.asp?CLASSNUM={}&TERM={}'.format(class_number, term))
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['table', 'tr']))
-    rows = soup.findChildren('table')[0].findChildren('tr')
-
-    has_description = False
-    for row in rows:
-        cells = row.findChildren('td')
-        for cell in cells:
-            if has_description:
-                return cell.string.strip()
-            if len(cell.contents) > 0 and str(cell.contents[0]) == '<strong>Description</strong>':
-                has_description = True
-
-
+    page = requests.get(URL + 'detail.asp?TERM={}&CLASSNUM={}'.format(_validate_term(term), class_number))
+    if 'There are no courses by that number.' in page.text: raise ValueError('Invalid class number.')
+    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['td']))
+    return soup.findAll('td', {'colspan': '9'})[1].text
