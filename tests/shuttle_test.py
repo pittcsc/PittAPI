@@ -17,15 +17,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
 
-import pprint
 import unittest
 
 import timeout_decorator
 
 from PittAPI import shuttle
 from . import PittServerError
-
-pp = pprint.PrettyPrinter(indent=2)
 
 
 class ShuttleTest(unittest.TestCase):

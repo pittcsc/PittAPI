@@ -17,7 +17,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
 
-#warnings.simplefilter('ignore')
+import warnings
+
+warnings.simplefilter('ignore')
 
 DEFAULT_TIMEOUT = 30
 

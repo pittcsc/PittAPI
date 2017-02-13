@@ -19,12 +19,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import unittest
 
 import timeout_decorator
+from bs4 import BeautifulSoup
 
 from PittAPI import course
 from . import PittServerError, DEFAULT_TIMEOUT
 
 TERM = '2177'
-HEADER_DATA = ['<th width="9%">Subject</th>', '<th>Catalog #</th>', '<th>Credits/Units</th>']
+HEADER_DATA = '<th width="9%">Subject</th><th>Catalog #</th><th>Credits/Units</th>'
 
 
 class CourseTest(unittest.TestCase):
@@ -45,9 +46,16 @@ class CourseTest(unittest.TestCase):
         self.assertIsInstance(course.get_courses(TERM, course.REQUIREMENTS[0]), list)
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
+    def test_get_courses_day_query(self):
+        self.assertIsInstance(course.get_courses(TERM, course.DAY_PROGRAM), list)
+
+    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
+    def test_get_courses_sat_query(self):
+        self.assertIsInstance(course.get_courses(TERM, course.SAT_PROGRAM), list)
+
+    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_class_description(self):
         self.assertIsInstance(course.get_class_description(TERM, '10045'), str)
-
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_invalid_subject(self):
@@ -66,9 +74,8 @@ class CourseTest(unittest.TestCase):
         self.assertRaises(ValueError, course._validate_term, '2', valid_terms=['1'])
 
     def test_column_header_extraction(self):
-        # column_titles = BeautifulSoup(HEADER_DATA, 'lxml')
-        # self.assertEqual(course._extract_header(column_titles[0]), ['subject'])
-        # self.assertEqual(course._extract_header(column_titles[1]), ['catalog_number'])
-        # self.assertEqual(course._extract_header(column_titles[2]), ['credits'])
-        # self.assertEqual(course._extract_header(column_titles), ['subject', 'catalog_number', 'credits'])
-        pass
+        column_titles = BeautifulSoup(HEADER_DATA, 'lxml').findAll('th')
+        self.assertEqual(course._extract_header(column_titles[0]), ['subject'])
+        self.assertEqual(course._extract_header(column_titles[1]), ['catalog_number'])
+        self.assertEqual(course._extract_header(column_titles[2]), ['credits'])
+        self.assertEqual(course._extract_header(column_titles), ['subject', 'catalog_number', 'credits'])

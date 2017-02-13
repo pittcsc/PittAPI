@@ -38,7 +38,7 @@ CODES = [
     'IE', 'ME', 'MEMS', 'MSE', 'MSEP', 'PETE', 'PWEA', 'WWW', 'HYBRID', 'UHC', 'BCCC']
 REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', 'IF', 'IFN', 'I', 'A']
 PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST',  'URBNST', 'SELF', 'GSWS']
-DAY_PROGRAMS, SAT_PROGRAMS = 'CGSDAY', 'CGSSAT'
+DAY_PROGRAM, SAT_PROGRAM = 'CGSDAY', 'CGSSAT'
 
 # TODO(azharichenko): Create function to fetch this data directly from the course website to make it consistent.
 TERMS = ['2171', '2174', '2177']
@@ -59,9 +59,9 @@ def _get_subject_query(code, term):
         return 'results-subjspeciala.asp?TERM={}&SUBJ={}'.format(term, code)
     elif code in REQUIREMENTS:
         return 'results-genedreqa.asp?TERM={}&REQ={}'.format(term, code)
-    elif code in DAY_PROGRAMS:
+    elif code in DAY_PROGRAM:
         return '/results-dayCGSa.asp?TERM={}'.format(term)
-    elif code in SAT_PROGRAMS:
+    elif code in SAT_PROGRAM:
         return '/results-satCGSa.asp?TERM={}'.format(term)
     raise ValueError("Invalid subject")
 
@@ -76,18 +76,11 @@ def _validate_term(term, *, valid_terms=TERMS):
     raise ValueError("Invalid term")
 
 
-def _extract_course_data(header, course):
-    """Constructs a dictionary from column header labels(subject, class number, etc.) and course data."""
-    data = {}
-    for item, value in zip(header, course.findAll('td')):
-        data[item] = value.text.strip().translate({'\r': '', '\n': '', '\t': ''}).replace('\xa0', '')
-        if not data[item]:
-            data[item] = 'Not Decided'
-    try:
-        # TODO(azharichenko): Look into why there is an empty column header
-        del data['']
-    finally:
-        return data
+def _retrieve_courses_from_url(url):
+    """Returns a tuple of column header keys and list of course data."""
+    page = requests.get(url)
+    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['table', 'tr', 'th']))
+    return _extract_header(soup.findAll('th')), soup.findAll("tr", {"class": ["odd", "even"]})
 
 
 def _extract_header(data):
@@ -102,11 +95,18 @@ def _extract_header(data):
     return header
 
 
-def _retrieve_courses_from_url(url):
-    """Returns a tuple of column header keys and list of course data."""
-    page = requests.get(url)
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['table', 'tr', 'th']))
-    return _extract_header(soup.findAll('th')), soup.findAll("tr", {"class": ["odd", "even"]})
+def _extract_course_data(header, course):
+    """Constructs a dictionary from column header labels(subject, class number, etc.) and course data."""
+    data = {}
+    for item, value in zip(header, course.findAll('td')):
+        data[item] = value.text.strip().translate({'\r': '', '\n': '', '\t': ''}).replace('\xa0', '')
+        if not data[item]:
+            data[item] = 'Not Decided'
+    try:
+        # TODO(azharichenko): Look into why there is an empty column header
+        del data['']
+    finally:
+        return data
 
 
 def get_class_description(term, class_number):
