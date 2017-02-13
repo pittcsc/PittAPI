@@ -70,9 +70,9 @@ class CourseTest(unittest.TestCase):
         self.assertRaises(ValueError, course.get_class_description, '1', '10045')
 
     def test_term_validation(self):
-        self.assertEqual(course._validate_term('1', valid_terms=['1']), '1')
-        self.assertEqual(course._validate_term(1, valid_terms=['1']), '1')
-        self.assertRaises(ValueError, course._validate_term, '2', valid_terms=['1'])
+        self.assertEqual(course._validate_term('2177'), TERM)
+        self.assertEqual(course._validate_term(2177), TERM)
+        self.assertRaises(ValueError, course._validate_term, '1')
 
     def test_column_header_extraction(self):
         column_titles = BeautifulSoup(HEADER_DATA, 'lxml').findAll('th')

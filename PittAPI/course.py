@@ -66,12 +66,12 @@ def _get_subject_query(code, term):
     raise ValueError("Invalid subject")
 
 
-def _validate_term(term, *, valid_terms=TERMS):
+def _validate_term(term):
     """Validates term is a string and check if it is valid."""
     if not isinstance(term, str):
         warnings.warn('Term value should be a string.')
         term = str(term)
-    if term in valid_terms:
+    if term in TERMS:
         return term
     raise ValueError("Invalid term")
 
@@ -111,7 +111,7 @@ def _extract_course_data(header, course):
 
 def get_class_description(term, class_number):
     """Return a string that is the description for class in a term"""
-    page = requests.get(URL + 'detail.asp?TERM={}&CLASSNUM={}'.format(_validate_term(term), class_number))
+    page = requests.get(URL + 'detail.asp', params={'TERM': _validate_term(term), 'CLASSNUM': class_number})
     if 'no courses by' in page.text or 'Search by subject' in page.text:
         raise ValueError('Invalid class number.')
     soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['td']))

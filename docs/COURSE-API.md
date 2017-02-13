@@ -7,7 +7,7 @@
 
 #### **Parameters**:
   - `term`: Term number | Example: `2171`
-  - `code`: Subject abbreviation | Example: `CS`
+  - `code`: Subject\Program\Requirement abbreviation | Example: `CS`
 
 #### **Returns**:
 Returns a list of dictionaries containing the data for all SUBJECT classes in TERM
