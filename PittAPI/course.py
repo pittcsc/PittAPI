@@ -29,7 +29,7 @@ URL = 'http://www.courses.as.pitt.edu/'
 CODES = [
     'ADMPS', 'AFRCNA', 'ANTH', 'ARABIC', 'ASL', 'ARTSC', 'ASTRON', 'BIOETH', 'BIOSC', 'CHEM', 'CHLIT', 'CHIN', 'CLASS',
     'COMMRC', 'CS', 'EAS', 'ECON', 'ENGCMP', 'ENGFLM', 'ENGLIT', 'ENGWRT', 'FP', 'FR', 'FTDA', 'FTDB', 'FTDC', 'GEOL',
-    'GER', 'GREEK', 'GREEKM',  'HINDI', 'HIST', 'HPS', 'HAA', 'ISSP', 'IRISH', 'ITAL', 'JPNSE', 'JS', 'KOREAN', 'LATIN',
+    'GER', 'GREEK', 'GREEKM', 'HINDI', 'HIST', 'HPS', 'HAA', 'ISSP', 'IRISH', 'ITAL', 'JPNSE', 'JS', 'KOREAN', 'LATIN',
     'LCTL', 'LING', 'MATH', 'MUSIC', 'NROSCI', 'PERS', 'PHIL', 'PEDC', 'PHYS', 'POLISH', 'PS', 'PORT', 'PSY', 'QUECH',
     'REL', 'RELGST', 'RUSS', 'SERCRO', 'SLAV', 'SLOVAK', 'SOC', 'SPAN', 'STAT', 'SA', 'SWAHIL', 'SWE', 'THEA', 'TURKSH',
     'UKRAIN', 'VIET', 'BUSACC', 'BUSECN', 'BUSENV', 'BUSFIN', 'BUSHRM', 'BUSBIS', 'BUSMIS', 'BUSMKT', 'BUSORG',
@@ -37,7 +37,7 @@ CODES = [
     'AFROTC', 'INFSCI', 'MILS', 'BIOENG', 'CEE', 'CHE', 'COE', 'COEE', 'ECE', 'EE', 'ENGR', 'ENGRPH', 'ENRES', 'FTDH',
     'IE', 'ME', 'MEMS', 'MSE', 'MSEP', 'PETE', 'PWEA', 'WWW', 'HYBRID', 'UHC', 'BCCC']
 REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', 'IF', 'IFN', 'I', 'A']
-PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST',  'URBNST', 'SELF', 'GSWS']
+PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST', 'URBNST', 'SELF', 'GSWS']
 DAY_PROGRAM, SAT_PROGRAM = 'CGSDAY', 'CGSSAT'
 
 # TODO(azharichenko): Create function to fetch this data directly from the course website to make it consistent.
@@ -87,7 +87,7 @@ def _extract_header(data):
     """Extracts column headers and converts it into keys for a future dictionary."""
     header = []
     for tag in data:
-        key = tag.text.strip().lower()\
+        key = tag.text.strip().lower() \
             .replace(' ', '').replace('#', '_number')
         if key.find('/') != - 1:
             key = key[:key.index('/')]
@@ -111,7 +111,11 @@ def _extract_course_data(header, course):
 
 def get_class_description(term, class_number):
     """Return a string that is the description for class in a term"""
-    page = requests.get(URL + 'detail.asp', params={'TERM': _validate_term(term), 'CLASSNUM': class_number})
+    payload = {
+        'TERM': _validate_term(term),
+        'CLASSNUM': class_number
+    }
+    page = requests.get(URL + 'detail.asp', params=payload)
     if 'no courses by' in page.text or 'Search by subject' in page.text:
         raise ValueError('Invalid class number.')
     soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['td']))
