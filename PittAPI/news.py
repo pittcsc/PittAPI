@@ -25,7 +25,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 sess = requests.session()
-strainer = SoupStrainer('div', attrs={'class': 'kgoui_list_item_textblock'})
+#strainer = SoupStrainer('div', attrs={'class': 'kgoui_list_item_textblock'})
 
 
 def get_news(feed="main_news"):
@@ -41,21 +41,21 @@ def get_news(feed="main_news"):
     end_loop = False
     counter = 0
     while not end_loop:
-        url = u'https://m.pitt.edu/news/index.json?feed={}&id=&_object=kgoui_Rcontent_I0_Rcontent_I0&_object_include_html=1'.format(feed) + u'&start=' + str(counter)
+        url = 'https://m.pitt.edu/news/index.json?feed={}&id=&_object=kgoui_Rcontent_I0_Rcontent_I0&_object_include_html=1'.format(feed) + '&start=' + str(counter)
         data = sess.get(url).json()  # Should be UTF-8 by JSON standard
         soup = BeautifulSoup(data['response']['html'], 'lxml') #, parse_only=strainer)
-	news_names = map((lambda i: i.getText()), soup.find_all('span', class_='kgoui_list_item_title'))
-	news_links = map((lambda i: i['href']), soup.find_all('a', class_="kgoui_list_item_action"))
-	news_links = map((lambda i: re.sub(r"\+at\+.+edu", "", i)), news_links)
-	news_links = map((lambda i: i.replace("/news", "https://m.pitt.edu/news")), news_links)
-	news_links = map((lambda i: unicode(i, 'utf-8')), news_links)
+        news_names = map((lambda i: i.getText()), soup.find_all('span', class_='kgoui_list_item_title'))
+        news_links = map((lambda i: i['href']), soup.find_all('a', class_="kgoui_list_item_action"))
+        news_links = map((lambda i: re.sub(r"\+at\+.+edu", "", i)), news_links)
+        news_links = map((lambda i: i.replace("/news", "https://m.pitt.edu/news")), news_links)
+        #news_links = map((lambda i: unicode(i, 'utf-8')), news_links)
 
-	map((lambda t, u: news.append({'title': t, 'url': u})), news_names, news_links)
+        map((lambda t, u: news.append({'title': t, 'url': u})), news_names, news_links)
 
-        if any(u'Load more...' in s for s in news_names):
-	    news.pop()
-	    counter += 10
+        if any('Load more...' in s for s in news_names):
+            news.pop()
+            counter += 10
         else:
-	    end_loop = True	
+            end_loop = True	
 
     return news
