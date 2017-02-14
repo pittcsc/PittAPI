@@ -35,27 +35,33 @@ def get_news(feed="main_news"):
     # "news_chronicle" - the Pitt Chronicle news
     # "news_alerts"    - crime alerts
 
-    # sample_url = 'https://m.pitt.edu/news/index.json?feed=main_news&id=&_object=kgoui_Rcontent_I0_Rcontent_I0&_object_include_html=1'
+    # sample_url = 'https://m.pitt.edu/news/index.json?feed=main_news&id=&_object=kgoui_Rcontent_I0_Rcontent_I0&_object_include_html=1&start=0'
     news = [] 
-
-    end_loop = False
-    counter = 0
-    while not end_loop:
-        url = 'https://m.pitt.edu/news/index.json?feed={}&id=&_object=kgoui_Rcontent_I0_Rcontent_I0&_object_include_html=1'.format(feed) + '&start=' + str(counter)
-        data = sess.get(url).json()  # Should be UTF-8 by JSON standard
+    payload = {
+        "feed": feed,
+        "id": "",
+        "_object": "kgoui_Rcontent_I0_Rcontent_I0",
+        "_object_include_html": "1",
+        "start": 0
+    }
+    
+    while not False:
+        data = sess.get('https://m.pitt.edu/news/index.json', params=payload).json()  # Should be UTF-8 by JSON standard
         soup = BeautifulSoup(data['response']['html'], 'lxml') #, parse_only=strainer)
         news_names = map((lambda i: i.getText()), soup.find_all('span', class_='kgoui_list_item_title'))
-        news_links = map((lambda i: i['href']), soup.find_all('a', class_="kgoui_list_item_action"))
-        news_links = map((lambda i: re.sub(r"\+at\+.+edu", "", i)), news_links)
-        news_links = map((lambda i: i.replace("/news", "https://m.pitt.edu/news")), news_links)
-        #news_links = map((lambda i: unicode(i, 'utf-8')), news_links)
+        news_links = map(_href_to_url, soup.find_all('a', class_="kgoui_list_item_action"))
 
-        map((lambda t, u: news.append({'title': t, 'url': u})), news_names, news_links)
+        news.extend(list(map((lambda t, u: {'title': t, 'url': u}), news_names, news_links)))
 
         if any('Load more...' in s for s in news_names):
             news.pop()
-            counter += 10
+            payload["start"] += 10
         else:
-            end_loop = True	
+            return news
 
-    return news
+def _href_to_url(item):
+    item = item['href']
+    item = re.sub(r"\+at\+.+edu", "", item)
+    item = item.replace("/news", "https://m.pitt.edu/news")
+    return item
+
