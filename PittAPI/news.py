@@ -45,7 +45,7 @@ def get_news(feed="main_news"):
         "start": 0
     }
     
-    while not False:
+    while True:
         data = sess.get('https://m.pitt.edu/news/index.json', params=payload).json()  # Should be UTF-8 by JSON standard
         soup = BeautifulSoup(data['response']['html'], 'lxml') #, parse_only=strainer)
         news_names = map((lambda i: i.getText()), soup.find_all('span', class_='kgoui_list_item_title'))

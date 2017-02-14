@@ -29,8 +29,8 @@ class NewsTest(unittest.TestCase):
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
     def test_get_news(self):
-        self.assertIsInstance(news.get_news(), dict)
-        self.assertIsInstance(news.get_news("main_news"), dict)
-        self.assertIsInstance(news.get_news("cssd"), dict)
-        self.assertIsInstance(news.get_news("news_chronicle"), dict)
-        self.assertIsInstance(news.get_news("news_alerts"), dict)
+        self.assertIsInstance(news.get_news(), list)
+        self.assertIsInstance(news.get_news("main_news"), list)
+        self.assertIsInstance(news.get_news("cssd"), list)
+        self.assertIsInstance(news.get_news("news_chronicle"), list)
+        self.assertIsInstance(news.get_news("news_alerts"), list)
