@@ -41,6 +41,7 @@ def _load_n_items(feed, max_news_items):
 
     request_objs = []
     for i in range(int(math.ceil(max_news_items / 10))):
+        payload["start"] = i * 10
         request_objs.append(grequests.get('https://m.pitt.edu/news/index.json', params=payload))
 
     responses = grequests.imap(request_objs)
@@ -68,7 +69,7 @@ def get_news(feed="main_news", max_news_items=10):
         news.extend([{'title': x[0], 'url': x[1]} for x in zip(news_names, news_links)])
 
     return news[:max_news_items]
-                
+
 def _href_to_url(item):
     item = item['href']
     item = re.sub(r"\+at\+.+edu", "", item)
