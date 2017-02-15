@@ -68,7 +68,7 @@ def get_news(feed="main_news", max_news_items=10):
         news.extend([{'title': x[0], 'url': x[1]} for x in zip(news_names, news_links)])
 
     return news[:max_news_items]
-                
+
 def _href_to_url(item):
     item = item['href']
     item = re.sub(r"\+at\+.+edu", "", item)

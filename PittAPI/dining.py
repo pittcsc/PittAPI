@@ -48,8 +48,7 @@ def get_dining_locations_by_status(status=None):
     counter = 0
     while not end_loop:
         load_more = False
-        url = 'https://m.pitt.edu/dining/index.json?_region=kgoui_Rcontent_I1_Ritems&_object_include_html=1&_object_js_config=1&_kgoui_page_state=eb95bc72eca310cbbe76a39964fc7143&feed=dining_locations&start=' + str(
-            counter)
+        url = 'https://m.pitt.edu/dining/index.json?_region=kgoui_Rcontent_I1_Ritems&_object_include_html=1&feed=dining_locations&start=' + str(counter)
         data = sess.get(url).json()  # Should be UTF-8 by JSON standard
         soup = BeautifulSoup(data['response']['html'], 'lxml', parse_only=strainer)
         res = soup.find_all('div', class_='kgoui_list_item_textblock')
