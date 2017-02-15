@@ -18,14 +18,34 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 '''
 
 import re
+import math
 import requests
+import grequests
+
 from bs4 import BeautifulSoup, SoupStrainer
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 sess = requests.session()
-#strainer = SoupStrainer('div', attrs={'class': 'kgoui_list_item_textblock'})
+
+
+def _load_n_items(feed, max_news_items):
+    payload = {
+        "feed": feed,
+        "id": "",
+        "_object": "kgoui_Rcontent_I0_Rcontent_I0",
+        "_object_include_html": "1",
+        "start": 0
+    }
+
+    request_objs = []
+    for i in range(int(math.ceil(max_news_items / 10))):
+        request_objs.append(grequests.get('https://m.pitt.edu/news/index.json', params=payload))
+
+    responses = grequests.imap(request_objs)
+
+    return responses
 
 
 def get_news(feed="main_news", max_news_items=10):
@@ -35,41 +55,20 @@ def get_news(feed="main_news", max_news_items=10):
     # "news_chronicle" - the Pitt Chronicle news
     # "news_alerts"    - crime alerts
 
-    # sample_url = 'https://m.pitt.edu/news/index.json?feed=main_news&id=&_object=kgoui_Rcontent_I0_Rcontent_I0&_object_include_html=1&start=0'
-    news = [] 
-    payload = {
-        "feed": feed,
-        "id": "",
-        "_object": "kgoui_Rcontent_I0_Rcontent_I0",
-        "_object_include_html": "1",
-        "start": 0
-    }
-    
-    while not False:
-        data = sess.get('https://m.pitt.edu/news/index.json', params=payload).json()  # Should be UTF-8 by JSON standard
-        soup = BeautifulSoup(data['response']['html'], 'lxml') #, parse_only=strainer)
-        news_names = map((lambda i: i.getText()), soup.find_all('span', class_='kgoui_list_item_title'))
-        news_links = map(_href_to_url, soup.find_all('a', class_="kgoui_list_item_action"))
+    news = []
 
-        news.extend(list(map((lambda t, u: {'title': t, 'url': u}), news_names, news_links)))
+    resps = _load_n_items(feed, max_news_items)
+    resps = [r.json() for r in resps]
 
-        if any('Load more...' in s for s in news_names):
-            news.pop()
-            payload["start"] += 10
-            if (len(news) > max_news_items):
-                while(len(news) != max_news_items):
-                    news.pop()
-                return news
-            elif (len(news) == max_news_items):
-                return news
-        else:
-            if (len(news) > max_news_items):
-                while(len(news) != max_news_items):
-                    news.pop()
-                return news
-            elif (len(news) == max_news_items):
-                return news
-            
+    for data in resps:
+        soup = BeautifulSoup(data['response']['html'], 'lxml')
+        news_names = (i.getText() for i in soup.find_all('span', class_='kgoui_list_item_title'))
+        news_links = (_href_to_url(x) for x in soup.find_all('a', class_="kgoui_list_item_action"))
+
+        news.extend([{'title': x[0], 'url': x[1]} for x in zip(news_names, news_links)])
+
+    return news[:max_news_items]
+                
 def _href_to_url(item):
     item = item['href']
     item = re.sub(r"\+at\+.+edu", "", item)
