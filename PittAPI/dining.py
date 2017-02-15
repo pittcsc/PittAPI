@@ -18,13 +18,27 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 '''
 
 import requests
+import grequests
 from bs4 import BeautifulSoup, SoupStrainer
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 sess = requests.session()
-strainer = SoupStrainer('div', attrs={'class': 'kgoui_list_item_textblock'})
+
+
+def _get_all_locations():
+    request_objs = []
+    for i in range(0,3):
+        payload = (
+            ("_region", "kgoui_Rcontent_I1_Ritems"),
+            ("feed", "dining_locations"),
+            ("start", i*10)
+        )
+        request_objs.append(grequests.get("https://m.pitt.edu/dining/index.json", params=payload))
+
+    resps = grequests.imap(request_objs)
+    return resps
 
 
 def get_dining_locations():
@@ -38,45 +52,30 @@ def get_dining_locations_by_status(status=None):
     # 'open'   - returns open dining locations
     # 'closed' - returns closed dining locations
 
-    # sample_url = 'https://m.pitt.edu/dining/index.json?_region=kgoui_Rcontent_I1_Ritems&_object_include_html=1&_object_js_config=1&_kgoui_page_state=eb95bc72eca310cbbe76a39964fc7143&_region_index_offset=15&feed=dining_locations&start=15'
-    # the _region_index_offset is optional
-    # -- seems like it's only for the id of the li for the html
-    dining_locations = {}
+    dining_locations = []
 
-    end_loop = False
-    load_more = False
-    counter = 0
-    while not end_loop:
-        load_more = False
-        url = 'https://m.pitt.edu/dining/index.json?_region=kgoui_Rcontent_I1_Ritems&_object_include_html=1&feed=dining_locations&start=' + str(counter)
-        data = sess.get(url).json()  # Should be UTF-8 by JSON standard
-        soup = BeautifulSoup(data['response']['html'], 'lxml', parse_only=strainer)
-        res = soup.find_all('div', class_='kgoui_list_item_textblock')
+    resps = _get_all_locations()
+    resps = [r.json()["response"]["contents"] for r in resps]
 
-        for i in res:
-            if i.find('span').getText() != 'Load more...':
-                if i.find('div') is not None:
-                    if (('Next:' in i.find('div').getText()) and status != 'open') or (('Next:' not in i.find('div').getText()) and status != 'closed'):
-                        dining_locations[i.find('span').getText()] = {
-                            'name': i.find('span').getText(),
-                            'hours': i.find('div').getText().replace('\n', '').replace('Next: ', ''),
-                            'status': 'closed' if 'Next:' in i.find('div').getText() else 'open'
-                        }
-                        end_loop = True
-                elif status != 'open':
-                    dining_locations[i.find('span').getText()] = {
-                        'name': i.find('span').getText(),
-                        'hours': '',
-                        'status': 'closed'
-                    }
-                    end_loop = True
+    for content in resps:
+        for item in content:
+            data = {}
+            fields = item["fields"]
+            if fields["type"] == "loadMore":
+                continue
+
+            if isinstance(fields["title"], dict):
+                data["name"] = fields["title"]["value"]
             else:
-                counter += 15
-                end_loop = False
-                load_more = True
-        if not load_more:
-            end_loop = True
+                data["name"] = fields["title"]
+            data["status"] = fields["status"]
+            try:
+                data["hours"] = fields["eventDate"]["formatted"]
+            except TypeError:
+                data["hours"] = "unavailable"
+            dining_locations.append(data)
 
+    dining_locations = [dict(t) for t in set([tuple(d.items()) for d in dining_locations])]
     return dining_locations
 
 
