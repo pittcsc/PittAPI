@@ -28,9 +28,30 @@ from . import PittServerError
 class NewsTest(unittest.TestCase):
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
-    def test_get_news(self):
+    def test_get_news_default(self):
         self.assertIsInstance(news.get_news(), list)
+
+    @timeout_decorator.timeout(30, timeout_exception=PittServerError)
+    def test_get_news_main(self):
         self.assertIsInstance(news.get_news("main_news"), list)
+
+    @timeout_decorator.timeout(30, timeout_exception=PittServerError)
+    def test_get_news_cssd(self):
         self.assertIsInstance(news.get_news("cssd"), list)
+
+    @timeout_decorator.timeout(30, timeout_exception=PittServerError)
+    def test_get_news_chronicle(self):
         self.assertIsInstance(news.get_news("news_chronicle"), list)
+
+    @timeout_decorator.timeout(30, timeout_exception=PittServerError)
+    def test_get_news_alerts(self):
         self.assertIsInstance(news.get_news("news_alerts"), list)
+
+    @timeout_decorator.timeout(30, timeout_exception=PittServerError)
+    def test_get_news_length(self):
+        self.assertEqual(len(news.get_news()), 10)
+        self.assertTrue(len(news.get_news(max_news_items=20)) <= 20)
+        self.assertTrue(len(news.get_news(max_news_items=25)) <= 25)
+        self.assertTrue(len(news.get_news(max_news_items=25)) <= 29)
+        self.assertTrue(len(news.get_news(max_news_items=30)) <= 30)
+        self.assertTrue(len(news.get_news(max_news_items=40)) <= 40)

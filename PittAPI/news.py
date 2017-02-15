@@ -28,7 +28,7 @@ sess = requests.session()
 #strainer = SoupStrainer('div', attrs={'class': 'kgoui_list_item_textblock'})
 
 
-def get_news(feed="main_news"):
+def get_news(feed="main_news", max_news_items=10):
     # feed indicates the desired news feed
     # "main_news"      - main news
     # "cssd"           - student announcements, on my pitt
@@ -45,7 +45,7 @@ def get_news(feed="main_news"):
         "start": 0
     }
     
-    while True:
+    while not False:
         data = sess.get('https://m.pitt.edu/news/index.json', params=payload).json()  # Should be UTF-8 by JSON standard
         soup = BeautifulSoup(data['response']['html'], 'lxml') #, parse_only=strainer)
         news_names = map((lambda i: i.getText()), soup.find_all('span', class_='kgoui_list_item_title'))
@@ -56,6 +56,12 @@ def get_news(feed="main_news"):
         if any('Load more...' in s for s in news_names):
             news.pop()
             payload["start"] += 10
+            if (len(news) > max_news_items):
+                while(len(news) != max_news_items):
+                    news.pop()
+                return news
+            elif (len(news) == max_news_items):
+                return news
         else:
             return news
 
