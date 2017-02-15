@@ -63,8 +63,13 @@ def get_news(feed="main_news", max_news_items=10):
             elif (len(news) == max_news_items):
                 return news
         else:
-            return news
-
+            if (len(news) > max_news_items):
+                while(len(news) != max_news_items):
+                    news.pop()
+                return news
+            elif (len(news) == max_news_items):
+                return news
+            
 def _href_to_url(item):
     item = item['href']
     item = re.sub(r"\+at\+.+edu", "", item)
