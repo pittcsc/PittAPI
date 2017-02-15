@@ -61,4 +61,4 @@ class DiningTest(unittest.TestCase):
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
     def test_get_dining_locations(self):
-        self.assertIsInstance(dining.get_dining_locations(), dict)
+        self.assertIsInstance(dining.get_dining_locations(), list)
