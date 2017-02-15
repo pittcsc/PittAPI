@@ -49,7 +49,7 @@ class NewsTest(unittest.TestCase):
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
     def test_get_news_length(self):
-        self.assertEqual(len(news.get_news()), 10)
+        self.assertTrue(len(news.get_news()) <= 10)
         self.assertTrue(len(news.get_news(max_news_items=20)) <= 20)
         self.assertTrue(len(news.get_news(max_news_items=25)) <= 25)
         self.assertTrue(len(news.get_news(max_news_items=25)) <= 29)
