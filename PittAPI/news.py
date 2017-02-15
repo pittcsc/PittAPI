@@ -21,6 +21,7 @@ import re
 import math
 import requests
 import grequests
+
 from bs4 import BeautifulSoup, SoupStrainer
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
@@ -39,7 +40,7 @@ def _load_n_items(feed, max_news_items):
     }
 
     request_objs = []
-    for i in range(int(math.ceil(max_news_items / 10.0))):
+    for i in range(int(math.ceil(max_news_items / 10))):
         request_objs.append(grequests.get('https://m.pitt.edu/news/index.json', params=payload))
 
     responses = grequests.imap(request_objs)
@@ -54,17 +55,17 @@ def get_news(feed="main_news", max_news_items=10):
     # "news_chronicle" - the Pitt Chronicle news
     # "news_alerts"    - crime alerts
 
-    news = [] 
+    news = []
 
     resps = _load_n_items(feed, max_news_items)
     resps = [r.json() for r in resps]
 
     for data in resps:
-        soup = BeautifulSoup(data['response']['html'], 'lxml') #, parse_only=strainer)
-        news_names = map((lambda i: i.getText()), soup.find_all('span', class_='kgoui_list_item_title'))
-        news_links = map(_href_to_url, soup.find_all('a', class_="kgoui_list_item_action"))
+        soup = BeautifulSoup(data['response']['html'], 'lxml')
+        news_names = (i.getText() for i in soup.find_all('span', class_='kgoui_list_item_title'))
+        news_links = (_href_to_url(x) for x in soup.find_all('a', class_="kgoui_list_item_action"))
 
-        news.extend(list(map((lambda t, u: {'title': t, 'url': u}), news_names, news_links)))
+        news.extend([{'title': x[0], 'url': x[1]} for x in zip(news_names, news_links)])
 
     return news[:max_news_items]
                 
