@@ -97,7 +97,7 @@ def get_dining_location_menu(location=None, date=None):
     # https://www.pc.pitt.edu/dining/menus/basicKneads.php
     # https://www.pc.pitt.edu/dining/menus/magellans.php
     # https://www.pc.pitt.edu/dining/locations/cathedralCafe.php
-    return
+    return []
 
 
 def _encode_dining_location(string):
