@@ -3,14 +3,14 @@
 
 # Dining API
 
-### **get_dining_locations()**
+### **get_locations()**
 
 #### **Returns**:
 Returns all dining locations
 
 ---
 
-### **get_dining_locations_by_status(status=None)**
+### **get_locations_by_status(status=None)**
 
 #### **Parameters**:
   - `status`: Status of locations (default is all)
@@ -23,7 +23,7 @@ Returns dining locations based on status
 
 ---
 
-### **get_dining_locations_by_name(location)**
+### **get_locations_by_name(location)**
 
 #### **Parameters**:
   - `location`: Dining Location
@@ -32,27 +32,10 @@ Returns dining locations based on status
 
 ---
 
-### **get_dining_locations_menu(location, date)**
+### **get_locations_menu(location, date)**
 
 #### **Parameters**:
   - `location`: Dining location
   - `date`: Date
-
-#### **Returns**:
----
-
-### **_encode_dining_location(string)**
-
-#### **Parameters**:
-  - `string`: Text
-
-#### **Returns**:
-
----
-
-### **_decode_dining_location(string)**
-
-#### **Parameters**:
-  - `string`: Text
 
 #### **Returns**:
