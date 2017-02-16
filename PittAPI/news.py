@@ -22,7 +22,6 @@ import math
 import requests
 import grequests
 
-from bs4 import BeautifulSoup, SoupStrainer
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -32,16 +31,15 @@ sess = requests.session()
 
 def _load_n_items(feed, max_news_items):
     payload = {
-        "feed": feed,
-        "id": "",
-        "_object": "kgoui_Rcontent_I0_Rcontent_I0",
-        "_object_include_html": "1",
-        "start": 0
+        'feed': feed,
+        'id': '',
+        '_object': 'kgoui_Rcontent_I0_Rcontent_I0',
+        'start': 0
     }
 
     request_objs = []
     for i in range(int(math.ceil(max_news_items / 10))):
-        payload["start"] = i * 10
+        payload['start'] = i * 10
         request_objs.append(grequests.get('https://m.pitt.edu/news/index.json', params=payload))
 
     responses = grequests.imap(request_objs)
@@ -49,30 +47,27 @@ def _load_n_items(feed, max_news_items):
     return responses
 
 
-def get_news(feed="main_news", max_news_items=10):
+def get_news(feed='main_news', max_news_items=10):
     # feed indicates the desired news feed
-    # "main_news"      - main news
-    # "cssd"           - student announcements, on my pitt
-    # "news_chronicle" - the Pitt Chronicle news
-    # "news_alerts"    - crime alerts
+    # 'main_news'      - main news
+    # 'cssd'           - student announcements, on my pitt
+    # 'news_chronicle' - the Pitt Chronicle news
+    # 'news_alerts'    - crime alerts
 
     news = []
 
     resps = _load_n_items(feed, max_news_items)
-    resps = [r.json() for r in resps]
+    resps = [r.json()["response"]["regions"][0]["contents"] for r in resps]
 
-    for data in resps:
-        soup = BeautifulSoup(data['response']['html'], 'lxml')
-        news_names = (i.getText() for i in soup.find_all('span', class_='kgoui_list_item_title'))
-        news_links = (_href_to_url(x) for x in soup.find_all('a', class_="kgoui_list_item_action"))
+    for resp in resps:
+        for data in resp:
+            fields = data["fields"]
+            if fields["type"] == "loadMore":
+                continue
 
-        news.extend([{'title': x[0], 'url': x[1]} for x in zip(news_names, news_links)])
+            title = fields["title"]
+            url = "https://m.pitt.edu" + fields["url"]["formatted"]
+            news.append({'title': title, 'url': url})
 
     return news[:max_news_items]
-
-def _href_to_url(item):
-    item = item['href']
-    item = re.sub(r"\+at\+.+edu", "", item)
-    item = item.replace("/news", "https://m.pitt.edu/news")
-    return item
 
