@@ -88,7 +88,5 @@ def get_person(query, max_people=10):
             person_dict["fields"].append({key: value})
 
         persons_list.append(person_dict)
-        if len(persons_list) >= max_people:
-            break   # only return up to amount specified
 
-    return persons_list
+    return persons_list[:max_people]
