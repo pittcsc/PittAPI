@@ -7,8 +7,6 @@ omit =
     version.py
     tests/*
     /Library/Frameworks/*
-concurrency =
-    gevent
 
 [report]
 show_missing = True
