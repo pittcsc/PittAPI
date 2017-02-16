@@ -24,7 +24,6 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 session = requests.session()
-strainer = SoupStrainer('span')
 
 location_dict = {
     'ALUMNI': 0,
@@ -47,7 +46,7 @@ def get_status(lab_name):
     lab_name = lab_name.upper()
     url = 'http://labinformation.cssd.pitt.edu/'
     page = session.get(url)
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=strainer)
+    soup = BeautifulSoup(page.text, 'lxml')
     labs = soup.span.contents[0].strip().split('  ')
 
     lab = labs[location_dict[lab_name]].split(':')
