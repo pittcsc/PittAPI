@@ -3,20 +3,16 @@ language:
 python:
   - "3.4"
   - "3.5"
-before_install:
-  - sudo add-apt-repository -y ppa:fkrull/deadsnakes
-  - sudo apt-get -qq update
-  - sudo apt-get install -y python3-dev
-  - sudo apt-get install -y python3.5-dev
 # command to install dependencies
 install:
-  - "pip3 install virtualenv"
-  - "python3 -m \"virtualenv\" venv"
+  - "pip install virtualenv"
+  - "python -m \"virtualenv\" venv"
   - ". venv/bin/activate"
-  - "pip3 install -r requirements.txt"
+  - "pip install -r requirements.txt"
+  - "coverage --version"
 # command to run tests
 script:
-  - python3 -m "nose" --with-coverage --cov PittAPI/ --with-timer tests/*
+  - python -m "nose" --with-coverage --cov PittAPI/ --with-timer tests/*
 notifications:
     email: false
 os:
