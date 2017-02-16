@@ -79,14 +79,14 @@ def get_dining_locations_by_status(status=None):
     return dining_locations
 
 
-def get_dining_location_by_name(location):
-    try:
-        return get_dining_locations()[location]
-    except:
-        raise ValueError('The dining location is invalid')
+#def get_dining_location_by_name(location):
+#    try:
+#        return get_dining_locations()[location]
+#    except:
+#        raise ValueError('The dining location is invalid')
 
 
-def get_dining_location_menu(location=None, date=None):
+#def get_dining_location_menu(location=None, date=None):
     # location can only be market, market's subordinates, and cathedral cafe
     # if location is none, return all menus, and date will be ignored
     # date has to be a day of the week, or if empty will return menus for all days of the week
@@ -97,7 +97,7 @@ def get_dining_location_menu(location=None, date=None):
     # https://www.pc.pitt.edu/dining/menus/basicKneads.php
     # https://www.pc.pitt.edu/dining/menus/magellans.php
     # https://www.pc.pitt.edu/dining/locations/cathedralCafe.php
-    return []
+#    return []
 
 
 def _encode_dining_location(string):
