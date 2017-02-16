@@ -29,13 +29,6 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 sess = requests.session()
 
 
-def _href_to_url(item):
-    url = item['href']
-    url = re.sub(r'\+at\+.+edu', '', url)
-    url = url.replace('/news', 'https://m.pitt.edu/news')
-    return url
-
-
 def _load_n_items(feed, max_news_items):
     payload = {
         'feed': feed,
@@ -73,8 +66,8 @@ def get_news(feed='main_news', max_news_items=10):
                 continue
 
             title = fields["title"]
-            url = fields["url"]["formatted"]
-            news.extend({'title': title, 'url': url})
+            url = "https://m.pitt.edu" + fields["url"]["formatted"]
+            news.append({'title': title, 'url': url})
 
     return news[:max_news_items]
 
