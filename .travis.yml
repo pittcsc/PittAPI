@@ -16,3 +16,5 @@ notifications:
     email: false
 os:
   - linux
+after_success:
+  - coveralls

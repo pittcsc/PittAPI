@@ -7,3 +7,4 @@ nose
 nose-cov
 nose-timer
 virtualenv
+python-coveralls
