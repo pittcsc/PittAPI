@@ -5,13 +5,14 @@ python:
   - "3.5"
 # command to install dependencies
 install:
-  - "pip3 install virtualenv"
-  - "python3 -m \"virtualenv\" venv"
+  - "pip install virtualenv"
+  - "python -m \"virtualenv\" venv"
   - ". venv/bin/activate"
-  - "pip3 install -r requirements.txt"
+  - "pip install -r requirements.txt"
+  - "coverage --version"
 # command to run tests
 script:
-  - python3 -m "nose" --with-coverage --cov PittAPI/ --with-timer tests/*
+  - python -m "nose" --with-coverage --cov PittAPI/ --with-timer tests/*
 notifications:
     email: false
 os:

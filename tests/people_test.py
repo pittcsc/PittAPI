@@ -12,4 +12,6 @@ class PittServerDownException(Exception):
 class PeopleTest(unittest.TestCase):
     @timeout_decorator.timeout(120, timeout_exception=PittServerDownException)
     def test_people_get_person(self):
-        self.assertIsInstance(people.get_person("dan", 20), list)
+        ans = people.get_person("dan", 19)
+        self.assertIsInstance(ans, list)
+        self.assertTrue(len(ans) == 19)

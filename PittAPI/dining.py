@@ -79,14 +79,14 @@ def get_locations_by_status(status=None):
     return dining_locations
 
 
-def get_location_by_name(location):
-    try:
-        return get_locations()[location]
-    except:
-        raise ValueError('The dining location is invalid')
+#def get_location_by_name(location):
+#    try:
+#        return get_locations()[location]
+#    except:
+#        raise ValueError('The dining location is invalid')
 
 
-def get_location_menu(location=None, date=None):
+#def get_location_menu(location=None, date=None):
     # location can only be market, market's subordinates, and cathedral cafe
     # if location is none, return all menus, and date will be ignored
     # date has to be a day of the week, or if empty will return menus for all days of the week
@@ -97,4 +97,21 @@ def get_location_menu(location=None, date=None):
     # https://www.pc.pitt.edu/dining/menus/basicKneads.php
     # https://www.pc.pitt.edu/dining/menus/magellans.php
     # https://www.pc.pitt.edu/dining/locations/cathedralCafe.php
-    return
+#    return []
+
+
+def _encode_dining_location(string):
+    # changes full name into dict key name
+    string = string.lower()
+    string = string.replace(' ', '_')
+    string = string.replace('_-_', '-')
+    string = string.replace('hilman', 'hillman')
+    string = string.replace('_library', '')
+    string = string.replace('_hall', '')
+    string = string.replace('litchfield_', '')
+    string = string.replace(u'\xe9', 'e')
+    string = string.replace('_science_center', '')
+    string = string.replace('_events_center_food_court', '')
+    string = string.replace('wesley_w._posvar,_second_floor', 'posvar')
+    string = string.replace('_law_building', '')
+    return string
