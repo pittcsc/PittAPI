@@ -41,11 +41,11 @@ def _get_all_locations():
     return resps
 
 
-def get_dining_locations():
-    return get_dining_locations_by_status()
+def get_locations():
+    return get_locations_by_status()
 
 
-def get_dining_locations_by_status(status=None):
+def get_locations_by_status(status=None):
     # status can be nil, open, or closed
     # None     - returns all dining locations
     # 'all'    - same as None (or anything else)
@@ -79,14 +79,14 @@ def get_dining_locations_by_status(status=None):
     return dining_locations
 
 
-#def get_dining_location_by_name(location):
+#def get_location_by_name(location):
 #    try:
-#        return get_dining_locations()[location]
+#        return get_locations()[location]
 #    except:
 #        raise ValueError('The dining location is invalid')
 
 
-#def get_dining_location_menu(location=None, date=None):
+#def get_location_menu(location=None, date=None):
     # location can only be market, market's subordinates, and cathedral cafe
     # if location is none, return all menus, and date will be ignored
     # date has to be a day of the week, or if empty will return menus for all days of the week
@@ -115,4 +115,3 @@ def _encode_dining_location(string):
     string = string.replace('wesley_w._posvar,_second_floor', 'posvar')
     string = string.replace('_law_building', '')
     return string
-

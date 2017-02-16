@@ -31,13 +31,13 @@ small_dict = lab.get_status(lab_name="ALUMNI")
 ### Dining
 # Will return a dictionary of dictionaries containing each dining location,
 # with its name, its open/closed status, and open times (if it exists)
-medium_dict = dining.get_dining_locations()
-medium_dict = dining.get_dining_locations_by_status(status="open")
-medium_dict = dining.get_dining_locations_by_status(status="closed")
+medium_dict = dining.get_locations()
+medium_dict = dining.get_locations_by_status(status="open")
+medium_dict = dining.get_locations_by_status(status="closed")
 # Will return a single dictionary of a dining location,
 # with its name, its open/closed status, and open times (if it exists)
-one = dining.get_dining_location_by_name(u"taco_bell-schenley_cafe")
-two = dining.get_dining_location_by_name(u"cup_&_chaucer-hillman")
+one = dining.get_location_by_name(u"taco_bell-schenley_cafe")
+two = dining.get_location_by_name(u"cup_&_chaucer-hillman")
 ```
 
 ## Tests
@@ -49,13 +49,13 @@ If your `python -v` is 3+, replace `python3` with `python`.
 * [x] Test the computer lab status API and make it return a dictionary
 * [ ] Working on the DiningAPI
     * [x] Have the DiningAPI return a dict instead of a list
-    * [x] Have a separate method for `get_dining_locations_by_status` and `get_dining_locations`
-        * [x] `get_dining_locations_by_status` is what is currently implemented
-        * [x] `get_dining_locations` is the same as what is currently implemented with no arguments
+    * [x] Have a separate method for `get_locations_by_status` and `get_locations`
+        * [x] `get_locations_by_status` is what is currently implemented
+        * [x] `get_locations` is the same as what is currently implemented with no arguments
             * [x] but with a good-looking dictionary
-    * [x] Implement the `get_dining_location_by_name` method
-    * [ ] Implement the `get_dining_location_menu` method
-    * [x] Implement the helper methods `_encode_dining_location` and `_decode_dining_location`
+    * [x] Implement the `get_location_by_name` method
+    * [ ] Implement the `get_location_menu` method
+    * [x] Implement the helper methods `_encode_location` and `_decode_location`
 * [x] Change all string processing to unicode (dropped Py2.7 support, fixed :smile:)
 
 ## License
