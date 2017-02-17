@@ -68,12 +68,23 @@ def get_books_data(course_ids):  # return list of dicts of books, need to expand
     book_url = 'http://pitt.verbacompare.com/comparison?id='
     for course_id in course_ids:
          book_url += course_id + '%2C'  # format url for multiple classes
-    book_url = 'http://pitt.verbacompare.com/comparison?id=1904820%2C'
+
+    #book_url = 'http://pitt.verbacompare.com/comparison?id=1904820%2C1904869'
+    #^^ uncomment to test multiple books
     book_data = session.get(book_url).text
     start = book_data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
     end = book_data.find('}]}]);') + 4
-    books_dict = json.loads(book_data[start:end])
-    books_list = [books_dict]
+    info = [json.loads(book_data[start:end])]
+    books_list = []
+    for i in range(len(info[0])):
+        book_dict = {}
+        big_dict = info[0][i]['books'][0]
+        book_dict['isbn'] = big_dict['isbn']
+        book_dict['citation'] = big_dict['citation']
+        book_dict['title'] = big_dict['title']
+        book_dict['edition'] = big_dict['edition']
+        book_dict['author'] = big_dict['author']
+        books_list.append(book_dict)
     return books_list
 #def get_many_books(list_of_books):
     # to be implemented
