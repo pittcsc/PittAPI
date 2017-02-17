@@ -63,13 +63,14 @@ def get_books_data(courses_info):
     books_list = []
     for i in range(len(info[0])):
         book_dict = {}
-        big_dict = info[0][i]['books'][0]
-        book_dict['isbn'] = big_dict['isbn']
-        book_dict['citation'] = big_dict['citation']
-        book_dict['title'] = big_dict['title']
-        book_dict['edition'] = big_dict['edition']
-        book_dict['author'] = big_dict['author']
-        books_list.append(book_dict)
+        for j in range(len(info[0][i]['books'])):
+            big_dict = info[0][i]['books'][j]
+            book_dict['isbn'] = big_dict['isbn']
+            book_dict['citation'] = big_dict['citation']
+            book_dict['title'] = big_dict['title']
+            book_dict['edition'] = big_dict['edition']
+            book_dict['author'] = big_dict['author']
+            books_list.append(book_dict)
     return books_list  # return list of dicts of books
 
 def get_course_id(department_code, course_name, instructor, term='2600'):  # 2600 --> spring 2017
@@ -91,4 +92,4 @@ def get_course_id(department_code, course_name, instructor, term='2600'):  # 260
             break
     return course_id
 
-print(get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN'}, {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III'}]))  # testing
+#print(get_books_data([{'department_code': 'CHEM', 'course_name': 'CHEM0120', 'instructor': 'FORTNEY'}, {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III'}]))  # testing
