@@ -3,15 +3,13 @@
 
 # Textbook API
 
-
 ### **get_books_data(course_ids)**
-
 
 #### **Parameters**:
   - `course_ids`: List of dictionaries of class info | Example: `get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN'}]`
 
 #### **Returns**:
-Returns a course id number corresponding to the format used by pitt.verbacompare.com
+Returns a list of dictionaries containing Author, ISBN, Edition, Title, and Citation
 
 #### **Example**:
 
