@@ -19,10 +19,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import requests
 import grequests
-from bs4 import BeautifulSoup, SoupStrainer
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 sess = requests.session()
 

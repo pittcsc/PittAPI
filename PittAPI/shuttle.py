@@ -18,9 +18,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 '''
 
 import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 sess = requests.session()
 

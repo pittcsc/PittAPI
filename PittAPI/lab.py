@@ -18,54 +18,50 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 '''
 
 import requests
-from bs4 import BeautifulSoup, SoupStrainer
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+from bs4 import BeautifulSoup
 
 session = requests.session()
 
-location_dict = {
-    'ALUMNI': 0,
-    'BENEDUM': 1,
-    'CATH_G26': 2,
-    'CATH_G27': 3,
-    'LAWRENCE': 4,
-    'HILLMAN': 5,
-    'SUTH': 6
-}
+LOCATIONS = ['ALUMNI', 'BENEDUM', 'CATH_G27', 'CATH_G62', 'LAWRENCE', 'HILLMAN', 'SUTH']
+URL = 'http://labinformation.cssd.pitt.edu/'
 
 
 def get_status(lab_name):
-    '''
-    :returns: a dictionary with status and amount of OS machines.
+    """Returns a dictionary with status and amount of OS machines."""
+    lab_name = _validate_lab(lab_name)
 
-    :param: lab_name: Lab name
-    '''
-
-    lab_name = lab_name.upper()
-    url = 'http://labinformation.cssd.pitt.edu/'
-    page = session.get(url)
+    page = session.get(URL)
     soup = BeautifulSoup(page.text, 'lxml')
     labs = soup.span.text.strip().split('  ')
+    status, *machines = labs[LOCATIONS.index(lab_name)].split(':')
 
-    lab = labs[location_dict[lab_name]].split(':')
-    status_dict = {}
-    if len(lab) > 1:
-        lab = [x.strip() for x in lab[1].split(',')]
-        machines = [int(x[:x.index(' ')]) for x in lab]
-        status_dict = {
-            u'status': u'open',
-            u'windows': machines[0],
-            u'mac': machines[1],
-            u'linux': machines[2]
-        }
+    if 'open' in status:
+        return _make_status('open', *_extract_machines(machines))
     else:
-        status_dict = {
-            u'status': u'closed',
-            u'windows': 0,
-            u'mac': 0,
-            u'linux': 0
-        }
+        return _make_status('closed')
 
-    return status_dict
+
+def _extract_machines(data):
+    machines = []
+    for machine in data.split(','):
+        machine = machine.strip()
+        machines.append(int(machine[:machine.index(' ')]))
+    return machines
+
+
+def _make_status(state, win=0, mac=0, linux=0):
+    return {
+        'status': state,
+        'windows': win,
+        'mac': mac,
+        'linux': linux
+    }
+
+
+def _validate_lab(lab):
+    '''Corrects case of lab name and checks whether it's valid.'''
+    lab = lab.upper()
+    if lab in LOCATIONS:
+        return lab
+    else:
+        raise ValueError("Invalid lab name")
