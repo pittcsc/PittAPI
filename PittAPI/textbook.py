@@ -55,7 +55,7 @@ def get_books_data(courses_info):
              book_url += course_id + '%2C'  # format url for multiple classes
     else:
         book_url += course_ids[0]  # just one course
-    
+
     book_data = session.get(book_url).text
     start = book_data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
     end = book_data.find('}]}]);') + 4
@@ -77,12 +77,10 @@ def get_course_id(department_code, course_name, instructor, term='2600'):  # 260
     if department_number > 22462:
         department_number += 2  # between codes DSANE and EAS 2 id numbers are skipped.
     url = 'http://pitt.verbacompare.com/compare/courses/' + '?id=' + str(department_number) + '&term_id=' + term
-    #print(url)
     r = session.get(url)
     json_data = r.json()
     sections = []
     course_id = ''
-    #print(json_data)
     for course_dict in (json_data):
         if course_dict['id'] == course_name:
             sections = course_dict['sections']
