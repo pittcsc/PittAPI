@@ -91,5 +91,3 @@ def get_course_id(department_code, course_name, instructor, term='2600'):  # 260
             course_id = section['id']
             break
     return course_id
-
-#print(get_books_data([{'department_code': 'CHEM', 'course_name': 'CHEM0120', 'instructor': 'FORTNEY'}, {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III'}]))  # testing
