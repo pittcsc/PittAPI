@@ -22,18 +22,18 @@ get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor':
 ```python
   [
     {
-    'author': 'Gaddis',
-    'isbn': '9780133957051',
-    'edition': '6',
-    'citation': '<em>Starting Out W/Java:From.. W/Access</em> by Gaddis. Pearson Education, 6th Edition, 2015. (ISBN: 9780133957051).',
-    'title': 'Starting Out W/Java:From... W/Access'
+      'author': 'Gaddis',
+      'isbn': '9780133957051',
+      'edition': '6',
+      'citation': '<em>Starting Out W/Java:From.. W/Access</em> by Gaddis. Pearson Education, 6th Edition, 2015. (ISBN: 9780133957051).',
+      'title': 'Starting Out W/Java:From... W/Access'
     },
     {
-    'author': 'Carrano',
-    'isbn': '9780133744057',
-    'edition': '4',
-    'citation': '<em>Data Struct.+Abstract.W/Java W/Access</em> by Carrano. Pearson Education, 4th Edition, 2014. (ISBN: 9780133744057).',
-    'title': 'Data Struct.+Abstract.W/Java W/Access'
+      'author': 'Carrano',
+      'isbn': '9780133744057',
+      'edition': '4',
+      'citation': '<em>Data Struct.+Abstract.W/Java W/Access</em> by Carrano. Pearson Education, 4th Edition, 2014. (ISBN: 9780133744057).',
+      'title': 'Data Struct.+Abstract.W/Java W/Access'
     }
   ]
 ```
@@ -54,7 +54,7 @@ Returns a course id number corresponding to the format used by pitt.verbacompare
 
 ###### **Code**:
 ```python
-textbook.get_course_id('CS', 'CS0445', 'GARRISON III')
+textbook.get_course_id('CS', 'CS0445', 'GARRISON III', '2600')
 ```
 ###### **Sample Output**:
 ```python

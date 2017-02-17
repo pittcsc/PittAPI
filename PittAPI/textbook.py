@@ -47,7 +47,7 @@ def get_books_data(courses_info):
 
     course_ids = []
     for book_info in courses_info:
-        course_ids.append(get_course_id(book_info['department_code'], book_info['course_name'], book_info['instructor']))  # create list of course ids
+        course_ids.append(get_course_id(book_info['department_code'], book_info['course_name'], book_info['instructor'], book_info['term']))  # create list of course ids
 
     book_url = 'http://pitt.verbacompare.com/comparison?id='
     if (len(course_ids) > 1):
