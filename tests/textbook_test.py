@@ -14,6 +14,9 @@ class TextbookTest(unittest.TestCase):
         ans = textbook.get_books_data([{'department_code': 'CHEM', 'course_name': 'CHEM0120', 'instructor': 'FORTNEY', 'term': '2600'}, {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III','term': '2600'}])
         self.assertIsInstance(ans, list)
         self.assertTrue(len(ans) == 6)
+
+    @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
+    def test_textbook_get_books_data_past_22462(self):
         ans = textbook.get_books_data([{'department_code': 'MATH', 'course_name': 'MATH0220', 'instructor': 'HOCKENSMITH', 'term': '2600'}])
         self.assertIsInstance(ans, list)
         self.assertTrue(len(ans) == 2)
