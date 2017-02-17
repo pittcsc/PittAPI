@@ -17,11 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
 
-import math
 import requests
-import grequests
-import urllib.parse
-import pprint
 import json
 
 session = requests.session()
@@ -90,4 +86,4 @@ def get_course_id(department_code, course_name, instructor, term='2600'):  # 260
         if section['instructor'] == instructor:
             course_id = section['id']
             break
-    return course_id    
+    return course_id
