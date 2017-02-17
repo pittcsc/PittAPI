@@ -42,7 +42,37 @@ CODES = [
     'SLAV','SLOVAK','SOC','SOCWRK','SPAN','STAT','SWAHIL','SWBEH','SWCOSA','SWE','SWGEN','SWINT','SWRES','SWWEL','TELCOM','THEA','TURKSH',
     'UKRAIN','URBNST','VIET']
 
-def get_book(department_code, course_name, instructor, term='2600'):  # 2600 --> spring 2017
+
+def get_books_data(courses_info):
+
+    course_ids = []
+    for book_info in courses_info:
+        course_ids.append(get_course_id(book_info['department_code'], book_info['course_name'], book_info['instructor']))  # create list of course ids
+
+    book_url = 'http://pitt.verbacompare.com/comparison?id='
+    if (len(course_ids) > 1):
+        for course_id in course_ids:
+             book_url += course_id + '%2C'  # format url for multiple classes
+    else:
+        book_url += course_ids[0]  # just one course
+    
+    book_data = session.get(book_url).text
+    start = book_data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
+    end = book_data.find('}]}]);') + 4
+    info = [json.loads(book_data[start:end])]
+    books_list = []
+    for i in range(len(info[0])):
+        book_dict = {}
+        big_dict = info[0][i]['books'][0]
+        book_dict['isbn'] = big_dict['isbn']
+        book_dict['citation'] = big_dict['citation']
+        book_dict['title'] = big_dict['title']
+        book_dict['edition'] = big_dict['edition']
+        book_dict['author'] = big_dict['author']
+        books_list.append(book_dict)
+    return books_list  # return list of dicts of books
+
+def get_course_id(department_code, course_name, instructor, term='2600'):  # 2600 --> spring 2017
     department_number = CODES.index(department_code) + 22399
     if department_number > 22462:
         department_number += 2  # between codes DSANE and EAS 2 id numbers are skipped.
@@ -61,32 +91,6 @@ def get_book(department_code, course_name, instructor, term='2600'):  # 2600 -->
         if section['instructor'] == instructor:
             course_id = section['id']
             break
+    return course_id
 
-    return get_books_data([course_id])
-
-def get_books_data(course_ids):  # return list of dicts of books, need to expand to get multiple books
-    book_url = 'http://pitt.verbacompare.com/comparison?id='
-    for course_id in course_ids:
-         book_url += course_id + '%2C'  # format url for multiple classes
-
-    #book_url = 'http://pitt.verbacompare.com/comparison?id=1904820%2C1904869'
-    #^^ uncomment to test multiple books
-    book_data = session.get(book_url).text
-    start = book_data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
-    end = book_data.find('}]}]);') + 4
-    info = [json.loads(book_data[start:end])]
-    books_list = []
-    for i in range(len(info[0])):
-        book_dict = {}
-        big_dict = info[0][i]['books'][0]
-        book_dict['isbn'] = big_dict['isbn']
-        book_dict['citation'] = big_dict['citation']
-        book_dict['title'] = big_dict['title']
-        book_dict['edition'] = big_dict['edition']
-        book_dict['author'] = big_dict['author']
-        books_list.append(book_dict)
-    return books_list
-#def get_many_books(list_of_books):
-    # to be implemented
-
-get_book('CS', 'CS0401', 'HOFFMAN')  # testing
+print(get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN'}, {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III'}]))  # testing
