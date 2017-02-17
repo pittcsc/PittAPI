@@ -56,13 +56,12 @@ def get_book(department_code, course_name, instructor, term='2600'):  # 2600 -->
     for course_dict in (json_data):
         if course_dict['id'] == course_name:
             sections = course_dict['sections']
-            print(sections)
             break
-
     for section in sections:
         if section['instructor'] == instructor:
             course_id = section['id']
             break
+
     return get_books_data([course_id])
 
 def get_books_data(course_ids):  # return list of dicts of books, need to expand to get multiple books
