@@ -8,7 +8,7 @@
 
 
 #### **Parameters**:
-  - `course_ids`: List of dictionaries of class info | Example: get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN'}]
+  - `course_ids`: List of dictionaries of class info | Example: `get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN'}]`
 
 #### **Returns**:
 Returns a course id number corresponding to the format used by pitt.verbacompare.com
