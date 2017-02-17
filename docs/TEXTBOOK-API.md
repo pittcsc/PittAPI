@@ -3,10 +3,10 @@
 
 # Textbook API
 
-### **get_books_data(course_ids)**
+### **get_books_data(course_info)**
 
 #### **Parameters**:
-  - `course_ids`: List of dictionaries of class info | Example: `get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN'}]`
+  - `courses_info`: List of dictionaries of class info | Example: `get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN', 'term': '2600'}]`
 
 #### **Returns**:
 Returns a list of dictionaries containing Author, ISBN, Edition, Title, and Citation
@@ -15,7 +15,7 @@ Returns a list of dictionaries containing Author, ISBN, Edition, Title, and Cita
 
 ###### **Code**:
 ```python
-get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN'}, {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III'}])
+get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN', 'term': '2600'}, {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III', 'term': '2600'}])
 ```
 
 ###### **Sample Output**:
@@ -38,7 +38,7 @@ get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor':
   ]
 ```
 
-### **get_course_id(department_code,course_name, instructor,term)**
+### **get_course_url(department_code,course_name, instructor,term)**
 
 #### **Parameters**:
   - `department_code`: Code for department | Example: `CS` or `LATIN`
@@ -48,7 +48,7 @@ get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor':
     - Default value is `2600` for Spring 2017
 
 #### **Returns**:
-Returns a course id number corresponding to the format used by pitt.verbacompare.com
+Returns a course url corresponding to the format used by pitt.verbacompare.com
 
 #### **Example**:
 
@@ -58,5 +58,5 @@ textbook.get_course_id('CS', 'CS0445', 'GARRISON III', '2600')
 ```
 ###### **Sample Output**:
 ```python
-1904869
-```
+http://pitt.verbacompare.com/compare/courses/?id=22525&term_id=2600
+````

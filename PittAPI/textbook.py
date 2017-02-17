@@ -16,10 +16,10 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
-
+import grequests
 import requests
 import json
-
+import time
 session = requests.session()
 
 
@@ -41,10 +41,33 @@ CODES = [
 
 def get_books_data(courses_info):
 
-    course_ids = []
-    for book_info in courses_info:
-        course_ids.append(get_course_id(book_info['department_code'], book_info['course_name'], book_info['instructor'], book_info['term']))  # create list of course ids
 
+    request_objs = []
+    course_names = []  # need to save these
+    instructors = []  # need to save these
+    for i in range(len(courses_info)):
+        book_info = courses_info[i]
+        course_names.append(book_info['course_name'])
+        instructors.append(book_info['instructor'])
+        request_objs.append(grequests.get(get_course_url(book_info['department_code'], book_info['term'])))
+        print(get_course_url(book_info['department_code'], book_info['term']))
+    responses = grequests.imap(request_objs)  # parallel requests
+    course_ids = []
+    j = 0  # counter to get course_names and instructors
+    for r in responses:
+        json_data = r.json()
+        sections = []
+        course_id = ''
+        for course_dict in (json_data):
+            if course_dict['id'] == course_names[j]:
+                sections = course_dict['sections']
+                break
+        for section in sections:
+            if section['instructor'] == instructors[j]:
+                course_id = section['id']
+                break
+        course_ids.append(course_id)
+        j += 1
     book_url = 'http://pitt.verbacompare.com/comparison?id='
     if (len(course_ids) > 1):
         for course_id in course_ids:
@@ -69,21 +92,11 @@ def get_books_data(courses_info):
             books_list.append(book_dict)
     return books_list  # return list of dicts of books
 
-def get_course_id(department_code, course_name, instructor, term='2600'):  # 2600 --> spring 2017
+def get_course_url(department_code,term='2600'):  # 2600 --> spring 2017
     department_number = CODES.index(department_code) + 22399
     if department_number > 22462:
         department_number += 2  # between codes DSANE and EAS 2 id numbers are skipped.
+    if department_number > 22580:
+        department_number += 1  # between codes PUBSRV and REHSCI 1 id number is skipped.
     url = 'http://pitt.verbacompare.com/compare/courses/' + '?id=' + str(department_number) + '&term_id=' + term
-    r = session.get(url)
-    json_data = r.json()
-    sections = []
-    course_id = ''
-    for course_dict in (json_data):
-        if course_dict['id'] == course_name:
-            sections = course_dict['sections']
-            break
-    for section in sections:
-        if section['instructor'] == instructor:
-            course_id = section['id']
-            break
-    return course_id
+    return url
