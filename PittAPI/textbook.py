@@ -90,4 +90,4 @@ def get_course_id(department_code, course_name, instructor, term='2600'):  # 260
         if section['instructor'] == instructor:
             course_id = section['id']
             break
-    return course_id
+    return course_id    
