@@ -20,8 +20,8 @@ import grequests
 import requests
 import json
 import time
-session = requests.session()
 
+session = requests.session()
 
 CODES = [
     'ADMJ','ADMPS','AFRCNA','AFROTC','ANTH','ARABIC','ARTSC','ASL','ASTRON','ATHLTR','BACC','BCHS','BECN','BFIN','BHRM','BIND',
@@ -38,9 +38,7 @@ CODES = [
     'SLAV','SLOVAK','SOC','SOCWRK','SPAN','STAT','SWAHIL','SWBEH','SWCOSA','SWE','SWGEN','SWINT','SWRES','SWWEL','TELCOM','THEA','TURKSH',
     'UKRAIN','URBNST','VIET']
 
-
 def get_books_data(courses_info):
-
 
     request_objs = []
     course_names = []  # need to save these
@@ -51,7 +49,7 @@ def get_books_data(courses_info):
         course_names.append(book_info['course_name'])
         instructors.append(book_info['instructor'])
         request_objs.append(grequests.get(get_course_url(book_info['department_code'], book_info['term']), timeout=10))
-    responses = grequests.imap(request_objs)  # parallel requests
+    responses = grequests.map(request_objs)  # parallel requests
     course_ids = []
     print(course_names)
     print(instructors)
@@ -68,7 +66,6 @@ def get_books_data(courses_info):
 
         for section in sections:
             if section['instructor'] == instructors[j]:
-                #print(section)
                 course_id = section['id']
                 break
         course_ids.append(course_id)

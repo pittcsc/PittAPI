@@ -30,18 +30,21 @@ class TextbookTest(unittest.TestCase):
         {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III','term': '2600'},
         {'department_code': 'CHEM', 'course_name': 'CHEM0120', 'instructor': 'FORTNEY', 'term': '2600'},
         {'department_code': 'STAT', 'course_name': 'STAT1000', 'instructor': 'NELSON', 'term': '2600'}])
-
+        print(len(ans))
         self.assertIsInstance(ans, list)
         self.assertTrue(len(ans) == 9)
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
     def test_invalid_department_code(self):
-        self.assertRaises(ValueError, textbook.get_books_data, [{'department_code': 'DOES', 'course_name': 'NOT', 'instructor': 'EXIST', 'term': '2600'}])
+        self.assertRaises(ValueError,textbook.get_books_data, [{'department_code': 'DOES', 'course_name': 'NOT', 'instructor': 'EXIST', 'term': '2600'}])
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
     def test_invalid_course_name(self):
-        self.assertRaises(ValueError, textbook.get_books_data, [{'department_code': 'CS', 'course_name': 'NOT', 'instructor': 'EXIST', 'term': '2600'}])
+        ans = textbook.get_books_data([{'department_code': 'CS', 'course_name': 'NOT', 'instructor': 'EXIST', 'term': '2600'}])
+        self.assertTrue(len(ans) == 0)
 
     @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
     def test_invalid_instructor(self):
-        self.assertRaises(ValueError, textbook.get_books_data, [{'department_code': 'CS', 'course_name': 'CS0447', 'instructor': 'EXIST', 'term': '2600'}])
+        ans = textbook.get_books_data([{'department_code': 'CS', 'course_name': 'CS0447', 'instructor': 'EXIST', 'term': '2600'}])
+        self.assertTrue(len(ans) == 0)
+        
