@@ -30,13 +30,17 @@ def get_status(lab_name):
     """Returns a dictionary with status and amount of OS machines."""
     lab_name = _validate_lab(lab_name)
 
-    page = session.get(URL)
-    soup = BeautifulSoup(page.text, 'lxml')
-    labs = soup.span.text.strip().split('  ')
+    text = ""
+    while not text:
+        page = session.get(URL)
+        soup = BeautifulSoup(page.text, 'lxml')
+        text = soup.span.text
+
+    labs = text.strip().split('  ')
     status, *machines = labs[LOCATIONS.index(lab_name)].split(':')
 
     if 'open' in status:
-        return _make_status('open', *_extract_machines(machines))
+        return _make_status('open', *_extract_machines(machines[0]))
     else:
         return _make_status('closed')
 
