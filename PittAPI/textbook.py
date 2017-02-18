@@ -51,15 +51,12 @@ def get_books_data(courses_info):
         course_names.append(book_info['course_name'])
         instructors.append(book_info['instructor'])
         request_objs.append(grequests.get(get_course_url(book_info['department_code'], book_info['term']), timeout=10))
-        #headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
     responses = grequests.imap(request_objs)  # parallel requests
     course_ids = []
     print(course_names)
     print(instructors)
     j = 0  # counter to get course_names and instructors
     for r in responses:
-        print(r.status_code)
-        #print(r.text)
         json_data = r.json()
 
         sections = []
@@ -67,7 +64,6 @@ def get_books_data(courses_info):
         for course_dict in (json_data):
             if course_dict['id'] == course_names[j]:
                 sections = course_dict['sections']
-                print(sections)
                 break
 
         for section in sections:
@@ -78,14 +74,12 @@ def get_books_data(courses_info):
         course_ids.append(course_id)
         j += 1
     book_url = 'http://pitt.verbacompare.com/comparison?id='
-    print(course_ids)
 
     if (len(course_ids) > 1):
         for course_id in course_ids:
              book_url += course_id + '%2C'  # format url for multiple classes
     else:
         book_url += course_ids[0]  # just one course
-    #print(book_url)
     book_data = session.get(book_url).text
     start = book_data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
     end = book_data.find('}]}]);') + 4
@@ -114,13 +108,4 @@ def get_course_url(department_code,term='2600'):  # 2600 --> spring 2017
     if department_number > 22580:
         department_number += 1  # between codes PUBSRV and REHSCI 1 id number is skipped.
     url = 'http://pitt.verbacompare.com/compare/courses/' + '?id=' + str(department_number) + '&term_id=' + term
-    #print(url)
     return url
-
-ans = get_books_data([
-{'department_code': 'MATH', 'course_name': 'MATH0220', 'instructor': 'HOCKENSMITH', 'term': '2600'},
-{'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III','term': '2600'},
-{'department_code': 'CHEM', 'course_name': 'CHEM0120', 'instructor': 'FORTNEY', 'term': '2600'},
-{'department_code': 'STAT', 'course_name': 'STAT1000', 'instructor': 'NELSON', 'term': '2600'}])
-print(ans)
-print(len(ans))
