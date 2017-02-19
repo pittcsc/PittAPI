@@ -28,21 +28,24 @@ URL = 'http://labinformation.cssd.pitt.edu/'
 
 def get_status(lab_name):
     """Returns a dictionary with status and amount of OS machines."""
-    lab_name = _validate_lab(lab_name)
-
-    text = ""
-    while not text:
-        page = session.get(URL)
-        soup = BeautifulSoup(page.text, 'lxml')
-        text = soup.span.text
-
-    labs = text.strip().split('  ')
+    lab_name, labs = _validate_lab(lab_name), _fetch_labs()
     status, *machines = labs[LOCATIONS.index(lab_name)].split(':')
 
     if 'open' in status:
         return _make_status('open', *_extract_machines(machines[0]))
     else:
         return _make_status('closed')
+
+
+def _fetch_labs():
+    """Fetches text of status/machines of all labs."""
+    text = ''
+    while not text:
+        page = session.get(URL)
+        soup = BeautifulSoup(page.text, 'lxml')
+        text = soup.span.text
+
+    return text.strip().split('  ')
 
 
 def _extract_machines(data):

@@ -34,6 +34,9 @@ class LabTest(unittest.TestCase):
     def test_get_status_sutherland(self):
         self.assertIsInstance(lab.get_status("SUTH"), dict)
 
+    def test_fetch_labs(self):
+        self.assertIsInstance(lab._fetch_labs(), list)
+
     def test_lab_name_validation(self):
         valid, fake = lab.LOCATIONS[0].lower(), 'test'
         self.assertTrue(lab._validate_lab(valid), lab.LOCATIONS[0])
