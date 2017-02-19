@@ -47,12 +47,15 @@ class LabTest(unittest.TestCase):
         self.assertIsInstance(closed, dict)
         self.assertIsInstance(open, dict)
 
-        self.assertTrue(closed[keys[0]], 'closed')
-        self.assertTrue(open[keys[0]], 'open')
+        self.assertEqual(closed[keys[0]], 'closed')
+        self.assertEqual(open[keys[0]], 'open')
 
         for key in keys[1:]:
-            self.assertTrue(closed[key], 0)
-            self.assertTrue(open[key], 1)
+            self.assertEqual(closed[key], 0)
+            self.assertEqual(open[key], 1)
 
-
-
+    def test_extract_machines(self):
+        data = '123 hello_world, 456 macOS, 789 cool, 3 nice'
+        info = lab._extract_machines(data)
+        self.assertIsInstance(info, list)
+        self.assertEqual(info, [123, 456, 789, 3])
