@@ -39,7 +39,7 @@ CODES = [
     'UKRAIN','URBNST','VIET']
 
 def get_books_data(courses_info):
-
+    """Returns list of dictionaries of book information."""
     request_objs = []
     course_names = []  # need to save these
     instructors = []  # need to save these
@@ -99,6 +99,7 @@ def get_books_data(courses_info):
     return books_list  # return list of dicts of books
 
 def get_department_url(department_code,term='2600'):  # 2600 --> spring 2017
+    """Returns url for given department code."""
     department_number = CODES.index(department_code) + 22399
     if department_number > 22462:
         department_number += 2  # between codes DSANE and EAS 2 id numbers are skipped.
