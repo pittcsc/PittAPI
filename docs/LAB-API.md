@@ -17,7 +17,7 @@
 ### **get_status(lab_name)**
 
 #### **Parameters**:
-  - `lab_name`: Lab name (comes from LabAPI's **LOCATION**)
+  - `lab_name`: Lab name (comes from LabAPI's **LOCATIONS**)
 
 #### **Returns**:
 Returns a dictionary with status and amount of OS machines.
