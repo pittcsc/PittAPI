@@ -54,7 +54,7 @@ class CourseTest(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_class_description(self):
-        self.assertIsInstance(course.get_class_description(TERM, '10045'), str)
+        self.assertIsInstance(course.get_class_description(TERM, '10045'), dict)
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_invalid_class_number(self):

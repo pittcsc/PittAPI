@@ -34,8 +34,25 @@ class LabTest(unittest.TestCase):
     def test_get_status_sutherland(self):
         self.assertIsInstance(lab.get_status("SUTH"), dict)
 
-    def test_lab_validation(self):
+    def test_lab_name_validation(self):
         valid, fake = lab.LOCATIONS[0].lower(), 'test'
         self.assertTrue(lab._validate_lab(valid), lab.LOCATIONS[0])
         self.assertRaises(ValueError, lab._validate_lab, fake)
+
+    def test_make_status(self):
+        keys = ['status', 'windows', 'mac', 'linux']
+        closed = lab._make_status('closed')
+        open = lab._make_status('open', 1, 1, 1)
+
+        self.assertIsInstance(closed, dict)
+        self.assertIsInstance(open, dict)
+
+        self.assertTrue(closed[keys[0]], 'closed')
+        self.assertTrue(open[keys[0]], 'open')
+
+        for key in keys[1:]:
+            self.assertTrue(closed[key], 0)
+            self.assertTrue(open[key], 1)
+
+
 
