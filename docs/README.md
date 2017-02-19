@@ -5,3 +5,5 @@
 - [Laundry API](LAUNDRY-API.md)
 - [People API](PEOPLE-API.md)
 - [Dining API](DINING-API.md)
+- [Shuttle API](SHUTTLE-API.md)
+- [News API](NEWS-API.md)
