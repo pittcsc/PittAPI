@@ -46,6 +46,7 @@ def get_status(lab_name):
 
 
 def _extract_machines(data):
+    """Gets available computer totals for each OS into a list."""
     machines = []
     for machine in data.split(','):
         machine = machine.strip()
@@ -54,6 +55,7 @@ def _extract_machines(data):
 
 
 def _make_status(state, win=0, mac=0, linux=0):
+    """Creates proper dictionary response for getting lab status."""
     return {
         'status': state,
         'windows': win,
@@ -63,7 +65,7 @@ def _make_status(state, win=0, mac=0, linux=0):
 
 
 def _validate_lab(lab):
-    '''Corrects case of lab name and checks whether it's valid.'''
+    """Corrects case of lab name and checks whether it's valid."""
     lab = lab.upper()
     if lab in LOCATIONS:
         return lab
