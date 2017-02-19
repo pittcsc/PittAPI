@@ -48,7 +48,7 @@ def get_books_data(courses_info):
         print(book_info)
         course_names.append(book_info['course_name'])
         instructors.append(book_info['instructor'])
-        request_objs.append(grequests.get(get_course_url(book_info['department_code'], book_info['term']), timeout=10))
+        request_objs.append(grequests.get(get_department_url(book_info['department_code'], book_info['term']), timeout=10))
     responses = grequests.map(request_objs)  # parallel requests
     course_ids = []
     print(course_names)
@@ -98,7 +98,7 @@ def get_books_data(courses_info):
 
     return books_list  # return list of dicts of books
 
-def get_course_url(department_code,term='2600'):  # 2600 --> spring 2017
+def get_department_url(department_code,term='2600'):  # 2600 --> spring 2017
     department_number = CODES.index(department_code) + 22399
     if department_number > 22462:
         department_number += 2  # between codes DSANE and EAS 2 id numbers are skipped.
