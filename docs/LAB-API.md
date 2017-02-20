@@ -6,8 +6,8 @@
 ### **Location Codes:**
   - Alumni Hall: `"ALUMNI"`
   - Benedum Hall: `"BENEDUM"`
-  - Cathedral G26: `"CATH_G27"`
-  - Cathedral G27: `"CATH_G62"`
+  - Cathedral G27: `"CATH_G27"`
+  - Cathedral G62: `"CATH_G62"`
   - David Lawrence Hall: `"LAWRENCE"`
   - Hillman Library: `"HILLMAN"`
   - Sutherland Hall: `"SUTH"`
