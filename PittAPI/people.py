@@ -18,11 +18,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 '''
 
 import math
-import requests
-import grequests
 import urllib.parse
 
-requests.packages.urllib3.disable_warnings()
+import grequests
 
 
 def _get_person_url(query, max_people):

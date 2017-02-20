@@ -22,10 +22,6 @@ import math
 import requests
 import grequests
 
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
 sess = requests.session()
 
 

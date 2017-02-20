@@ -20,9 +20,6 @@ import warnings
 
 import requests
 from bs4 import BeautifulSoup, SoupStrainer
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 URL = 'http://www.courses.as.pitt.edu/'
 
@@ -119,4 +116,6 @@ def get_class_description(term, class_number):
     if 'no courses by' in page.text or 'Search by subject' in page.text:
         raise ValueError('Invalid class number.')
     soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['td']))
-    return soup.findAll('td', {'colspan': '9'})[1].text
+    return {
+        'description': soup.findAll('td', {'colspan': '9'})[1].text
+    }

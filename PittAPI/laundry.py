@@ -21,9 +21,6 @@ import re
 
 import requests
 from bs4 import BeautifulSoup
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 session = requests.session()
 
