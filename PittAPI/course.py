@@ -117,13 +117,23 @@ def get_class(term, class_number):
         raise ValueError('Invalid class number.')
 
     description = _extract_description(page.text)
-    time = _extract_time(page.text)
+    details = _extract_details(page.text)
+
+    return {**description, **details}
 
 def _extract_description(text):
     soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
-    return soup.findAll('td', {'colspan': '9'})[1].text
+    return {
+        'description': soup.findAll('td', {'colspan': '9'})[1].text
+    }
 
 
-def _extract_time(text):
+def _extract_details(text):
     soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
-    soup.findAll('td', {'class': 'style1'})
+    items = soup.findAll('td', {'class': 'style1'})
+    return {
+        'class_number': items[0].text,
+        'section': items[1].text,
+        'days': items[2].text,
+        'time': items[3].text
+    }
