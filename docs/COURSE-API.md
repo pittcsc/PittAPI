@@ -45,23 +45,34 @@ course.get_courses(term='2171', code='cs')
 
 ---
 
-### **get_class_description(class_number, term)**
+### **get_class(class_number, term)**
 
 #### **Parameters**:
   - `term`: Term number | Example: `"2171"`
   - `class_number`: Class Number | Example: `"18047"`
 
 #### **Returns**:
-Returns the description for `class_number` in `term`.
+Returns the details for `class_number` in `term`.
 
 #### **Example**:
 
 ###### **Code**:
 ```python
-course.get_class_description(term="2171", class_number="18047")
+course.get_class(term="2171", class_number="18047")
 ```
 
 ###### **Sample Output**:
 ```python
-u'This course will cover methods and strategies that are useful for the design of nonnumeric algorithms. Students are expected to design their own algorithms.'
+{'class_number': '26966',
+ 'classroom': '05502 SENSQ',
+ 'days': 'TuTh',
+ 'description': 'This is a first course in computer science programming. It is '
+                'recommended for those students intending to major in computer '
+                'science who do not have the required background for CS 0401. '
+                'It may also be of interest to students majoring in one of the '
+                'social sciences or humanities. The focus of the course is on '
+                'problem analysis and the development of algorithms and '
+                'computer programs in a modern high-level language.',
+ 'section': 'AT',
+ 'time': ['01:00 PM', '02:15 PM']}
 ```

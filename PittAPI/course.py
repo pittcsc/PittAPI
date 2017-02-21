@@ -107,6 +107,7 @@ def _extract_course_data(header, course):
 
 
 def get_class(term, class_number):
+    """Returns dictionary of details about a class."""
     payload = {
         'TERM': _validate_term(term),
         'CLASSNUM': class_number
@@ -123,20 +124,22 @@ def get_class(term, class_number):
 
 
 def _extract_description(text):
+    """Extracts class description from web page"""
     soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
     return {
-        'description': soup.findAll('td', {'colspan': '9'})[1].text
+        'description': soup.findAll('td', {'colspan': '9'})[1].text.replace('\r\n', '')
     }
 
 
 def _extract_details(text):
+    """Extracts class number, classroom, section, date, and time from web page"""
     soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
-    items = soup.findAll('td', {'class': 'style1'})[:3]
-    days, time, classroom = items[2].text.split('/')
+    number, section, details = soup.findAll('td', {'class': 'style1'})[:3]
+    days, time, classroom = details.text.split(' / ')
     return {
-        'class_number': items[0].text.strip(),
-        'section': items[1].text.strip(),
-        'days': days.strip(),
-        'time': time.strip(),
-        'classroom': classroom.strip()
+        'class_number': number.text.strip(),
+        'section': section.text.strip(),
+        'days': days,
+        'time': time.split('-'),
+        'classroom': classroom.replace('\xa0', ' ')
     }
