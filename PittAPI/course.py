@@ -117,10 +117,7 @@ def get_class(term, class_number):
     if 'no courses by' in page.text or 'Search by subject' in page.text:
         raise ValueError('Invalid class number.')
 
-    description = _extract_description(page.text)
-    details = _extract_details(page.text)
-
-    return dict(description, **details)
+    return dict(_extract_description(page.text), **_extract_details(page.text))
 
 
 def _extract_description(text):
@@ -134,10 +131,9 @@ def _extract_description(text):
 def _extract_details(text):
     """Extracts class number, classroom, section, date, and time from web page"""
     soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
-    number, section, details = soup.findAll('td', {'class': 'style1'})[:3]
+    section, details = soup.findAll('td', {'class': 'style1'})[1:3]
     days, time, classroom = details.text.split(' / ')
     return {
-        'class_number': number.text.strip(),
         'section': section.text.strip(),
         'days': days,
         'time': time.split('-'),

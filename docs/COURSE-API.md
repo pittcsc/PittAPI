@@ -58,13 +58,12 @@ Returns the details for `class_number` in `term`.
 
 ###### **Code**:
 ```python
-course.get_class(term="2171", class_number="18047")
+course.get_class(term='2171', class_number='26966')
 ```
 
 ###### **Sample Output**:
 ```python
-{'class_number': '26966',
- 'classroom': '05502 SENSQ',
+{'classroom': '05502 SENSQ',
  'days': 'TuTh',
  'description': 'This is a first course in computer science programming. It is '
                 'recommended for those students intending to major in computer '
