@@ -106,7 +106,7 @@ def _extract_course_data(header, course):
         return data
 
 
-def get_class_description(term, class_number):
+def get_class(term, class_number):
     """Return a string that is the description for class in a term"""
     payload = {
         'TERM': _validate_term(term),
@@ -115,7 +115,15 @@ def get_class_description(term, class_number):
     page = requests.get(URL + 'detail.asp', params=payload)
     if 'no courses by' in page.text or 'Search by subject' in page.text:
         raise ValueError('Invalid class number.')
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['td']))
-    return {
-        'description': soup.findAll('td', {'colspan': '9'})[1].text
-    }
+
+    description = _extract_description(page.text)
+    time = _extract_time(page.text)
+
+def _extract_description(text):
+    soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
+    return soup.findAll('td', {'colspan': '9'})[1].text
+
+
+def _extract_time(text):
+    soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
+    soup.findAll('td', {'class': 'style1'})
