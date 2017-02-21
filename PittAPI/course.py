@@ -107,19 +107,20 @@ def _extract_course_data(header, course):
 
 
 def get_class(term, class_number):
-    """Return a string that is the description for class in a term"""
     payload = {
         'TERM': _validate_term(term),
         'CLASSNUM': class_number
     }
     page = requests.get(URL + 'detail.asp', params=payload)
+
     if 'no courses by' in page.text or 'Search by subject' in page.text:
         raise ValueError('Invalid class number.')
 
     description = _extract_description(page.text)
     details = _extract_details(page.text)
 
-    return {**description, **details}
+    return dict(description, **details)
+
 
 def _extract_description(text):
     soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
@@ -130,10 +131,12 @@ def _extract_description(text):
 
 def _extract_details(text):
     soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
-    items = soup.findAll('td', {'class': 'style1'})
+    items = soup.findAll('td', {'class': 'style1'})[:3]
+    days, time, classroom = items[2].text.split('/')
     return {
-        'class_number': items[0].text,
-        'section': items[1].text,
-        'days': items[2].text,
-        'time': items[3].text
+        'class_number': items[0].text.strip(),
+        'section': items[1].text.strip(),
+        'days': days.strip(),
+        'time': time.strip(),
+        'classroom': classroom.strip()
     }
