@@ -15,8 +15,8 @@ from PittAPI import course, laundry, lab, dining
 big_dict = course.get_courses(term="2177", code="CS")
 # Will return a list of dictionaries containing courses that fulfill requirement
 big_dict = course.get_course(term="2177", code="Q")
-# Will return a string, which is the description of the course
-description = course.get_class_description(term="2177", class_number="10163")
+# Will return a dictionary with a details about the class
+description = course.get_Class(term="2177", class_number="10163")
 
 ### Laundry
 # Will return a dictionary with amount of washers and dryers
