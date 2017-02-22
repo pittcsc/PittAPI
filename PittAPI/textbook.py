@@ -77,11 +77,12 @@ def get_books_data(courses_info):
 
     book_data = session.get(book_url).text
 
+    books_list = []
     try:
         start = book_data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
         end = book_data.find('}]}]);') + 4
         info = [json.loads(book_data[start:end])]
-        books_list = []
+
         for i in range(len(info[0])):
             for j in range(len(info[0][i]['books'])):
                 book_dict = {}
