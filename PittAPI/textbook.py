@@ -51,19 +51,16 @@ def get_books_data(courses_info):
         request_objs.append(grequests.get(get_department_url(book_info['department_code'], book_info['term']), timeout=10))
     responses = grequests.map(request_objs)  # parallel requests
     course_ids = []
-    print(course_names)
-    print(instructors)
+
     j = 0  # counter to get course_names and instructors
     for r in responses:
         json_data = r.json()
-
         sections = []
         course_id = ''
         for course_dict in (json_data):
             if course_dict['id'] == course_names[j]:
                 sections = course_dict['sections']
                 break
-
         for section in sections:
             if section['instructor'] == instructors[j]:
                 course_id = section['id']
@@ -78,14 +75,15 @@ def get_books_data(courses_info):
     else:
         book_url += course_ids[0]  # just one course
     book_data = session.get(book_url).text
-    start = book_data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
-    end = book_data.find('}]}]);') + 4
     books_list = []
     try:
+        start = book_data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
+        end = book_data.find('}]}]);') + 4
         info = [json.loads(book_data[start:end])]
+        books_list = []
         for i in range(len(info[0])):
-            book_dict = {}
             for j in range(len(info[0][i]['books'])):
+                book_dict = {}
                 big_dict = info[0][i]['books'][j]
                 book_dict['isbn'] = big_dict['isbn']
                 book_dict['citation'] = big_dict['citation']
