@@ -93,8 +93,9 @@ def get_books_data(courses_info):
                 book_dict['edition'] = big_dict['edition']
                 book_dict['author'] = big_dict['author']
                 books_list.append(book_dict)
-    except ValueError:
+    except ValueError as e:
         print('Error while decoding response, try again!')
+        raise e
 
     return books_list  # return list of dicts of books
 
