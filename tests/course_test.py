@@ -54,11 +54,11 @@ class CourseTest(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_class_description(self):
-        self.assertIsInstance(course.get_class_description(TERM, '10045'), dict)
+        self.assertIsInstance(course.get_class(TERM, '10045'), dict)
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_invalid_class_number(self):
-        self.assertRaises(ValueError, course.get_class_description, TERM, '0')
+        self.assertRaises(ValueError, course.get_class, TERM, '0')
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_invalid_subject(self):
@@ -67,7 +67,7 @@ class CourseTest(unittest.TestCase):
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_invalid_term(self):
         self.assertRaises(ValueError, course.get_courses, '1', 'CS')
-        self.assertRaises(ValueError, course.get_class_description, '1', '10045')
+        self.assertRaises(ValueError, course.get_class, '1', '10045')
 
     def test_term_validation(self):
         self.assertEqual(course._validate_term('2177'), TERM)
