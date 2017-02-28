@@ -28,8 +28,11 @@ URL = 'http://labinformation.cssd.pitt.edu/'
 
 def get_status(lab_name):
     """Returns a dictionary with status and amount of OS machines."""
-    lab_name, labs = _validate_lab(lab_name), _fetch_labs()
-    status, *machines = labs[LOCATIONS.index(lab_name)].split(':')
+    status = None
+    machines = None
+    while not status and not machines:
+        lab_name, labs = _validate_lab(lab_name), _fetch_labs()
+        status, *machines = labs[LOCATIONS.index(lab_name)].split(':')
 
     if 'open' in status:
         return _make_status('open', *_extract_machines(machines[0]))
