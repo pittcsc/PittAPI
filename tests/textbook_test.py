@@ -21,14 +21,14 @@ class TextbookTest(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_textbook_get_books_data_past_22462(self):
-        ans = textbook.get_books_data([{'department_code': 'MATH', 'course_name': 'MATH0220', 'instructor': 'HOCKENSMITH', 'term': '2600'}])
+        ans = textbook.get_books_data([{'department_code': 'MATH', 'course_name': 'MATH0240', 'instructor': 'SYSOEVA', 'term': '2600'}])
         self.assertIsInstance(ans, list)
         self.assertTrue(len(ans) == 2)
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_textbook_get_books_data_many(self):
         ans = textbook.get_books_data([
-        {'department_code': 'MATH', 'course_name': 'MATH0220', 'instructor': 'HOCKENSMITH', 'term': '2600'},
+        {'department_code': 'MATH', 'course_name': 'MATH0240', 'instructor': 'SYSOEVA', 'term': '2600'},
         {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III','term': '2600'},
         {'department_code': 'CHEM', 'course_name': 'CHEM0120', 'instructor': 'FORTNEY', 'term': '2600'},
         {'department_code': 'STAT', 'course_name': 'STAT1000', 'instructor': 'NELSON', 'term': '2600'}])
