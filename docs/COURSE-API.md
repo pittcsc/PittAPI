@@ -48,8 +48,8 @@ course.get_courses(term='2171', code='cs')
 ### **get_class(class_number, term)**
 
 #### **Parameters**:
-  - `term`: Term number | Example: `"2171"`
-  - `class_number`: Class Number | Example: `"18047"`
+  - `term`: Term number | Example: `"2174"`
+  - `class_number`: Class Number | Example: `"23138"`
 
 #### **Returns**:
 Returns the details for `class_number` in `term`.
@@ -58,20 +58,25 @@ Returns the details for `class_number` in `term`.
 
 ###### **Code**:
 ```python
-course.get_class(term='2171', class_number='26966')
+course.get_class(term='2174', class_number='23138')
 ```
 
 ###### **Sample Output**:
 ```python
-{'classroom': '05502 SENSQ',
- 'days': 'TuTh',
- 'description': 'This is a first course in computer science programming. It is '
-                'recommended for those students intending to major in computer '
-                'science who do not have the required background for CS 0401. '
-                'It may also be of interest to students majoring in one of the '
-                'social sciences or humanities. The focus of the course is on '
-                'problem analysis and the development of algorithms and '
-                'computer programs in a modern high-level language.',
+{'class_number': '23138',
+ 'classroom': '05502 SENSQ',
+ 'days': 'MoWe',
+ 'description': 'This course covers a broad range of the most commonly used '
+                'algorithms. Some examples include algorithms for sorting, '
+                'searching, encryption, compression and local search. The '
+                'students will implement and test several algorithms. The '
+                'course is programming intensive.Please note that each CS '
+                'section has a WRIT and non-WRIT option. Please enroll '
+                'carefully.',
+ 'enroll_limit': '20',
+ 'instructor': 'Farnan,Nicholas Leo',
  'section': 'AT',
- 'time': ['01:00 PM', '02:15 PM']}
+ 'special_indicators': ['WRIT'],
+ 'term': '2174',
+ 'time': ['09:30 AM', '10:45 AM']}
 ```
