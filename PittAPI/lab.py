@@ -28,11 +28,8 @@ URL = 'http://labinformation.cssd.pitt.edu/'
 
 def get_status(lab_name):
     """Returns a dictionary with status and amount of OS machines."""
-    status = None
-    machines = None
-    while not status and not machines:
-        lab_name, labs = _validate_lab(lab_name), _fetch_labs()
-        status, *machines = labs[LOCATIONS.index(lab_name)].split(':')
+    lab_name, labs = _validate_lab(lab_name), _fetch_labs()
+    status, *machines = labs[LOCATIONS.index(lab_name)].split(':')
 
     if 'open' in status:
         return _make_status('open', *_extract_machines(machines[0]))
@@ -43,7 +40,7 @@ def get_status(lab_name):
 def _fetch_labs():
     """Fetches text of status/machines of all labs."""
     text = ''
-    while not text:
+    while "Lab" not in text:
         page = session.get(URL)
         soup = BeautifulSoup(page.text, 'lxml')
         text = soup.span.text
