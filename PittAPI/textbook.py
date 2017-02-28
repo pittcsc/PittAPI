@@ -45,7 +45,6 @@ def get_books_data(courses_info):
     instructors = []  # need to save these
     for i in range(len(courses_info)):
         book_info = courses_info[i]
-        print(book_info)
         course_names.append(book_info['course_name'])
         instructors.append(book_info['instructor'])
         request_objs.append(grequests.get(get_department_url(book_info['department_code'], book_info['term']), timeout=10))
@@ -82,7 +81,6 @@ def get_books_data(courses_info):
         start = book_data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
         end = book_data.find('}]}]);') + 4
         info = [json.loads(book_data[start:end])]
-
         for i in range(len(info[0])):
             for j in range(len(info[0][i]['books'])):
                 book_dict = {}
@@ -94,8 +92,8 @@ def get_books_data(courses_info):
                 book_dict['author'] = big_dict['author']
                 books_list.append(book_dict)
     except ValueError as e:
-        print('Error while decoding response, try again!')
         raise e
+
 
     return books_list  # return list of dicts of books
 
@@ -108,3 +106,8 @@ def get_department_url(department_code,term='2600'):  # 2600 --> spring 2017
         department_number += 1  # between codes PUBSRV and REHSCI 1 id number is skipped.
     url = 'http://pitt.verbacompare.com/compare/courses/' + '?id=' + str(department_number) + '&term_id=' + term
     return url
+print(get_books_data([
+{'department_code': 'MATH', 'course_name': 'MATH0220', 'instructor': 'HOCKENSMITH', 'term': '2600'},
+{'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III','term': '2600'},
+{'department_code': 'CHEM', 'course_name': 'CHEM0120', 'instructor': 'FORTNEY', 'term': '2600'},
+{'department_code': 'STAT', 'course_name': 'STAT1000', 'instructor': 'NELSON', 'term': '2600'}]))
