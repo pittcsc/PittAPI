@@ -97,7 +97,7 @@ def get_books_data(courses_info):
 
     return books_list  # return list of dicts of books
 
-def get_department_url(department_code,term='2600'):  # 2600 --> spring 2017
+def _get_department_url(department_code,term='2600'):  # 2600 --> spring 2017
     """Returns url for given department code."""
     department_number = CODES.index(department_code) + 22399
     if department_number > 22462:
@@ -106,8 +106,3 @@ def get_department_url(department_code,term='2600'):  # 2600 --> spring 2017
         department_number += 1  # between codes PUBSRV and REHSCI 1 id number is skipped.
     url = 'http://pitt.verbacompare.com/compare/courses/' + '?id=' + str(department_number) + '&term_id=' + term
     return url
-print(get_books_data([
-{'department_code': 'MATH', 'course_name': 'MATH0220', 'instructor': 'HOCKENSMITH', 'term': '2600'},
-{'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III','term': '2600'},
-{'department_code': 'CHEM', 'course_name': 'CHEM0120', 'instructor': 'FORTNEY', 'term': '2600'},
-{'department_code': 'STAT', 'course_name': 'STAT1000', 'instructor': 'NELSON', 'term': '2600'}]))
