@@ -8,31 +8,46 @@ from . import PittServerError, DEFAULT_TIMEOUT
 class LabTest(unittest.TestCase):
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_alumni(self):
-        self.assertIsInstance(lab.get_status("ALUMNI"), dict)
+        results = lab.get_status("ALUMNI")
+        self.assertIsInstance(results, dict)
+        self.assertTrue("status" in results.keys())
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_benedum(self):
-        self.assertIsInstance(lab.get_status("BENEDUM"), dict)
+        results = lab.get_status("BENEDUM")
+        self.assertIsInstance(results, dict)
+        self.assertTrue("status" in results.keys())
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_cathg27(self):
-        self.assertIsInstance(lab.get_status("CATH_G27"), dict)
+        results = lab.get_status("CATH_G27")
+        self.assertIsInstance(results, dict)
+        self.assertTrue("status" in results.keys())
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_cathg62(self):
-        self.assertIsInstance(lab.get_status("CATH_G62"), dict)
+        results = lab.get_status("CATH_G62")
+        self.assertIsInstance(results, dict)
+        self.assertTrue("status" in results.keys())
+
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_lawrence(self):
-        self.assertIsInstance(lab.get_status("LAWRENCE"), dict)
+        results = lab.get_status("LAWRENCE")
+        self.assertIsInstance(results, dict)
+        self.assertTrue("status" in results.keys())
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_hillman(self):
-        self.assertIsInstance(lab.get_status("HILLMAN"), dict)
+        results = lab.get_status("HILLMAN")
+        self.assertIsInstance(results, dict)
+        self.assertTrue("status" in results.keys())
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_sutherland(self):
-        self.assertIsInstance(lab.get_status("SUTH"), dict)
+        results = lab.get_status("SUTH")
+        self.assertIsInstance(results, dict)
+        self.assertTrue("status" in results.keys())
 
     def test_fetch_labs(self):
         self.assertIsInstance(lab._fetch_labs(), list)

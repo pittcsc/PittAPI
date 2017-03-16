@@ -7,3 +7,4 @@
 - [Dining API](DINING-API.md)
 - [Shuttle API](SHUTTLE-API.md)
 - [News API](NEWS-API.md)
+- [Textbook API](TEXTBOOK-API.md)

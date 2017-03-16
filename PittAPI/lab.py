@@ -40,7 +40,7 @@ def get_status(lab_name):
 def _fetch_labs():
     """Fetches text of status/machines of all labs."""
     text = ''
-    while not text:
+    while "Lab" not in text:
         page = session.get(URL)
         soup = BeautifulSoup(page.text, 'lxml')
         text = soup.span.text
