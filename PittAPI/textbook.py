@@ -47,7 +47,7 @@ def get_books_data(courses_info):
         book_info = courses_info[i]
         course_names.append(book_info['course_name'])
         instructors.append(book_info['instructor'])
-        request_objs.append(grequests.get(get_department_url(book_info['department_code'], book_info['term']), timeout=10))
+        request_objs.append(grequests.get(_get_department_url(book_info['department_code'], book_info['term']), timeout=10))
     responses = grequests.map(request_objs)  # parallel requests
     course_ids = []
 

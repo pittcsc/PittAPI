@@ -38,7 +38,7 @@ get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor':
   ]
 ```
 
-### **get_department_url(department_code,term)**
+### **_get_department_url(department_code,term)**
 
 #### **Parameters**:
   - `department_code`: Code for department | Example: `CS` or `LATIN`
