@@ -65,7 +65,7 @@ def _get_person_url(query, max_people):
     query = query.replace(' ', '+')
     request_objs = []
 
-    for i in range(int(max_people / 10)):
+    for i in range(int(max_people / 10) + 1):
         payload = {
             "search": "Search",
             "filter": query,
