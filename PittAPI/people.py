@@ -17,15 +17,55 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
 
-import math
 import urllib.parse
 
 import grequests
 
+PEOPLE_URL = "https://m.pitt.edu/people/search.json"
+DETAIL_URL = "https://m.pitt.edu/people/detail.json"
+
+
+def get_person(query, max_people=10):
+    """ """
+    url_list = [item for l_list in _get_person_url(query, max_people) for item in l_list]
+    results = [_get_person_details(url) for url in url_list]
+    people_info = [resp.json()["response"] for resp in grequests.map(results)]
+    persons = [_extract_person(person) for person in people_info]
+
+    return persons[:max_people]
+
+
+def _extract_person(item):
+    """ """
+    person = {
+        'name': item["fields"]["title"],
+        'fields': {}
+    }
+
+    for tree in item["regions"][1]["contents"]:
+        tree = tree["regions"][0]["contents"][0]["fields"]
+        person["fields"].update({tree["label"]: tree['title']})
+
+    return person
+
+
+def _get_person_details(url):
+    """ """
+    payload = {
+        "id": url,
+        "_object": "kgoui_Rcontent_I0_Rcontent_I1",
+        "_object_include_html": 1
+    }
+    payload_str = "&".join("{}={}".format(k, v) for k, v in payload.items())
+    return grequests.get(DETAIL_URL, params=payload_str)
+
 
 def _get_person_url(query, max_people):
+    """ """
+    query = query.replace(' ', '+')
     request_objs = []
-    for i in range(int(math.ceil(max_people / 10.0))):
+
+    for i in range(int(max_people / 10) + 1):
         payload = {
             "search": "Search",
             "filter": query,
@@ -33,12 +73,11 @@ def _get_person_url(query, max_people):
             "_object_include_html": 1,
             "_object_js_config": 1,
             "_kgoui_page_state": "8c6ef035807a2a969576d6d78d211c78",
-            "_region_index_offset": str(i*10),
+            "_region_index_offset": i * 10,
             "feed": "directory",
-            "start": str(i*10)
+            "start": i * 10
         }
-        url = "https://m.pitt.edu/people/search.json"
-        request_objs.append(grequests.get(url, params=payload))
+        request_objs.append(grequests.get(PEOPLE_URL, params=payload))
 
     responses = grequests.imap(request_objs)
 
@@ -52,39 +91,3 @@ def _get_person_url(query, max_people):
         url_list.append(local_url_list)
 
     return url_list
-
-
-def get_person(query, max_people=10):
-    query = query.replace(' ', '+')
-    url_list = _get_person_url(query, max_people)
-    url_list = [item for l_list in url_list for item in l_list]  # flatmap
-
-    results = set()
-    detail_url = "https://m.pitt.edu/people/detail.json"
-    for url in url_list:
-        payload = (
-            ("id", url),
-            ("_object", "kgoui_Rcontent_I0_Rcontent_I1"),
-            ("_object_include_html", 1)
-        )
-        payload_str = "&".join("{}={}".format(x[0], x[1]) for x in payload)
-        results.add(grequests.get(detail_url, params=payload_str))
-
-    people_info = grequests.map(results)   # make requests
-    people_info = [resp.json()["response"] for resp in people_info]
-
-    persons_list = []
-
-    for person in people_info:
-        person_dict = {}
-        name = person["fields"]["title"]
-        person_dict["name"] = name
-        person_dict["fields"] = []
-        for tree in person["regions"][1]["contents"]:
-            key = tree["regions"][0]["contents"][0]["fields"]["label"]
-            value = tree["regions"][0]["contents"][0]["fields"]["title"]
-            person_dict["fields"].append({key: value})
-
-        persons_list.append(person_dict)
-
-    return persons_list[:max_people]
