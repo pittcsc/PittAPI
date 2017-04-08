@@ -34,7 +34,6 @@ def get_person(query, max_people=10):
 
     return persons[:max_people]
 
-
 def _extract_person(item):
     """ """
     person = {
@@ -62,7 +61,6 @@ def _get_person_details(url):
 
 def _get_person_url(query, max_people):
     """ """
-    query = query.replace(' ', '+')
     request_objs = []
 
     for i in range(int(max_people / 10) + 1):
