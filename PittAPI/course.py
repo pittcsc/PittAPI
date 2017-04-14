@@ -38,7 +38,7 @@ PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST', 'URBNST', 'SELF', 'GSWS']
 DAY_PROGRAM, SAT_PROGRAM = 'CGSDAY', 'CGSSAT'
 
 # TODO(azharichenko): Create function to fetch this data directly from the course website to make it consistent.
-TERMS = ['2171', '2174', '2177']
+TERMS = ['2174', '2177', '2181']
 
 
 def get_courses(term, code):
@@ -117,10 +117,10 @@ def get_class(term, class_number):
     if 'no courses by' in page.text or 'Search by subject' in page.text:
         raise ValueError('Invalid class number.')
 
-    class_dict = dict(_extract_description(page.text), **_extract_details(page.text))
-    class_dict = dict(class_dict, **{'class_number': class_number, 'term': term})
-
-    return class_dict
+    return {**_extract_description(page.text),
+            **_extract_details(page.text),
+            **{'class_number': class_number, 'term': term}
+            }
 
 
 def _extract_description(text):
