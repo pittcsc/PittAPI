@@ -24,7 +24,7 @@ from bs4 import BeautifulSoup
 from PittAPI import course
 from . import PittServerError, DEFAULT_TIMEOUT
 
-TERM = '2177'
+TERM = course.TERMS[0]
 HEADER_DATA = '<th width="9%">Subject</th><th>Catalog #</th><th>Credits/Units</th>'
 
 class CourseTest(unittest.TestCase):
