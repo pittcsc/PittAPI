@@ -38,7 +38,8 @@ CODES = [
     'SLAV','SLOVAK','SOC','SOCWRK','SPAN','STAT','SWAHIL','SWBEH','SWCOSA','SWE','SWGEN','SWINT','SWRES','SWWEL','TELCOM','THEA','TURKSH',
     'UKRAIN','URBNST','VIET']
 
-def get_books_data(courses_info):
+
+def get_books_data(*courses_info):
     """Returns list of dictionaries of book information."""
     request_objs = []
     course_names = []  # need to save these
@@ -77,23 +78,19 @@ def get_books_data(courses_info):
     book_data = session.get(book_url).text
 
     books_list = []
+
+    keys = ['isbn', 'citation', 'title', 'edition', 'author']
     try:
         start = book_data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
         end = book_data.find('}]}]);') + 4
         info = [json.loads(book_data[start:end])]
         for i in range(len(info[0])):
             for j in range(len(info[0][i]['books'])):
-                book_dict = {}
-                big_dict = info[0][i]['books'][j]
-                book_dict['isbn'] = big_dict['isbn']
-                book_dict['citation'] = big_dict['citation']
-                book_dict['title'] = big_dict['title']
-                book_dict['edition'] = big_dict['edition']
-                book_dict['author'] = big_dict['author']
-                books_list.append(book_dict)
+                data = info[0][i]['books'][j]
+                book = dict((k, data[k]) for k in keys if k in data)
+                books_list.append(book)
     except ValueError as e:
         raise e
-
 
     return books_list  # return list of dicts of books
 
