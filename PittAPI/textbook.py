@@ -87,12 +87,16 @@ def get_books_data(*courses_info):
         for i in range(len(info[0])):
             for j in range(len(info[0][i]['books'])):
                 data = info[0][i]['books'][j]
-                book = dict((k, data[k]) for k in keys if k in data)
-                books_list.append(book)
+                books_list.append(_filter_dictionary(data, keys))
     except ValueError as e:
         raise e
 
     return books_list  # return list of dicts of books
+
+
+def _filter_dictionary(d, keys):
+    return dict((k, d[k]) for k in keys if k in d)
+
 
 def _get_department_url(department_code,term='2600'):  # 2600 --> spring 2017
     """Returns url for given department code."""
