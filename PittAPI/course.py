@@ -123,10 +123,8 @@ def get_class(term, class_number):
     if 'no courses by' in page.text or 'Search by subject' in page.text:
         raise ValueError('Invalid class number.')
 
-    return {**_extract_description(page.text),
-            **_extract_details(page.text),
-            **{'class_number': class_number, 'term': term}
-            }
+    class_details = dict(_extract_description(page.text), **_extract_details(page.text))
+    return dict(class_details, **{'class_number': class_number, 'term': term})
 
 
 def _extract_description(text):
