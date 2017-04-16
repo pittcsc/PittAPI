@@ -61,6 +61,7 @@ def get_news(feed='main_news', max_news_items=10):
             if fields["type"] == "loadMore":
                 continue
 
+            # TODO: Look into why this gives a Type Error during the news alert test.
             try:
                 title = fields["title"]
                 url = "https://m.pitt.edu" + fields["url"]["formatted"]
