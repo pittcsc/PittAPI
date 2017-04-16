@@ -39,11 +39,19 @@ CODES = [
     'UKRAIN','URBNST','VIET']
 
 
+# TODO: Create function to automatically retrieve valid terms
+# TODO: Possibly make conversion between textbook term numbers and course term numbers
+TERMS = ['2600', '2671']
+
+URL = 'http://pitt.verbacompare.com/'
+
+
 def get_books_data(*courses_info):
     """Returns list of dictionaries of book information."""
     request_objs = []
     course_names = []  # need to save these
     instructors = []  # need to save these
+
     for i in range(len(courses_info)):
         book_info = courses_info[i]
         course_names.append(book_info['course_name'])
@@ -52,12 +60,11 @@ def get_books_data(*courses_info):
     responses = grequests.map(request_objs)  # parallel requests
     course_ids = []
 
-    j = 0  # counter to get course_names and instructors
-    for r in responses:
-        json_data = r.json()
+    # counter to get course_names and instructors
+    for r, j in zip(responses, range(len(responses))):
         sections = []
         course_id = ''
-        for course_dict in (json_data):
+        for course_dict in r.json():
             if course_dict['id'] == course_names[j]:
                 sections = course_dict['sections']
                 break
@@ -66,32 +73,31 @@ def get_books_data(*courses_info):
                 course_id = section['id']
                 break
         course_ids.append(course_id)
-        j += 1
-    book_url = 'http://pitt.verbacompare.com/comparison?id='
 
-    if (len(course_ids) > 1):
+    book_url = URL + 'comparison?id='
+    if len(course_ids) > 1:
         for course_id in course_ids:
-             book_url += course_id + '%2C'  # format url for multiple classes
+            book_url += course_id + '%2C'  # format url for multiple classes
     else:
         book_url += course_ids[0]  # just one course
 
     book_data = session.get(book_url).text
 
-    books_list = []
-
     keys = ['isbn', 'citation', 'title', 'edition', 'author']
+    return  _extract_books(book_data, keys)  # return list of dicts of books
+
+
+def _extract_books(data, keys):
     try:
-        start = book_data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
-        end = book_data.find('}]}]);') + 4
-        info = [json.loads(book_data[start:end])]
+        start = data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
+        end = data.find('}]}]);') + 4
+        info = [json.loads(data[start:end])]
         for i in range(len(info[0])):
             for j in range(len(info[0][i]['books'])):
                 data = info[0][i]['books'][j]
-                books_list.append(_filter_dictionary(data, keys))
+                data.append(_filter_dictionary(data, keys))
     except ValueError as e:
         raise e
-
-    return books_list  # return list of dicts of books
 
 
 def _filter_dictionary(d, keys):
