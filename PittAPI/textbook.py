@@ -56,7 +56,9 @@ def get_books_data(*courses_info):
         book_info = courses_info[i]
         course_names.append(book_info['course_name'])
         instructors.append(book_info['instructor'])
-        request_objs.append(grequests.get(_get_department_url(book_info['department_code'], book_info['term']), timeout=10))
+        request_objs.append(
+            grequests.get(_get_department_url(book_info['department_code'], book_info['term']), timeout=10)
+        )
     responses = grequests.map(request_objs)  # parallel requests
 
     course_ids = _extract_course_ids(responses, course_names, instructors)
@@ -97,6 +99,7 @@ def _extract_course_ids(responses, course_names, instructors):
         ids.append(course_id)
     return ids
 
+
 def _extract_books(data, keys):
     books = []
     try:
@@ -118,7 +121,7 @@ def _filter_dictionary(d, keys):
     return dict((k, d[k]) for k in keys if k in d)
 
 
-def _get_department_url(department_code,term='2600'):  # 2600 --> spring 2017
+def _get_department_url(department_code, term):
     """Returns url for given department code."""
     department_number = CODES.index(department_code) + 22399
     if department_number > 22462:

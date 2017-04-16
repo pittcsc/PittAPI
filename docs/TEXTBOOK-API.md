@@ -6,7 +6,7 @@
 ### **get_books_data(course_info)**
 
 #### **Parameters**:
-  - `courses_info`: List of dictionaries of class info | Example: `get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN', 'term': '2600'}]`
+  - `courses_info`: List of dictionaries of class info | Example: `get_books_data({'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN', 'term': '2600'}`
 
 #### **Returns**:
 Returns a list of dictionaries containing Author, ISBN, Edition, Title, and Citation
@@ -15,7 +15,7 @@ Returns a list of dictionaries containing Author, ISBN, Edition, Title, and Cita
 
 ###### **Code**:
 ```python
-get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN', 'term': '2600'}, {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III', 'term': '2600'}])
+get_books_data({'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN', 'term': '2600'}, {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III', 'term': '2600'])
 ```
 
 ###### **Sample Output**:
@@ -37,24 +37,3 @@ get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor':
     }
   ]
 ```
-
-### **_get_department_url(department_code,term)**
-
-#### **Parameters**:
-  - `department_code`: Code for department | Example: `CS` or `LATIN`
-  - `term` : ID for class term | Example `2600`
-    - Default value is `2600` for Spring 2017
-
-#### **Returns**:
-Returns a department url corresponding to the format used by pitt.verbacompare.com
-
-#### **Example**:
-
-###### **Code**:
-```python
-textbook.get_department_url('CS', '2600')
-```
-###### **Sample Output**:
-```python
-http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=2600
-````
