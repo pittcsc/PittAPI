@@ -58,46 +58,60 @@ def get_books_data(*courses_info):
         instructors.append(book_info['instructor'])
         request_objs.append(grequests.get(_get_department_url(book_info['department_code'], book_info['term']), timeout=10))
     responses = grequests.map(request_objs)  # parallel requests
-    course_ids = []
+
+    course_ids = _extract_course_ids(responses, course_names, instructors)
+    book_data = session.get(_construct_url(course_ids)).text
+
+    keys = ['isbn', 'citation', 'title', 'edition', 'author']
+    return _extract_books(book_data, keys)  # return list of dicts of books
+
+
+def _construct_url(ids):
+    url = URL + 'comparison?id='
+    if len(ids) > 1:
+        for course_id in ids:
+            url += course_id + '%2C'  # format url for multiple classes
+    else:
+        url += ids[0]  # just one course
+    return url
+
+
+def _extract_course_ids(responses, course_names, instructors):
+    ids = []
 
     # counter to get course_names and instructors
     for r, j in zip(responses, range(len(responses))):
         sections = []
         course_id = ''
+
         for course_dict in r.json():
             if course_dict['id'] == course_names[j]:
                 sections = course_dict['sections']
                 break
+
         for section in sections:
             if section['instructor'] == instructors[j]:
                 course_id = section['id']
                 break
-        course_ids.append(course_id)
 
-    book_url = URL + 'comparison?id='
-    if len(course_ids) > 1:
-        for course_id in course_ids:
-            book_url += course_id + '%2C'  # format url for multiple classes
-    else:
-        book_url += course_ids[0]  # just one course
-
-    book_data = session.get(book_url).text
-
-    keys = ['isbn', 'citation', 'title', 'edition', 'author']
-    return  _extract_books(book_data, keys)  # return list of dicts of books
-
+        ids.append(course_id)
+    return ids
 
 def _extract_books(data, keys):
+    books = []
     try:
         start = data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
         end = data.find('}]}]);') + 4
         info = [json.loads(data[start:end])]
+
         for i in range(len(info[0])):
             for j in range(len(info[0][i]['books'])):
                 data = info[0][i]['books'][j]
-                data.append(_filter_dictionary(data, keys))
+                books.append(_filter_dictionary(data, keys))
+
     except ValueError as e:
         raise e
+    return books
 
 
 def _filter_dictionary(d, keys):
