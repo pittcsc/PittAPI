@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import warnings
 
 import requests
+import re
 from bs4 import BeautifulSoup, SoupStrainer
 
 URL = 'http://www.courses.as.pitt.edu/'
@@ -38,7 +39,7 @@ PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST', 'URBNST', 'SELF', 'GSWS']
 DAY_PROGRAM, SAT_PROGRAM = 'CGSDAY', 'CGSSAT'
 
 # TODO(azharichenko): Create function to fetch this data directly from the course website to make it consistent.
-TERMS = ['2171', '2174', '2177']
+TERMS = re.compile("2..[147]")
 
 
 def get_courses(term, code):
@@ -68,7 +69,7 @@ def _validate_term(term):
     if not isinstance(term, str):
         warnings.warn('Term value should be a string.')
         term = str(term)
-    if term in TERMS:
+    if TERMS.match(term):
         return term
     raise ValueError("Invalid term")
 
