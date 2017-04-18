@@ -19,7 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import warnings
 
 import requests
-import re
+import datetime.date
 from bs4 import BeautifulSoup, SoupStrainer
 
 URL = 'http://www.courses.as.pitt.edu/'
@@ -38,13 +38,30 @@ REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', '
 PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST', 'URBNST', 'SELF', 'GSWS']
 DAY_PROGRAM, SAT_PROGRAM = 'CGSDAY', 'CGSSAT'
 
+
 def _retrieve_term_codes():
     """Returns a list of all current term codes from course web page."""
     page = requests.get(URL)
     soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['input'])).findAll('input')
     return [tag.attrs['value'] for tag in soup[:3]]
 
+
+def _retrieve_update_date():
+    """Returns the updated date from course web page."""
+    page = requests.get(URL)
+    footer = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer('div', {'id': 'footer'})).findAll('p')[0]
+    update_date = footer.contents[0].split('|')[1].strip()
+    return update_date
+
+
 TERMS = _retrieve_term_codes()
+UPDATE_DATE = _retrieve_update_date()
+
+
+def _update_course_data():
+    """Update term codes and other variable to be determined."""
+    TERMS = _retrieve_term_codes()
+
 
 def get_courses(term, code):
     """Returns a list of dictionaries containing all courses queried from code."""
