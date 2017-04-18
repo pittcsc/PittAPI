@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import warnings
 
 import requests
+import re
 from bs4 import BeautifulSoup, SoupStrainer
 
 URL = 'http://www.courses.as.pitt.edu/'
@@ -37,7 +38,6 @@ REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', '
 PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST', 'URBNST', 'SELF', 'GSWS']
 DAY_PROGRAM, SAT_PROGRAM = 'CGSDAY', 'CGSSAT'
 
-
 def _retrieve_term_codes():
     """Returns a list of all current term codes from course web page."""
     page = requests.get(URL)
@@ -45,7 +45,6 @@ def _retrieve_term_codes():
     return [tag.attrs['value'] for tag in soup[:3]]
 
 TERMS = _retrieve_term_codes()
-
 
 def get_courses(term, code):
     """Returns a list of dictionaries containing all courses queried from code."""
@@ -74,7 +73,7 @@ def _validate_term(term):
     if not isinstance(term, str):
         warnings.warn('Term value should be a string.')
         term = str(term)
-    if term in TERMS:
+    if TERMS.match(term):
         return term
     raise ValueError("Invalid term")
 
