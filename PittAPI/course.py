@@ -38,9 +38,13 @@ REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', '
 PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST', 'URBNST', 'SELF', 'GSWS']
 DAY_PROGRAM, SAT_PROGRAM = 'CGSDAY', 'CGSSAT'
 
-# TODO(azharichenko): Create function to fetch this data directly from the course website to make it consistent.
-TERMS = re.compile("2..[147]")
+def _retrieve_term_codes():
+    """Returns a list of all current term codes from course web page."""
+    page = requests.get(URL)
+    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['input'])).findAll('input')
+    return [tag.attrs['value'] for tag in soup[:3]]
 
+TERMS = _retrieve_term_codes()
 
 def get_courses(term, code):
     """Returns a list of dictionaries containing all courses queried from code."""
@@ -118,10 +122,8 @@ def get_class(term, class_number):
     if 'no courses by' in page.text or 'Search by subject' in page.text:
         raise ValueError('Invalid class number.')
 
-    class_dict = dict(_extract_description(page.text), **_extract_details(page.text))
-    class_dict = dict(class_dict, **{'class_number': class_number, 'term': term})
-
-    return class_dict
+    class_details = dict(_extract_description(page.text), **_extract_details(page.text))
+    return dict(class_details, **{'class_number': class_number, 'term': term})
 
 
 def _extract_description(text):
