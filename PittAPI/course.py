@@ -73,7 +73,7 @@ def _validate_term(term):
     if not isinstance(term, str):
         warnings.warn('Term value should be a string.')
         term = str(term)
-    if TERMS.match(term):
+    if term in TERMS:
         return term
     raise ValueError("Invalid term")
 
