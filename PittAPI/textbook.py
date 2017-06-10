@@ -1,4 +1,4 @@
-'''
+"""
 The Pitt API, to access workable data of the University of Pittsburgh
 Copyright (C) 2015 Ritwik Gupta
 
@@ -15,11 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-'''
+"""
 import grequests
 import requests
 import json
-import time
+import warnings
+
+from bs4 import BeautifulSoup
 
 session = requests.session()
 
@@ -39,11 +41,33 @@ CODES = [
     'UKRAIN','URBNST','VIET']
 
 
-# TODO: Create function to automatically retrieve valid terms
 # TODO: Possibly make conversion between textbook term numbers and course term numbers
-TERMS = ['2600', '2671']
+BASE_URL = 'http://pitt.verbacompare.com/'
 
-URL = 'http://pitt.verbacompare.com/'
+
+def _fetch_term_codes():
+    """Fetches current valid term codes"""
+    try:
+        page = requests.get(BASE_URL)
+    except ConnectionError:
+        return []
+    script = BeautifulSoup(page.text, 'lxml').findAll('script')[-2].text
+    data = json.loads(script[script.find('['):script.find(']') + 1])
+    terms = [int(item['id']) for item in data]
+    return terms
+
+
+TERMS = _fetch_term_codes()
+
+
+def _validate_term(term):
+    """Validates term is a string and check if it is valid."""
+    if len(TERMS) == 0:
+        warnings.warn('Wasn\'t able to validate term. Assuming term code is valid.')
+        return term
+    if term in TERMS:
+        return term
+    raise ValueError("Invalid term")
 
 
 def get_books_data(*courses_info):
@@ -69,7 +93,7 @@ def get_books_data(*courses_info):
 
 
 def _construct_url(ids):
-    url = URL + 'comparison?id='
+    url = BASE_URL + 'comparison?id='
     if len(ids) > 1:
         for course_id in ids:
             url += course_id + '%2C'  # format url for multiple classes
@@ -128,5 +152,5 @@ def _get_department_url(department_code, term):
         department_number += 2  # between codes DSANE and EAS 2 id numbers are skipped.
     if department_number > 22580:
         department_number += 1  # between codes PUBSRV and REHSCI 1 id number is skipped.
-    url = 'http://pitt.verbacompare.com/compare/courses/' + '?id=' + str(department_number) + '&term_id=' + term
-    return url
+    query = 'compare/courses/?id={}&term_id={}'.format(str(department_number), _validate_term(term))
+    return BASE_URL + query
