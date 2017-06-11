@@ -41,6 +41,7 @@ CODES = [
     'UKRAIN','URBNST','VIET']
 
 
+# TODO(Alex Z.): Look into instructor names and whether they are useful
 # TODO: Possibly make conversion between textbook term numbers and course term numbers
 BASE_URL = 'http://pitt.verbacompare.com/'
 
@@ -75,6 +76,9 @@ def get_books_data(courses_info):
     course_names = []  # need to save these
     instructors = []  # need to save these
 
+    # TODO(Alex Z.): Validation that argument is a list
+
+    print(courses_info)
     for course in courses_info:
         book_info = course
         course_names.append(book_info['course_name'])
