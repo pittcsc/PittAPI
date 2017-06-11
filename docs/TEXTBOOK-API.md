@@ -15,7 +15,7 @@ Returns a list of dictionaries containing Author, ISBN, Edition, Title, and Cita
 
 ###### **Code**:
 ```python
-get_books_data({'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN', 'term': '2600'}, {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III', 'term': '2600'])
+get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN', 'term': '2600'}, {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III', 'term': '2600'}])
 ```
 
 ###### **Sample Output**:

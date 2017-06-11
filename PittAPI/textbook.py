@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-import grequests
-import requests
 import json
 import warnings
 
+import grequests
+import requests
 from bs4 import BeautifulSoup
 
 session = requests.session()
@@ -57,7 +57,8 @@ def _fetch_term_codes():
     return terms
 
 
-TERMS = _fetch_term_codes()
+# TERMS = _fetch_term_codes()
+TERMS = []
 
 
 def _validate_term(term):
@@ -70,14 +71,14 @@ def _validate_term(term):
     raise ValueError("Invalid term")
 
 
-def get_books_data(*courses_info):
+def get_books_data(courses_info):
     """Returns list of dictionaries of book information."""
     request_objs = []
     course_names = []  # need to save these
     instructors = []  # need to save these
 
-    for i in range(len(courses_info)):
-        book_info = courses_info[i]
+    for course in courses_info:
+        book_info = course
         course_names.append(book_info['course_name'])
         instructors.append(book_info['instructor'])
         request_objs.append(
@@ -88,8 +89,7 @@ def get_books_data(*courses_info):
     course_ids = _extract_course_ids(responses, course_names, instructors)
     book_data = session.get(_construct_url(course_ids)).text
 
-    keys = ['isbn', 'citation', 'title', 'edition', 'author']
-    return _extract_books(book_data, keys)  # return list of dicts of books
+    return _extract_books(book_data)  # return list of dicts of books
 
 
 def _construct_url(ids):
@@ -106,7 +106,7 @@ def _extract_course_ids(responses, course_names, instructors):
     ids = []
 
     # counter to get course_names and instructors
-    for r, j in zip(responses, range(len(responses))):
+    for j, r in enumerate(responses):
         sections = []
         course_id = ''
 
@@ -124,20 +124,20 @@ def _extract_course_ids(responses, course_names, instructors):
     return ids
 
 
-def _extract_books(data, keys):
-    books = []
-    try:
-        start = data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
-        end = data.find('}]}]);') + 4
-        info = [json.loads(data[start:end])]
+def _extract_books(data):
+    books, keys = [], ['isbn', 'citation', 'title', 'edition', 'author']
 
-        for i in range(len(info[0])):
-            for j in range(len(info[0][i]['books'])):
-                data = info[0][i]['books'][j]
-                books.append(_filter_dictionary(data, keys))
+    start = data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
+    end = data.find('}]}]);') + 4
+    info = [json.loads(data[start:end])]
 
-    except ValueError as e:
-        raise e
+    for i in range(len(info[0])):
+        for j in range(len(info[0][i]['books'])):
+            data = info[0][i]['books'][j]
+            books.append(
+                _filter_dictionary(data, keys)
+            )
+
     return books
 
 
@@ -152,5 +152,5 @@ def _get_department_url(department_code, term):
         department_number += 2  # between codes DSANE and EAS 2 id numbers are skipped.
     if department_number > 22580:
         department_number += 1  # between codes PUBSRV and REHSCI 1 id number is skipped.
-    query = 'compare/courses/?id={}&term_id={}'.format(str(department_number), _validate_term(term))
+    query = 'compare/courses/?id={}&term_id={}'.format(department_number, _validate_term(term))
     return BASE_URL + query
