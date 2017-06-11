@@ -53,13 +53,11 @@ def _fetch_term_codes():
         return []
     script = BeautifulSoup(page.text, 'lxml').findAll('script')[-2].text
     data = json.loads(script[script.find('['):script.find(']') + 1])
-    terms = [int(item['id']) for item in data]
+    terms = [item['id'] for item in data]
     return terms
 
 
-# TERMS = _fetch_term_codes()
-TERMS = []
-
+TERMS = _fetch_term_codes()
 
 def _validate_term(term):
     """Validates term is a string and check if it is valid."""
