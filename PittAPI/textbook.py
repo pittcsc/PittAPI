@@ -60,6 +60,7 @@ def _fetch_term_codes():
 
 TERMS = _fetch_term_codes()
 
+
 def _validate_term(term):
     """Validates term is a string and check if it is valid."""
     if len(TERMS) == 0:
@@ -76,11 +77,12 @@ def get_books_data(courses_info):
     course_names = []  # need to save these
     instructors = []  # need to save these
 
-    # TODO(Alex Z.): Validation that argument is a list
+    # TODO(Alex Z.): Validation that argument is a list, add warning and correction is not or raise exception
 
     print(courses_info)
     for course in courses_info:
         book_info = course
+        # TODO(Alex Z.): Check what information is actually needed
         course_names.append(book_info['course_name'])
         instructors.append(book_info['instructor'])
         request_objs.append(
@@ -95,6 +97,7 @@ def get_books_data(courses_info):
 
 
 def _construct_url(ids):
+    # TODO(Alex Z.): Attempted making this into a one liner
     url = BASE_URL + 'comparison?id='
     if len(ids) > 1:
         for course_id in ids:
@@ -129,6 +132,7 @@ def _extract_course_ids(responses, course_names, instructors):
 def _extract_books(data):
     books, keys = [], ['isbn', 'citation', 'title', 'edition', 'author']
 
+    # TODO(Alex Z.): Added check for invalid response that return an empty json list
     start = data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
     end = data.find('}]}]);') + 4
     info = [json.loads(data[start:end])]
@@ -149,6 +153,7 @@ def _filter_dictionary(d, keys):
 
 def _get_department_url(department_code, term):
     """Returns url for given department code."""
+    # TODO(Alex Z.): Fix statements below to something more concrete then using static list of codes
     department_number = CODES.index(department_code) + 22399
     if department_number > 22462:
         department_number += 2  # between codes DSANE and EAS 2 id numbers are skipped.

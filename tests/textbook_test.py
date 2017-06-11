@@ -27,6 +27,12 @@ TERM = textbook.TERMS[0]
 
 
 class TextbookTest(unittest.TestCase):
+    def test_term_validation(self):
+        pass
+
+
+@unittest.skipIf(len(TERM) == 0, 'Wasn\'t able to fetch correct terms to test with.')
+class TextbookAPITest(unittest.TestCase):
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_textbook_get_books_data(self):
         ans = textbook.get_books_data([
@@ -63,6 +69,3 @@ class TextbookTest(unittest.TestCase):
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_invalid_instructor(self):
         self.assertRaises(ValueError, textbook.get_books_data, [{'department_code': 'CS', 'course_name': 'CS0447', 'instructor': 'EXIST', 'term': TERM}])
-
-    def test_term_validation(self):
-        pass
