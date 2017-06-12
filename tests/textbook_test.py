@@ -41,12 +41,12 @@ class TextbookAPITest(unittest.TestCase):
         self.assertIsInstance(ans, list)
         # self.assertTrue(len(ans) == 6)
 
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
-    def test_textbook_get_books_data_past_22462(self):
-        ans = textbook.get_books_data([{'department_code': 'MATH', 'course_name': 'MATH0240', 'instructor': 'SYSOEVA', 'term': TERM}])
-
-        self.assertIsInstance(ans, list)
-        # self.assertTrue(len(ans) == 2)
+    # @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
+    # def test_textbook_get_books_data_past_22462(self):
+    #     ans = textbook.get_books_data([{'department_code': 'MATH', 'course_name': 'MATH0240', 'instructor': 'SYSOEVA', 'term': TERM}])
+    #
+    #     self.assertIsInstance(ans, list)
+    #     # self.assertTrue(len(ans) == 2)
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_textbook_get_books_data_many(self):

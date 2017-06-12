@@ -78,8 +78,6 @@ def get_books_data(courses_info):
     instructors = []  # need to save these
 
     # TODO(Alex Z.): Validation that argument is a list, add warning and correction is not or raise exception
-
-    print(courses_info)
     for course in courses_info:
         book_info = course
         # TODO(Alex Z.): Check what information is actually needed
