@@ -123,17 +123,14 @@ def _extract_course_ids(responses, course_names, instructors):
 
 def _extract_books(data):
     books, keys = [], ['isbn', 'citation', 'title', 'edition', 'author']
-
     # TODO(Alex Z.): Added check for invalid response that return an empty json list
-    start = data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
-    end = data.find('}]}]);') + 4
-    info = [json.loads(data[start:end])]
+    start, end = data.find('Verba.Compare.Collections.Sections') + 35, data.find('}]}]);') + 4
+    info = [json.loads(data[start:end])][0]  # TODO(Alex Z.) Look into whether it's needed to choose the first index
 
-    for i in range(len(info[0])):
-        for j in range(len(info[0][i]['books'])):
-            data = info[0][i]['books'][j]
+    for data in info:
+        for book in data['books']:
             books.append(
-                _filter_dictionary(data, keys)
+                _filter_dictionary(book, keys)
             )
 
     return books
