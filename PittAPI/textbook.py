@@ -97,14 +97,7 @@ def get_books_data(courses_info):
 
 
 def _construct_url(ids):
-    # TODO(Alex Z.): Attempted making this into a one liner
-    url = BASE_URL + 'comparison?id='
-    if len(ids) > 1:
-        for course_id in ids:
-            url += course_id + '%2C'  # format url for multiple classes
-    else:
-        url += ids[0]  # just one course
-    return url
+    return BASE_URL + 'comparison?id=' + '%2C'.join(ids)
 
 
 def _extract_course_ids(responses, course_names, instructors):
