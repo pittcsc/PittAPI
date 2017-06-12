@@ -65,11 +65,11 @@ def get_status_simple(building_name):
     search = rg.findall(str(soup))
 
     di = {
-        u'building': building_name,
-        u'free_washers': search[0][0],
-        u'total_washers': search[0][4],
-        u'free_dryers': search[1][0],
-        u'total_dryers': search[1][4]
+        'building': building_name,
+        'free_washers': search[0][0],
+        'total_washers': search[0][4],
+        'free_dryers': search[1][0],
+        'total_dryers': search[1][4]
     }
 
     return di
@@ -132,9 +132,9 @@ def get_status_detailed(building_name):
         else:
             time_left = -1 if machine[6] is '' else machine[6]
         di.append({
-            u'machine_name': machine_name,
-            u'machine_status': machine_status,
-            u'time_left': time_left
+            'machine_name': machine_name,
+            'machine_status': machine_status,
+            'time_left': time_left
         })
 
     return di
