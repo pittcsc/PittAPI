@@ -103,18 +103,17 @@ def _construct_url(ids):
 def _extract_course_ids(responses, course_names, instructors):
     ids = []
 
-    # counter to get course_names and instructors
-    for j, r in enumerate(responses):
+    for resp, course, instruct in zip(responses, course_names, instructors):
         sections = []
         course_id = ''
 
-        for course_dict in r.json():
-            if course_dict['id'] == course_names[j]:
+        for course_dict in resp.json():
+            if course_dict['id'] == course:
                 sections = course_dict['sections']
                 break
 
         for section in sections:
-            if section['instructor'] == instructors[j]:
+            if section['instructor'] == instruct:
                 course_id = section['id']
                 break
 
