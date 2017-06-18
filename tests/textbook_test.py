@@ -30,6 +30,17 @@ class TextbookTest(unittest.TestCase):
     def test_term_validation(self):
         pass
 
+    def test_construct_url(self):
+        pass
+
+    def test_extract_books(self):
+        pass
+
+    def test_extract_course_ids(self):
+        pass
+
+    def test_get_department_url(self):
+        pass
 
 @unittest.skipIf(len(TERM) == 0, 'Wasn\'t able to fetch correct terms to test with.')
 class TextbookAPITest(unittest.TestCase):

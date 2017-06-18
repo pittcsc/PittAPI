@@ -25,22 +25,6 @@ from bs4 import BeautifulSoup
 
 session = requests.session()
 
-CODES = [
-    'ADMJ','ADMPS','AFRCNA','AFROTC','ANTH','ARABIC','ARTSC','ASL','ASTRON','ATHLTR','BACC','BCHS','BECN','BFIN','BHRM','BIND',
-    'BIOENG','BIOETH','BIOINF','BIOSC','BIOST','BMIS','BMKT','BOAH','BORG','BQOM','BSEO','BSPP','BUS','BUSACC','BUSADM','BUSBIS',
-    'BUSECN','BUSENV','BUSERV','BUSFIN','BUSHRM','BUSMKT','BUSORG','BUSQOM','BUSSCM','BUSSPP','CDACCT','CDENT','CEE','CGS','CHE',
-    'CHEM','CHIN','CLASS','CLRES','CLST','CMMUSIC','CMPBIO','COE','COEA','COEE','COMMRC','CS','CSD','DENHYG','DENT','DIASCI','DSANE',
-    'EAS','ECE','ECON','EDUC','ELI','EM','ENDOD','ENGCMP','ENGFLM','ENGLIT','ENGR','ENGSCI','ENGWRT','ENRES','EOH','EPIDEM','FACDEV',
-    'FILMG','FILMST','FP','FR','FTADMA','FTDA','FTDB','FTDC','FTDR','GEOL','GER','GERON','GREEK','GREEKM','GSWS','HAA','HIM','HINDI',
-    'HIST','HONORS','HPA','HPM','HPS','HRS','HUGEN','IDM','IE','IL','IMB','INFSCI','INTBP','IRISH','ISB','ISSP','ITAL','JPNSE','JS',
-    'KOREAN','LATIN','LAW','LCTL','LDRSHP','LEGLST','LING','LIS','LSAP','MATH','ME','MED','MEDEDU','MEMS','MILS','MOLBPH','MSCBIO',
-    'MSCBMP','MSCMP','MSE','MSIMM','MSMBPH','MSMGDB','MSMPHL','MSMVM','MSNBIO','MUSIC','NEURO','NPHS','NROSCI','NUR','NURCNS','NURNM',
-    'NURNP','NURSAN','NURSP','NUTR','ODO','OLLI','ORBIOL','ORSUR','OT','PAS','PEDC','PEDENT','PERIO','PERS','PETE','PHARM','PHIL','PHYS',
-    'PIA','POLISH','PORT','PROSTH','PS','PSY','PSYC','PSYED','PT','PUBHLT','PUBSRV','REHSCI','REL','RELGST','RESTD','RUSS','SA','SERCRO',
-    'SLAV','SLOVAK','SOC','SOCWRK','SPAN','STAT','SWAHIL','SWBEH','SWCOSA','SWE','SWGEN','SWINT','SWRES','SWWEL','TELCOM','THEA','TURKSH',
-    'UKRAIN','URBNST','VIET']
-
-
 # TODO(Alex Z.): Look into instructor names and whether they are useful
 # TODO: Possibly make conversion between textbook term numbers and course term numbers
 BASE_URL = 'http://pitt.verbacompare.com/'
@@ -122,6 +106,8 @@ def _extract_course_ids(responses, course_names, instructors):
 def _extract_books(data):
     books, keys = [], ['isbn', 'citation', 'title', 'edition', 'author']
     # TODO(Alex Z.): Added check for invalid response that return an empty json list
+
+
     start, end = data.find('Verba.Compare.Collections.Sections') + 35, data.find('}]}]);') + 4
     info = [json.loads(data[start:end])][0]  # TODO(Alex Z.) Look into whether it's needed to choose the first index
 
@@ -141,10 +127,11 @@ def _filter_dictionary(d, keys):
 def _get_department_url(department_code, term):
     """Returns url for given department code."""
     # TODO(Alex Z.): Fix statements below to something more concrete then using static list of codes
-    department_number = CODES.index(department_code) + 22399
-    if department_number > 22462:
-        department_number += 2  # between codes DSANE and EAS 2 id numbers are skipped.
-    if department_number > 22580:
-        department_number += 1  # between codes PUBSRV and REHSCI 1 id number is skipped.
+    department_code = 0
+    # department_number = CODES.index(department_code) + 22399
+    # if department_number > 22462:
+    #     department_number += 2  # between codes DSANE and EAS 2 id numbers are skipped.
+    # if department_number > 22580:
+    #     department_number += 1  # between codes PUBSRV and REHSCI 1 id number is skipped.
     query = 'compare/courses/?id={}&term_id={}'.format(department_number, _validate_term(term))
     return BASE_URL + query
