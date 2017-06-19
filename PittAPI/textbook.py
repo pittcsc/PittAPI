@@ -85,7 +85,7 @@ def get_books_data(courses_info):
             )
         )
 
-    responses = grequests.map(request_objs ,exception_handler=connection_exception)  # parallel requests
+    responses = grequests.map(request_objs, exception_handler=connection_exception)  # parallel requests
     bundle = list(zip(responses, course_names, instructors))
 
     course_ids = _extract_course_ids(bundle)
@@ -99,24 +99,30 @@ def _construct_url(ids):
 
 
 def _extract_course_ids(bundle):
-    ids = []
-
-    for response, course, instruct in bundle:
-        sections = []
-        course_id = ''
-
-        for course_dict in response.json():
-            if course_dict['id'] == course:
-                sections = course_dict['sections']
-                break
-
-        for section in sections:
-            if section['instructor'] == instruct:
-                course_id = section['id']
-                break
-
-        ids.append(course_id)
+    ids = [
+        _extract_course_id(
+            sections=_extract_sections(
+                response=response,
+                course=course),
+            instructor=instructor
+        )
+        for response, course, instructor in bundle
+    ]
     return ids
+
+
+def _extract_sections(response, course):
+    for course_dict in response.json():
+        if course_dict['id'] == course:
+            sections = course_dict['sections']
+            return sections
+
+
+def _extract_course_id(sections, instructor):
+    for section in sections:
+        if section['instructor'] == instructor:
+            course_id = section['id']
+            return course_id
 
 
 def _extract_books(data):
