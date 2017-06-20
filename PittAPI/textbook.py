@@ -22,9 +22,10 @@ import warnings
 import grequests
 import requests
 from bs4 import BeautifulSoup
+from requests.exceptions import ConnectionError as RequestsConnectionError
 
 # Future change to be implemented
-from . import departments
+# from . import departments
 
 session = requests.session()
 
@@ -37,7 +38,7 @@ def _fetch_term_codes():
     """Fetches current valid term codes"""
     try:
         page = requests.get(BASE_URL)
-    except ConnectionError:
+    except RequestsConnectionError:
         return []
     script = BeautifulSoup(page.text, 'lxml').findAll('script')[-2].text
     data = json.loads(script[script.find('['):script.find(']') + 1])
@@ -62,7 +63,8 @@ def _validate_term(term):
 
 
 def connection_exception(request, exception):
-    pass
+    # TODO(Alex Z.): Improve error message
+    raise ConnectionError('Issues with connecting')
 
 
 def get_books_data(courses_info):
@@ -71,7 +73,12 @@ def get_books_data(courses_info):
     course_names = []  # need to save these
     instructors = []  # need to save these
 
-    # TODO(Alex Z.): Validation that argument is a list, add warning and correction is not or raise exception
+    if isinstance(courses_info, dict):
+        courses_info = [courses_info]
+    elif not isinstance(courses_info, list):
+        # TODO(Alex Z.): Added exception message
+        raise TypeError('')
+
     for book_info in courses_info:
         # TODO(Alex Z.): Check what information is actually needed
 
@@ -85,16 +92,15 @@ def get_books_data(courses_info):
             )
         )
 
-    responses = grequests.map(request_objs, exception_handler=connection_exception)  # parallel requests
+    responses = grequests.map(request_objs, exception_handler=connection_exception)
     bundle = list(zip(responses, course_names, instructors))
-
     course_ids = _extract_course_ids(bundle)
     book_data = session.get(_construct_url(course_ids)).text
-
     return _extract_books(book_data)  # return list of dicts of books
 
 
 def _construct_url(ids):
+    print(ids)
     return BASE_URL + 'comparison?id=' + '%2C'.join(ids)
 
 
@@ -127,6 +133,7 @@ def _extract_course_id(sections, instructor):
 
 def _extract_books(data):
     keys = ['isbn', 'citation', 'title', 'edition', 'author']
+    print(data)
     # TODO(Alex Z.): Added check for invalid response that return an empty json list
     start, end = data.find('Verba.Compare.Collections.Sections') + 35, data.find('}]}]);') + 4
     info = [json.loads(data[start:end])][0]  # TODO(Alex Z.) Look into whether it's needed to choose the first index
@@ -149,7 +156,8 @@ def _filter_dictionary(d, keys):
 def _get_department_url(department_code, term):
     """Returns url for given department code."""
     query = 'compare/courses/?id={}&term_id={}'.format(
-        departments[department_code]['textbook'],
+        # departments[department_code]['textbook'],
+        22457,
         _validate_term(term)
     )
     return BASE_URL + query
