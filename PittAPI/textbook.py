@@ -26,6 +26,7 @@ from requests.exceptions import ConnectionError as RequestsConnectionError
 
 BASE_URL = 'http://pitt.verbacompare.com/'
 
+
 def _fetch_term_codes():
     """Fetches current valid term codes"""
     try:
@@ -74,7 +75,7 @@ def _validate_term(term):
     """Validates term is a string and check if it is valid."""
     if len(TERMS) == 0:
         warnings.warn('Wasn\'t able to validate term. Assuming term code is valid.')
-        if len(term) == 4:
+        if len(term) == 4 and term.isdigit():
             return term
         raise ValueError("Invalid term")
     if term in TERMS:
@@ -83,10 +84,10 @@ def _validate_term(term):
 
 
 def _validate_course(course):
-    if len(course) == 4:
-        return course
-    elif len(course) > 4:
+    if len(course) > 4 or not course.isdigit():
         raise ValueError('Invalid course number')
+    elif len(course) == 4:
+        return course
     return '0' * (4 - len(course)) + course
 
 

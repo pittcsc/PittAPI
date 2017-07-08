@@ -37,6 +37,7 @@ class TextbookTest(unittest.TestCase):
         else:
             self.assertEqual(validate('2000'), '2000')
             self.assertRaises(ValueError, validate, '1')
+            self.assertRaises(ValueError, validate, 'a')
 
         self.assertRaises(ValueError, validate, '100')
 
@@ -55,11 +56,12 @@ class TextbookTest(unittest.TestCase):
         # Testing incorrect input
         self.assertRaises(ValueError, validate, '00000')
         self.assertRaises(ValueError, validate, '11111')
+        self.assertRaises(ValueError, validate, 'hi')
 
     def test_construct_query(self):
         construct = textbook._construct_query
-        course_query = 'http://pitt.verbacompare.com/compare/courses/?id=9999&term_id=1111'
-        book_query = 'http://pitt.verbacompare.com/compare/books?id=9999'
+        course_query = 'compare/courses/?id=9999&term_id=1111'
+        book_query = 'compare/books?id=9999'
 
         self.assertEqual(construct('courses', '9999', '1111'), course_query)
         self.assertEqual(construct('books', '9999'), book_query)
@@ -77,7 +79,7 @@ class TextbookTest(unittest.TestCase):
         for i in range(1, 6):
             self.assertEqual(find(test_data, i), i ** 2)
 
-        self.assertRaises(LookupError, find, 6)
+        self.assertRaises(LookupError, find, test_data, 6)
 
     def test_extract_ids(self):
         self.assertRaises(ValueError, textbook._extract_books, None, None, None, None)
@@ -86,37 +88,44 @@ class TextbookTest(unittest.TestCase):
 @unittest.skipIf(len(TERM) == 0, 'Wasn\'t able to fetch correct terms to test with.')
 class TextbookAPITest(unittest.TestCase):
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
-    def test_textbook_get_textbooks(self):
-        ans = textbook.get_textbooks(
+    def test_textbook_get_textbook(self):
+        instructor_test = textbook.get_textbook(
             term=TERM,
-            courses=[
-                {'department': 'CHEM', 'course': '120', 'instructor': 'FORTNEY'},
-                {'department': 'CS', 'course': '445', 'instructor': 'GARRISON III'}])
-        self.assertIsInstance(ans, list)
+            department='CS',
+            course='445',
+            instructor='GARRISON III'
+        )
+
+        section_test = textbook.get_textbook(
+            term=TERM,
+            department='CS',
+            course='445',
+            section='1010'
+        )
+        self.assertIsInstance(instructor_test, list)
+        self.assertIsInstance(section_test, list)
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
-    def test_textbook_get_books_data_many(self):
-        ans = textbook.get_textbooks(
+    def test_textbook_get_textbooks(self):
+        multi_book_test = textbook.get_textbooks(
             term=TERM,
             courses=[
-                {'department': 'MATH', 'course': '240', 'instructor': 'SYSOEVA'},
-                {'department': 'CS', 'course': '445', 'instructor': 'GARRISON III'},
-                {'department': 'CHEM', 'course': '120', 'instructor': 'FORTNEY'},
-                {'department': 'STAT', 'course': '1000', 'instructor': 'NELSON'}])
-        self.assertIsInstance(ans, list)
+                {'department': 'CS', 'course': '445', 'section': '1010'},
+                {'department': 'STAT', 'course': '1000', 'instructor': 'YANG'}])
+        self.assertIsInstance(multi_book_test, list)
 
     @unittest.skip
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_invalid_department_code(self):
-        self.assertRaises(ValueError, textbook.get_textbook, TERM, 'TEST', 'Not', 'EXIST', None)
+        self.assertRaises(ValueError, textbook.get_textbook, TERM, 'TEST', '000', 'EXIST', None)
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_invalid_course_name(self):
-        self.assertRaises(ValueError, textbook.get_textbook, TERM, 'CS', 'Not', 'EXIST', None)
+        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '000', 'EXIST', None)
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_invalid_instructor(self):
-        self.assertRaises(ValueError, textbook.get_textbook, TERM, 'CS', '447', 'EXIST', None)
+        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '447', 'EXIST', None)
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_invalid_section(self):
