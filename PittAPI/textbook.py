@@ -117,6 +117,7 @@ def _extract_ids(response, course, instructor=None, section=None):
         return _find_course_id_by_instructor(sections, instructor)
     elif section is not None:
         return _find_course_id_by_section(sections, section)
+    raise ValueError('No instructor or section entered')
 
 
 def _extract_books(ids):
