@@ -82,7 +82,7 @@ class TextbookTest(unittest.TestCase):
         self.assertRaises(LookupError, find, test_data, 6)
 
     def test_extract_ids(self):
-        self.assertRaises(ValueError, textbook._extract_books, None, None, None, None)
+        self.assertRaises(ValueError, textbook._extract_ids, None, None, None, None)
 
 
 @unittest.skipIf(len(TERM) == 0, 'Wasn\'t able to fetch correct terms to test with.')

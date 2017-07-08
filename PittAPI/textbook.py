@@ -111,7 +111,7 @@ def _find_item(id_key, data_key):
 
 _find_sections = _find_item('id', 'sections')
 _find_course_id_by_instructor = _find_item('instructor', 'id')
-_find_course_id_by_section = _find_item('id', 'id')
+_find_course_id_by_section = _find_item('name', 'id')
 
 
 def _extract_ids(response, course, instructor=None, section=None):
