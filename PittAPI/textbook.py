@@ -126,11 +126,9 @@ def _extract_id(response, course, instructor=None, section=None):
      instructor name or section number.
      """
     sections = _find_sections(response.json(), course)
-    print(sections)
-
     try:
         if instructor is not None:
-            return _find_course_id_by_instructor(sections, instructor)
+            return _find_course_id_by_instructor(sections, instructor.upper())
         elif section is not None:
             return _find_course_id_by_section(sections, section)
     except LookupError as e:
