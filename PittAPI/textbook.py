@@ -84,6 +84,10 @@ def _validate_term(term):
 
 
 def _validate_course(course):
+    """Validates course is a four digit number,
+     otherwise adds zero(s) to create four digit number or,
+     raises an exception.
+     """
     if len(course) > 4 or not course.isdigit():
         raise ValueError('Invalid course number')
     elif len(course) == 4:
@@ -100,11 +104,14 @@ def _filter_dictionary(d, keys):
 
 
 def _find_item(id_key, data_key):
+    """Finds a dictionary in a list based on it's id key, and
+    returns a piece of data from the dictionary based on a data key.
+    """
     def find(data, value):
         for item in data:
             if item[id_key] == value:
                 return item[data_key]
-        raise LookupError('Unable to find ' + value)
+        raise LookupError('Can\'t find ' + str(value))
 
     return find
 
@@ -114,17 +121,27 @@ _find_course_id_by_instructor = _find_item('instructor', 'id')
 _find_course_id_by_section = _find_item('name', 'id')
 
 
-def _extract_ids(response, course, instructor=None, section=None):
+def _extract_id(response, course, instructor=None, section=None):
+    """Gathers sections from departments and finds course id by
+     instructor name or section number.
+     """
     sections = _find_sections(response.json(), course)
     print(sections)
-    if instructor is not None:
-        return _find_course_id_by_instructor(sections, instructor)
-    elif section is not None:
-        return _find_course_id_by_section(sections, section)
+
+    try:
+        if instructor is not None:
+            return _find_course_id_by_instructor(sections, instructor)
+        elif section is not None:
+            return _find_course_id_by_section(sections, section)
+    except LookupError as e:
+        raise LookupError('Unable to find course. ' + str(e))
     raise ValueError('No instructor or section entered')
 
 
 def _extract_books(ids):
+    """Fetches a course's textbook information and returns a list
+    of textbooks for the given course.
+    """
     responses = grequests.imap([
         grequests.get(BASE_URL + _construct_query('books', section_id))
         for section_id in ids
@@ -137,12 +154,15 @@ def _extract_books(ids):
     return books
 
 
+# Meant to force a return of None instead of cause a KeyError
+# when using a nonexistent key
 class DefaultDict(dict):
     def __missing__(self, key):
         return None
 
 
 def _fetch_course(courses, departments):
+    """Generator for fetching a courses information in order"""
     for course in courses:
         course = DefaultDict(course)
         yield (
@@ -154,6 +174,10 @@ def _fetch_course(courses, departments):
 
 
 def _get_department_number(department_code):
+    """Temporary solution to finding a department.
+    There will be a new method to getting department information
+    at a later time.
+    """
     department_number = CODES.index(department_code) + 22399
     if department_number > 22462:
         department_number += 2  # between codes DSANE and EAS 2 id numbers are skipped.
@@ -163,6 +187,7 @@ def _get_department_number(department_code):
 
 
 def get_textbooks(term, courses):
+    """Retrieves textbooks for multiple courses in the same term."""
     departments = {course['department'] for course in courses}
     responses = grequests.map(
         [
@@ -171,13 +196,14 @@ def get_textbooks(term, courses):
         ]
     )
     section_ids = [
-        _extract_ids(*course)
+        _extract_id(*course)
         for course in _fetch_course(courses, dict(zip(departments, responses)))
     ]
     return _extract_books(section_ids)
 
 
 def get_textbook(term, department, course, instructor=None, section=None):
+    """Retrieves textbooks for a given course."""
     response = requests.get(BASE_URL + _construct_query('courses', _get_department_number(department), term))
-    section_id = _extract_ids(response, department + _validate_course(course), instructor, section)
+    section_id = _extract_id(response, department + _validate_course(course), instructor, section)
     return _extract_books([section_id])

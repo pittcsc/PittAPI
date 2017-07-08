@@ -25,7 +25,7 @@ from . import PittServerError, DEFAULT_TIMEOUT
 try:
     TERM = textbook.TERMS[0]
 except IndexError:
-    TERM = []
+    TERM = ''
 
 
 class TextbookTest(unittest.TestCase):
@@ -81,9 +81,6 @@ class TextbookTest(unittest.TestCase):
 
         self.assertRaises(LookupError, find, test_data, 6)
 
-    def test_extract_ids(self):
-        self.assertRaises(ValueError, textbook._extract_ids, None, None, None, None)
-
 
 @unittest.skipIf(len(TERM) == 0, 'Wasn\'t able to fetch correct terms to test with.')
 class TextbookAPITest(unittest.TestCase):
@@ -129,4 +126,4 @@ class TextbookAPITest(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_invalid_section(self):
-        self.assertRaises(ValueError, textbook.get_textbook, TERM, 'CS', '401',  None, '1060')
+        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '401',  None, '1060')
