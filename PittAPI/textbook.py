@@ -74,7 +74,9 @@ def _validate_term(term):
     """Validates term is a string and check if it is valid."""
     if len(TERMS) == 0:
         warnings.warn('Wasn\'t able to validate term. Assuming term code is valid.')
-        return term
+        if len(term) == 4:
+            return term
+        raise ValueError("Invalid term")
     if term in TERMS:
         return term
     raise ValueError("Invalid term")
@@ -113,6 +115,7 @@ _find_course_id_by_section = _find_item('id', 'id')
 
 def _extract_ids(response, course, instructor=None, section=None):
     sections = _find_sections(response.json(), course)
+    print(sections)
     if instructor is not None:
         return _find_course_id_by_instructor(sections, instructor)
     elif section is not None:

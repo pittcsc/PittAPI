@@ -1,4 +1,4 @@
-'''
+"""
 The Pitt API, to access workable data of the University of Pittsburgh
 Copyright (C) 2015 Ritwik Gupta
 
@@ -15,31 +15,72 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-'''
+"""
 import unittest
 import timeout_decorator
 
 from PittAPI import textbook
 from . import PittServerError, DEFAULT_TIMEOUT
 
-TERM = textbook.TERMS[0]
+try:
+    TERM = textbook.TERMS[0]
+except IndexError:
+    TERM = []
 
 
 class TextbookTest(unittest.TestCase):
     def test_term_validation(self):
-        pass
+        validate = textbook._validate_term
+
+        if len(TERM) != 0:
+            self.assertEqual(validate(TERM), TERM)
+        else:
+            self.assertEqual(validate('2000'), '2000')
+            self.assertRaises(ValueError, validate, '1')
+
+        self.assertRaises(ValueError, validate, '100')
 
     def test_validate_course(self):
-        pass
+        validate = textbook._validate_course
+
+        # Testing correct input
+        self.assertEqual(validate('0000'), '0000')
+        self.assertEqual(validate('1234'), '1234')
+
+        # Testing improper input
+        self.assertEqual(validate('1'), '0001')
+        self.assertEqual(validate('12'), '0012')
+        self.assertEqual(validate('123'), '0123')
+
+        # Testing incorrect input
+        self.assertRaises(ValueError, validate, '00000')
+        self.assertRaises(ValueError, validate, '11111')
 
     def test_construct_query(self):
-        pass
+        construct = textbook._construct_query
+        course_query = 'http://pitt.verbacompare.com/compare/courses/?id=9999&term_id=1111'
+        book_query = 'http://pitt.verbacompare.com/compare/books?id=9999'
+
+        self.assertEqual(construct('courses', '9999', '1111'), course_query)
+        self.assertEqual(construct('books', '9999'), book_query)
 
     def test_find_item(self):
-        pass
+        find = textbook._find_item('id', 'key')
+        test_data = [
+            {'id': 1, 'key': 1},
+            {'id': 2, 'key': 4},
+            {'id': 3, 'key': 9},
+            {'id': 4, 'key': 16},
+            {'id': 5, 'key': 25}
+        ]
+
+        for i in range(1, 6):
+            self.assertEqual(find(test_data, i), i ** 2)
+
+        self.assertRaises(LookupError, find, 6)
 
     def test_extract_ids(self):
-        pass
+        self.assertRaises(ValueError, textbook._extract_books, None, None, None, None)
 
 
 @unittest.skipIf(len(TERM) == 0, 'Wasn\'t able to fetch correct terms to test with.')
