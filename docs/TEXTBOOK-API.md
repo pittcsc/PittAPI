@@ -76,21 +76,29 @@ get_textbooks(
     term='2671',
     courses=[
     {'department': 'CS', 'course': '445', 'section': '1010'},
-    {'department': 'STAT', 'course': '1000', 'instructor': 'YANG'}
+    {'department': 'STAT', 'course': '1000', 'instructor': 'REGISTER'}
     ]
 )
 ```
 
 ###### **Sample Output**:
 ```python
-  [
-    {
-        'author': 'Carrano',
-        'citation': '<em>Data Struct.+Abstract.W/Java-W/Access</em> by Carrano.
-                    Pearson Education, 4th Edition, 2014. (ISBN: 9780133744057).',
-        'edition': '4',
-        'isbn': '9780133744057',
-        'title': 'Data Struct.+Abstract.W/Java-W/Access'
-    }
-  ]
+    [
+        {
+            'author': 'Moore',
+            'citation': '<em>Intro.To Practice Of Stat.-W/Access</em> by Moore. Freeman
+                        & Company, W. H., 8th Edition, 2014. (ISBN: 9781464158933).',
+            'edition': '8',
+            'isbn': '9781464158933',
+            'title': 'Intro.To Practice Of Stat.-W/Access'
+        },
+        {
+            'author': 'Carrano',
+            'citation': '<em>Data Struct.+Abstract.W/Java-W/Access</em> by Carrano.
+                        Pearson Education, 4th Edition, 2014. (ISBN: 9780133744057).',
+            'edition': '4',
+            'isbn': '9780133744057',
+            'title': 'Data Struct.+Abstract.W/Java-W/Access'
+        }
+    ]
 ```
