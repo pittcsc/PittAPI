@@ -81,6 +81,9 @@ class TextbookTest(unittest.TestCase):
 
         self.assertRaises(LookupError, find, test_data, 6)
 
+    def test_get_textbook(self):
+        self.assertRaises(TypeError, textbook.get_textbook, '0000', 'CS', '401')
+
 
 @unittest.skipIf(len(TERM) == 0, 'Wasn\'t able to fetch correct terms to test with.')
 class TextbookAPITest(unittest.TestCase):

@@ -121,7 +121,7 @@ _find_course_id_by_instructor = _find_item('instructor', 'id')
 _find_course_id_by_section = _find_item('name', 'id')
 
 
-def _extract_id(response, course, instructor=None, section=None):
+def _extract_id(response, course, instructor, section):
     """Gathers sections from departments and finds course id by
      instructor name or section number.
      """
@@ -202,6 +202,9 @@ def get_textbooks(term, courses):
 
 def get_textbook(term, department, course, instructor=None, section=None):
     """Retrieves textbooks for a given course."""
+    has_section_or_instructor = (instructor is not None) or (section is not None)
+    if not has_section_or_instructor:
+        raise TypeError('get_textbook() is missing a instructor or section argument')
     response = requests.get(BASE_URL + _construct_query('courses', _get_department_number(department), term))
     section_id = _extract_id(response, department + _validate_course(course), instructor, section)
     return _extract_books([section_id])
