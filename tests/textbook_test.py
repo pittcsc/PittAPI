@@ -67,7 +67,7 @@ class TextbookTest(unittest.TestCase):
         self.assertEqual(construct('books', '9999'), book_query)
 
     def test_find_item(self):
-        find = textbook._find_item('id', 'key')
+        find = textbook._find_item('id', 'key', 'test')
         test_data = [
             {'id': 1, 'key': 1},
             {'id': 2, 'key': 4},

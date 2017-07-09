@@ -65,6 +65,11 @@ QUERIES = {
     'courses': 'compare/courses/?id={}&term_id={}',
     'books': 'compare/books?id={}'
 }
+LOOKUP_ERRORS = {
+    1: 'instructor {1}.',
+    2: 'section {2}.',
+    3: 'instructor {1} or section {2}.'
+}
 
 
 def _construct_query(query, *args):
@@ -103,7 +108,7 @@ def _filter_dictionary(d, keys):
     )
 
 
-def _find_item(id_key, data_key):
+def _find_item(id_key, data_key, error_item):
     """Finds a dictionary in a list based on it's id key, and
     returns a piece of data from the dictionary based on a data key.
     """
@@ -111,14 +116,13 @@ def _find_item(id_key, data_key):
         for item in data:
             if item[id_key] == value:
                 return item[data_key]
-        raise LookupError('Can\'t find ' + str(value))
-
+        raise LookupError('Can\'t find {} {}.'.format(error_item, str(value)))
     return find
 
 
-_find_sections = _find_item('id', 'sections')
-_find_course_id_by_instructor = _find_item('instructor', 'id')
-_find_course_id_by_section = _find_item('name', 'id')
+_find_sections = _find_item('id', 'sections', 'course')
+_find_course_id_by_instructor = _find_item('instructor', 'id', 'instructor')
+_find_course_id_by_section = _find_item('name', 'id', 'section')
 
 
 def _extract_id(response, course, instructor, section):
@@ -126,14 +130,18 @@ def _extract_id(response, course, instructor, section):
      instructor name or section number.
      """
     sections = _find_sections(response.json(), course)
+    error = 0
     try:
         if instructor is not None:
             return _find_course_id_by_instructor(sections, instructor.upper())
-        elif section is not None:
+    except LookupError:
+        error += 1
+    try:
+        if section is not None:
             return _find_course_id_by_section(sections, section)
-    except LookupError as e:
-        raise LookupError('Unable to find course. ' + str(e))
-    raise ValueError('No instructor or section entered')
+    except LookupError:
+        error += 2
+    raise ValueError('Unable to find course by ' + LOOKUP_ERRORS[error].format(instructor, section))
 
 
 def _extract_books(ids):
