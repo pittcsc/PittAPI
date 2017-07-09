@@ -73,6 +73,9 @@ LOOKUP_ERRORS = {
 
 
 def _construct_query(query, *args):
+    """Constructs query based on which one is requested
+    and fills the query in with the given arguments
+    """
     return QUERIES[query].format(*args)
 
 
@@ -101,6 +104,9 @@ def _validate_course(course):
 
 
 def _filter_dictionary(d, keys):
+    """Creates new dictionary from selecting certain
+    key value pairs from another dictionary
+    """
     return dict(
         (k, d[k])
         for k in keys
@@ -141,7 +147,7 @@ def _extract_id(response, course, instructor, section):
             return _find_course_id_by_section(sections, section)
     except LookupError:
         error += 2
-    raise ValueError('Unable to find course by ' + LOOKUP_ERRORS[error].format(instructor, section))
+    raise LookupError('Unable to find course by ' + LOOKUP_ERRORS[error].format(instructor, section))
 
 
 def _extract_books(ids):
@@ -160,7 +166,7 @@ def _extract_books(ids):
     return books
 
 
-# Meant to force a return of None instead of cause a KeyError
+# Meant to force a return of None instead of raising a KeyError
 # when using a nonexistent key
 class DefaultDict(dict):
     def __missing__(self, key):
