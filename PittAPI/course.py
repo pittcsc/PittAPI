@@ -64,7 +64,9 @@ def _update_course_data():
 
 def get_courses(term, code):
     """Returns a list of dictionaries containing all courses queried from code."""
-    col_headers, courses = _retrieve_courses_from_url(URL + _get_subject_query(code, term))
+    col_headers, courses = _retrieve_courses_from_url(
+        URL + _get_subject_query(code, term)
+    )
     return [_extract_course_data(col_headers, course) for course in courses]
 
 
@@ -98,7 +100,8 @@ def _retrieve_courses_from_url(url):
     """Returns a tuple of column header keys and list of course data."""
     page = requests.get(url)
     soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['table', 'tr', 'th']))
-    return _extract_header(soup.findAll('th')), soup.findAll("tr", {"class": ["odd", "even"]})
+    course =  _extract_header(soup.findAll('th')), soup.findAll("tr", {"class": ["odd", "even"]})
+    return course
 
 
 def _extract_header(data):
@@ -145,9 +148,10 @@ def get_class(term, class_number):
 def _extract_description(text):
     """Extracts class description from web page"""
     soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
-    return {
+    description = {
         'description': soup.findAll('td', {'colspan': '9'})[1].text.replace('\r\n', '')
     }
+    return description
 
 
 def _extract_details(text):
