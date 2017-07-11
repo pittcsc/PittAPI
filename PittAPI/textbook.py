@@ -115,7 +115,7 @@ def _filter_dictionary(d, keys):
 
 
 def _find_item(id_key, data_key, error_item):
-    """Finds a dictionary in a list based on it's id key, and
+    """Finds a dictionary in a list based on its id key, and
     returns a piece of data from the dictionary based on a data key.
     """
     def find(data, value):
