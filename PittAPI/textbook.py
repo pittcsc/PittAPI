@@ -1,4 +1,4 @@
-'''
+"""
 The Pitt API, to access workable data of the University of Pittsburgh
 Copyright (C) 2015 Ritwik Gupta
 
@@ -15,94 +15,210 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-'''
+"""
+import json
+import warnings
+
 import grequests
 import requests
-import json
-import time
+from bs4 import BeautifulSoup
+from requests.exceptions import ConnectionError as RequestsConnectionError
 
-session = requests.session()
+BASE_URL = 'http://pitt.verbacompare.com/'
 
-CODES = [
-    'ADMJ','ADMPS','AFRCNA','AFROTC','ANTH','ARABIC','ARTSC','ASL','ASTRON','ATHLTR','BACC','BCHS','BECN','BFIN','BHRM','BIND',
-    'BIOENG','BIOETH','BIOINF','BIOSC','BIOST','BMIS','BMKT','BOAH','BORG','BQOM','BSEO','BSPP','BUS','BUSACC','BUSADM','BUSBIS',
-    'BUSECN','BUSENV','BUSERV','BUSFIN','BUSHRM','BUSMKT','BUSORG','BUSQOM','BUSSCM','BUSSPP','CDACCT','CDENT','CEE','CGS','CHE',
-    'CHEM','CHIN','CLASS','CLRES','CLST','CMMUSIC','CMPBIO','COE','COEA','COEE','COMMRC','CS','CSD','DENHYG','DENT','DIASCI','DSANE',
-    'EAS','ECE','ECON','EDUC','ELI','EM','ENDOD','ENGCMP','ENGFLM','ENGLIT','ENGR','ENGSCI','ENGWRT','ENRES','EOH','EPIDEM','FACDEV',
-    'FILMG','FILMST','FP','FR','FTADMA','FTDA','FTDB','FTDC','FTDR','GEOL','GER','GERON','GREEK','GREEKM','GSWS','HAA','HIM','HINDI',
-    'HIST','HONORS','HPA','HPM','HPS','HRS','HUGEN','IDM','IE','IL','IMB','INFSCI','INTBP','IRISH','ISB','ISSP','ITAL','JPNSE','JS',
-    'KOREAN','LATIN','LAW','LCTL','LDRSHP','LEGLST','LING','LIS','LSAP','MATH','ME','MED','MEDEDU','MEMS','MILS','MOLBPH','MSCBIO',
-    'MSCBMP','MSCMP','MSE','MSIMM','MSMBPH','MSMGDB','MSMPHL','MSMVM','MSNBIO','MUSIC','NEURO','NPHS','NROSCI','NUR','NURCNS','NURNM',
-    'NURNP','NURSAN','NURSP','NUTR','ODO','OLLI','ORBIOL','ORSUR','OT','PAS','PEDC','PEDENT','PERIO','PERS','PETE','PHARM','PHIL','PHYS',
-    'PIA','POLISH','PORT','PROSTH','PS','PSY','PSYC','PSYED','PT','PUBHLT','PUBSRV','REHSCI','REL','RELGST','RESTD','RUSS','SA','SERCRO',
-    'SLAV','SLOVAK','SOC','SOCWRK','SPAN','STAT','SWAHIL','SWBEH','SWCOSA','SWE','SWGEN','SWINT','SWRES','SWWEL','TELCOM','THEA','TURKSH',
-    'UKRAIN','URBNST','VIET']
 
-def get_books_data(courses_info):
-    """Returns list of dictionaries of book information."""
-    request_objs = []
-    course_names = []  # need to save these
-    instructors = []  # need to save these
-    for i in range(len(courses_info)):
-        book_info = courses_info[i]
-        course_names.append(book_info['course_name'])
-        instructors.append(book_info['instructor'])
-        request_objs.append(grequests.get(_get_department_url(book_info['department_code'], book_info['term']), timeout=10))
-    responses = grequests.map(request_objs)  # parallel requests
-    course_ids = []
-
-    j = 0  # counter to get course_names and instructors
-    for r in responses:
-        json_data = r.json()
-        sections = []
-        course_id = ''
-        for course_dict in (json_data):
-            if course_dict['id'] == course_names[j]:
-                sections = course_dict['sections']
-                break
-        for section in sections:
-            if section['instructor'] == instructors[j]:
-                course_id = section['id']
-                break
-        course_ids.append(course_id)
-        j += 1
-    book_url = 'http://pitt.verbacompare.com/comparison?id='
-
-    if (len(course_ids) > 1):
-        for course_id in course_ids:
-             book_url += course_id + '%2C'  # format url for multiple classes
-    else:
-        book_url += course_ids[0]  # just one course
-
-    book_data = session.get(book_url).text
-
-    books_list = []
+def _fetch_term_codes():
+    """Fetches current valid term codes"""
     try:
-        start = book_data.find('Verba.Compare.Collections.Sections') + len('Verba.Compare.Collections.Sections') + 1
-        end = book_data.find('}]}]);') + 4
-        info = [json.loads(book_data[start:end])]
-        for i in range(len(info[0])):
-            for j in range(len(info[0][i]['books'])):
-                book_dict = {}
-                big_dict = info[0][i]['books'][j]
-                book_dict['isbn'] = big_dict['isbn']
-                book_dict['citation'] = big_dict['citation']
-                book_dict['title'] = big_dict['title']
-                book_dict['edition'] = big_dict['edition']
-                book_dict['author'] = big_dict['author']
-                books_list.append(book_dict)
-    except ValueError as e:
-        raise e
+        page = requests.get(BASE_URL)
+    except RequestsConnectionError:
+        return []
+    script = BeautifulSoup(page.text, 'lxml').findAll('script')[-2].text
+    data = json.loads(script[script.find('['):script.find(']') + 1])
+    terms = [
+        item['id']
+        for item in data
+    ]
+    return terms
 
 
-    return books_list  # return list of dicts of books
+TERMS = _fetch_term_codes()
+CODES = [
+    'ADMJ', 'ADMPS', 'AFRCNA', 'AFROTC', 'ANTH', 'ARABIC', 'ARTSC', 'ASL', 'ASTRON', 'ATHLTR', 'BACC', 'BCHS', 'BECN',
+    'BFIN', 'BHRM', 'BIND', 'BIOENG', 'BIOETH', 'BIOINF', 'BIOSC', 'BIOST', 'BMIS', 'BMKT', 'BOAH', 'BORG', 'BQOM',
+    'BSEO', 'BSPP', 'BUS', 'BUSACC', 'BUSADM', 'BUSBIS', 'BUSECN', 'BUSENV', 'BUSERV', 'BUSFIN', 'BUSHRM', 'BUSMKT',
+    'BUSORG', 'BUSQOM', 'BUSSCM', 'BUSSPP', 'CDACCT', 'CDENT', 'CEE', 'CGS', 'CHE', 'CHEM', 'CHIN', 'CLASS', 'CLRES',
+    'CLST', 'CMMUSIC', 'CMPBIO', 'COE', 'COEA', 'COEE', 'COMMRC', 'CS', 'CSD', 'DENHYG', 'DENT', 'DIASCI', 'DSANE',
+    'EAS', 'ECE', 'ECON', 'EDUC', 'ELI', 'EM', 'ENDOD', 'ENGCMP', 'ENGFLM', 'ENGLIT', 'ENGR', 'ENGSCI', 'ENGWRT',
+    'ENRES', 'EOH', 'EPIDEM', 'FACDEV', 'FILMG', 'FILMST', 'FP', 'FR', 'FTADMA', 'FTDA', 'FTDB', 'FTDC', 'FTDR', 'GEOL',
+    'GER', 'GERON', 'GREEK', 'GREEKM', 'GSWS', 'HAA', 'HIM', 'HINDI', 'HIST', 'HONORS', 'HPA', 'HPM', 'HPS', 'HRS',
+    'HUGEN', 'IDM', 'IE', 'IL', 'IMB', 'INFSCI', 'INTBP', 'IRISH', 'ISB', 'ISSP', 'ITAL', 'JPNSE', 'JS', 'KOREAN',
+    'LATIN', 'LAW', 'LCTL', 'LDRSHP', 'LEGLST', 'LING', 'LIS', 'LSAP', 'MATH', 'ME', 'MED', 'MEDEDU', 'MEMS', 'MILS',
+    'MOLBPH', 'MSCBIO', 'MSCBMP', 'MSCMP', 'MSE', 'MSIMM', 'MSMBPH', 'MSMGDB', 'MSMPHL', 'MSMVM', 'MSNBIO', 'MUSIC',
+    'NEURO', 'NPHS', 'NROSCI', 'NUR', 'NURCNS', 'NURNM', 'NURNP', 'NURSAN', 'NURSP', 'NUTR', 'ODO', 'OLLI', 'ORBIOL',
+    'ORSUR', 'OT', 'PAS', 'PEDC', 'PEDENT', 'PERIO', 'PERS', 'PETE', 'PHARM', 'PHIL', 'PHYS', 'PIA', 'POLISH', 'PORT',
+    'PROSTH', 'PS', 'PSY', 'PSYC', 'PSYED', 'PT', 'PUBHLT', 'PUBSRV', 'REHSCI', 'REL', 'RELGST', 'RESTD', 'RUSS', 'SA',
+    'SERCRO', 'SLAV', 'SLOVAK', 'SOC', 'SOCWRK', 'SPAN', 'STAT', 'SWAHIL', 'SWBEH', 'SWCOSA', 'SWE', 'SWGEN', 'SWINT',
+    'SWRES', 'SWWEL', 'TELCOM', 'THEA', 'TURKSH', 'UKRAIN', 'URBNST', 'VIET']
+KEYS = ['isbn', 'citation', 'title', 'edition', 'author']
+QUERIES = {
+    'courses': 'compare/courses/?id={}&term_id={}',
+    'books': 'compare/books?id={}'
+}
+LOOKUP_ERRORS = {
+    1: 'instructor {1}.',
+    2: 'section {2}.',
+    3: 'instructor {1} or section {2}.'
+}
 
-def _get_department_url(department_code,term='2600'):  # 2600 --> spring 2017
-    """Returns url for given department code."""
+
+def _construct_query(query, *args):
+    """Constructs query based on which one is requested
+    and fills the query in with the given arguments
+    """
+    return QUERIES[query].format(*args)
+
+
+def _validate_term(term):
+    """Validates term is a string and check if it is valid."""
+    if len(TERMS) == 0:
+        warnings.warn('Wasn\'t able to validate term. Assuming term code is valid.')
+        if len(term) == 4 and term.isdigit():
+            return term
+        raise ValueError("Invalid term")
+    if term in TERMS:
+        return term
+    raise ValueError("Invalid term")
+
+
+def _validate_course(course):
+    """Validates course is a four digit number,
+     otherwise adds zero(s) to create four digit number or,
+     raises an exception.
+     """
+    if len(course) > 4 or not course.isdigit():
+        raise ValueError('Invalid course number')
+    elif len(course) == 4:
+        return course
+    return '0' * (4 - len(course)) + course
+
+
+def _filter_dictionary(d, keys):
+    """Creates new dictionary from selecting certain
+    key value pairs from another dictionary
+    """
+    return dict(
+        (k, d[k])
+        for k in keys
+        if k in d
+    )
+
+
+def _find_item(id_key, data_key, error_item):
+    """Finds a dictionary in a list based on its id key, and
+    returns a piece of data from the dictionary based on a data key.
+    """
+    def find(data, value):
+        for item in data:
+            if item[id_key] == value:
+                return item[data_key]
+        raise LookupError('Can\'t find {} {}.'.format(error_item, str(value)))
+    return find
+
+
+_find_sections = _find_item('id', 'sections', 'course')
+_find_course_id_by_instructor = _find_item('instructor', 'id', 'instructor')
+_find_course_id_by_section = _find_item('name', 'id', 'section')
+
+
+def _extract_id(response, course, instructor, section):
+    """Gathers sections from departments and finds course id by
+     instructor name or section number.
+     """
+    sections = _find_sections(response.json(), course)
+    error = 0
+    try:
+        if instructor is not None:
+            return _find_course_id_by_instructor(sections, instructor.upper())
+    except LookupError:
+        error += 1
+    try:
+        if section is not None:
+            return _find_course_id_by_section(sections, section)
+    except LookupError:
+        error += 2
+    raise LookupError('Unable to find course by ' + LOOKUP_ERRORS[error].format(instructor, section))
+
+
+def _extract_books(ids):
+    """Fetches a course's textbook information and returns a list
+    of textbooks for the given course.
+    """
+    responses = grequests.imap([
+        grequests.get(BASE_URL + _construct_query('books', section_id))
+        for section_id in ids
+    ])
+    books = [
+        _filter_dictionary(book, KEYS)
+        for response in responses
+        for book in response.json()
+    ]
+    return books
+
+
+# Meant to force a return of None instead of raising a KeyError
+# when using a nonexistent key
+class DefaultDict(dict):
+    def __missing__(self, key):
+        return None
+
+
+def _fetch_course(courses, departments):
+    """Generator for fetching a courses information in order"""
+    for course in courses:
+        course = DefaultDict(course)
+        yield (
+            departments[course['department']],
+            course['department'] + _validate_course(course['course']),
+            course['instructor'],
+            course['section']
+        )
+
+
+def _get_department_number(department_code):
+    """Temporary solution to finding a department.
+    There will be a new method to getting department information
+    at a later time.
+    """
     department_number = CODES.index(department_code) + 22399
     if department_number > 22462:
         department_number += 2  # between codes DSANE and EAS 2 id numbers are skipped.
     if department_number > 22580:
         department_number += 1  # between codes PUBSRV and REHSCI 1 id number is skipped.
-    url = 'http://pitt.verbacompare.com/compare/courses/' + '?id=' + str(department_number) + '&term_id=' + term
-    return url
+    return department_number
+
+
+def get_textbooks(term, courses):
+    """Retrieves textbooks for multiple courses in the same term."""
+    departments = {course['department'] for course in courses}
+    responses = grequests.map(
+        [
+            grequests.get(BASE_URL + _construct_query('courses', _get_department_number(department), term), timeout=10)
+            for department in departments
+        ]
+    )
+    section_ids = [
+        _extract_id(*course)
+        for course in _fetch_course(courses, dict(zip(departments, responses)))
+    ]
+    return _extract_books(section_ids)
+
+
+def get_textbook(term, department, course, instructor=None, section=None):
+    """Retrieves textbooks for a given course."""
+    has_section_or_instructor = (instructor is not None) or (section is not None)
+    if not has_section_or_instructor:
+        raise TypeError('get_textbook() is missing a instructor or section argument')
+    response = requests.get(BASE_URL + _construct_query('courses', _get_department_number(department), term))
+    section_id = _extract_id(response, department + _validate_course(course), instructor, section)
+    return _extract_books([section_id])

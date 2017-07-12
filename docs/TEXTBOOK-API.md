@@ -3,10 +3,14 @@
 
 # Textbook API
 
-### **get_books_data(course_info)**
+### **get_textbook(term, department, course, instructor, section)**
 
 #### **Parameters**:
-  - `courses_info`: List of dictionaries of class info | Example: `get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN', 'term': '2600'}]`
+  - `term`: Term number | Example: `2671`
+  - `department`: Department code | Example: `CS`
+  - `course`: Course number | Example: `0401`, `411`
+  - `instructor`: Instructor name | Example: `GARRISON III`, `YANG`, `HOFFMAN`
+  - `section`: Section number | Example: `1030`, `1060`
 
 #### **Returns**:
 Returns a list of dictionaries containing Author, ISBN, Edition, Title, and Citation
@@ -15,46 +19,86 @@ Returns a list of dictionaries containing Author, ISBN, Edition, Title, and Cita
 
 ###### **Code**:
 ```python
-get_books_data([{'department_code': 'CS', 'course_name': 'CS0401', 'instructor': 'HOFFMAN', 'term': '2600'}, {'department_code': 'CS', 'course_name': 'CS0445', 'instructor': 'GARRISON III', 'term': '2600'}])
+get_textbook(
+            term='2671,
+            department='CS',
+            course='445',
+            instructor='GARRISON III'
+)
+
+get_textbook(
+            term='2671',
+            department='CS',
+            course='401',
+            section='1010'
+)
 ```
 
 ###### **Sample Output**:
 ```python
-  [
-    {
-      'author': 'Gaddis',
-      'isbn': '9780133957051',
-      'edition': '6',
-      'citation': '<em>Starting Out W/Java:From.. W/Access</em> by Gaddis. Pearson Education, 6th Edition, 2015. (ISBN: 9780133957051).',
-      'title': 'Starting Out W/Java:From... W/Access'
-    },
-    {
-      'author': 'Carrano',
-      'isbn': '9780133744057',
-      'edition': '4',
-      'citation': '<em>Data Struct.+Abstract.W/Java W/Access</em> by Carrano. Pearson Education, 4th Edition, 2014. (ISBN: 9780133744057).',
-      'title': 'Data Struct.+Abstract.W/Java W/Access'
-    }
-  ]
+    [
+        {
+            'author': 'Carrano',
+            'citation': '<em>Data Struct.+Abstract.W/Java-W/Access</em> by Carrano. '
+            'Pearson Education, 4th Edition, 2014. (ISBN: 9780133744057).',
+            'edition': '4',
+            'isbn': '9780133744057',
+            'title': 'Data Struct.+Abstract.W/Java-W/Access'
+        }
+    ]
+
+    [
+        {
+            'author': 'Gaddis',
+            'citation': '<em>Starting Out W/Java:From..-W/Access</em> by Gaddis. Pearson '
+            'Education, 6th Edition, 2015. (ISBN: 9780133957051).',
+            'edition': '6',
+            'isbn': '9780133957051',
+            'title': 'Starting Out W/Java:From...-W/Access'
+        }
+    ]
 ```
 
-### **_get_department_url(department_code,term)**
+### **get_textbooks(term, courses)**
 
 #### **Parameters**:
-  - `department_code`: Code for department | Example: `CS` or `LATIN`
-  - `term` : ID for class term | Example `2600`
-    - Default value is `2600` for Spring 2017
+  - `term`: Term number | Example: `2671`
+  - `courses`: List of dictionaries of class info | Example: `[{'department': 'CS', 'course': '0401', 'instructor': 'HOFFMAN'}]`
 
 #### **Returns**:
-Returns a department url corresponding to the format used by pitt.verbacompare.com
+Returns a list of dictionaries containing Author, ISBN, Edition, Title, and Citation
 
 #### **Example**:
 
 ###### **Code**:
 ```python
-textbook.get_department_url('CS', '2600')
+get_textbooks(
+    term='2671',
+    courses=[
+    {'department': 'CS', 'course': '445', 'section': '1010'},
+    {'department': 'STAT', 'course': '1000', 'instructor': 'REGISTER'}
+    ]
+)
 ```
+
 ###### **Sample Output**:
 ```python
-http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=2600
-````
+    [
+        {
+            'author': 'Moore',
+            'citation': '<em>Intro.To Practice Of Stat.-W/Access</em> by Moore. Freeman
+                        & Company, W. H., 8th Edition, 2014. (ISBN: 9781464158933).',
+            'edition': '8',
+            'isbn': '9781464158933',
+            'title': 'Intro.To Practice Of Stat.-W/Access'
+        },
+        {
+            'author': 'Carrano',
+            'citation': '<em>Data Struct.+Abstract.W/Java-W/Access</em> by Carrano.
+                        Pearson Education, 4th Edition, 2014. (ISBN: 9780133744057).',
+            'edition': '4',
+            'isbn': '9780133744057',
+            'title': 'Data Struct.+Abstract.W/Java-W/Access'
+        }
+    ]
+```
