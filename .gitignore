@@ -4,4 +4,5 @@ test.py
 sample.py
 
 .coverage
+.idea/
 .ropeproject/
