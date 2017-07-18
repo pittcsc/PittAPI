@@ -46,21 +46,7 @@ def _retrieve_term_codes():
     return [tag.attrs['value'] for tag in soup[:3]]
 
 
-def _retrieve_update_date():
-    """Returns the updated date from course web page."""
-    page = requests.get(URL)
-    footer = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer('div', {'id': 'footer'})).findAll('p')[0]
-    update_date = footer.contents[0].split('|')[1].strip()
-    return update_date
-
-
 TERMS = _retrieve_term_codes()
-UPDATE_DATE = _retrieve_update_date()
-
-
-def _update_course_data():
-    """Update term codes and other variable to be determined."""
-    TERMS = _retrieve_term_codes()
 
 
 def get_courses(term, code):
