@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import warnings
 
 import requests
+import re
 from bs4 import BeautifulSoup, SoupStrainer
 
 URL = 'http://www.courses.as.pitt.edu/'
@@ -92,7 +93,7 @@ def _validate_term(term):
     if not isinstance(term, str):
         warnings.warn('Term value should be a string.')
         term = str(term)
-    if term in TERMS:
+    if TERMS.match(term):
         return term
     raise ValueError("Invalid term")
 
