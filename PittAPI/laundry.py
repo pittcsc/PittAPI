@@ -1,30 +1,17 @@
 '''
-The Pitt API, to access workable data of the University of Pittsburgh
-Copyright (C) 2015 Ritwik Gupta
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+    File: laundry.py
+    Author: Ankit Joshi
+    Date Created: 9/1/2017
+    Last Modified: 9/1/2017
 '''
 
-import re
 
 import requests
 from bs4 import BeautifulSoup
+import re
 
-session = requests.session()
-
-location_dict = {
+# ugh, update when codes change
+location_lookup = {
     'TOWERS': '2430136',
     'BRACKENRIDGE': '2430119',
     'HOLLAND': '2430137',
@@ -36,10 +23,10 @@ location_dict = {
 }
 
 
-def get_status_simple(building_name):
+def get_overall_status(building_name):
     """
     :returns: a dictionary with free washers and dryers as well as total washers
-    and dryers for given building
+              and dryers for given building
 
     :param: loc: Building name, case doesn't matter
         -> TOWERS
@@ -49,92 +36,85 @@ def get_status_simple(building_name):
         -> MCCORMICK
         -> SUTH_EAST
         -> SUTH_WEST
-
-    session.hash_bits_per_character = 5
     """
 
     building_name = building_name.upper()
-    url = 'http://classic.laundryview.com/appliance_status_ajax.php?lr={}'.format(location_dict[building_name])
-    page = session.get(url)
-    soup = BeautifulSoup(page.text, 'lxml')
+    url ='http://m.laundryview.com/submitFunctions.php?monitor=true&lr={}'.\
+            format(location_lookup[building_name])
+    response = requests.get(url)
+    laundry_soup = BeautifulSoup(response.text, 'lxml')
+    reFormat = re.compile(r'^([0-9]+) of ([0-9]+) available$')
+    washer_text = laundry_soup.find('span',{'id': 'washer_available'}).text
+    dryer_text = laundry_soup.find('span',{'id': 'dryer_available'}).text
+    washer_match = reFormat.match(washer_text)
+    dryer_match = reFormat.match(dryer_text)
 
-    # What was I doing...
-    re1 = ['(\\d+)', '(\\s+)', '(of)', '(\\s+)', '(\\d+)', '(\\s+)', '((?:[a-z][a-z]+))']
-
-    rg = re.compile(''.join(re1), re.IGNORECASE | re.DOTALL)
-    search = rg.findall(str(soup))
-
-    di = {
+    return  {
         'building': building_name,
-        'free_washers': search[0][0],
-        'total_washers': search[0][4],
-        'free_dryers': search[1][0],
-        'total_dryers': search[1][4]
+        'free_washers': int(washer_match.group(1)),
+        'total_washers': int(washer_match.group(2)),
+        'free_dryers': int(dryer_match.group(1)),
+        'total_dryers': int(dryer_match.group(2))
     }
 
-    return di
 
 
-def get_status_detailed(building_name):
+def get_status_detailed(building_name, machine=None):
+    """
+    :returns: A list of washers and dryers for the passed
+              building location with their statuses
+
+              OR
+
+              A dict of machine metadata if machine name
+              is explicity passed
+
+    :param building_name: (String) one of these:
+        -> BRACKENRIDGE
+        -> HOLLAND
+        -> LOTHROP
+        -> MCCORMICK
+        -> SUTH_EAST
+        -> SUTH_WEST
+    :param machine: (String) specific machine to query
+                    eg: machine='BA02'
+    """
     building_name = building_name.upper()
+    machines = []
 
-    # Get a cookie
-    response = requests.get("http://www.laundryview.com/laundry_room.php?view=c&lr={}".format(location_dict[building_name]))
-    cookie = response.headers["Set-Cookie"]
-    cookie = cookie[cookie.index("=") + 1:cookie.index(";")]
+    url = 'http://m.laundryview.com/submitFunctions.php?monitor=true&lr={}'.\
+            format(location_lookup[building_name])
+    response = requests.get(url)
+    laundry_soup = BeautifulSoup(response.text, 'lxml')
+    is_washer = False
 
-    # Get the weird laundry data
-    headers = {"Cookie": "PHPSESSID={}".format(cookie)}
-    response = requests.get("http://www.laundryview.com/dynamicRoomData.php?location={}".format(
-        location_dict[building_name]), headers=headers).text
-    resp_split = response.split('&')[3:]
-
-    cleaned_resp = []
-    for status_string in resp_split:
-        if "machine" not in status_string:
+    for li in laundry_soup.findAll('li'):
+        if 'id' in li.attrs:
+            is_washer = True if li.attrs['id'] == 'washer' \
+                            else False
             continue
-        machine_name = status_string[:status_string.index('=')].replace('Status', '')
-        status_string = status_string[status_string.index('=') + 1:].strip()
 
-        machine_split = status_string.split("\n")
-        machine_split[0] += machine_name
+        machine_id = int(li.find('a').attrs['id'])
+        machine_status = li.find('p').text
+        machine_name = li.text.split(machine_status)[0].\
+                           encode('ascii', 'ignore')
+        machine_type = 'washer' if is_washer else 'dryer'
 
-        try:
-            machine_split[1] += machine_name
-        except IndexError:
-            pass
-
-        machine_split = [x.split(':') for x in machine_split]
-        cleaned_resp.append(machine_split[0])
-        try:
-            cleaned_resp.append(machine_split[1])
-        except IndexError:
-            pass
-
-    cleaned_resp = [x for x in cleaned_resp if len(x) == 10]
-
-    di = []
-    for machine in cleaned_resp:
-        time_left = -1
-        machine_name = "{}_{}".format(machine[9], machine[3])
-        machine_status = ""
-
-        if machine[0] is '1':
-            machine_status = u'Free'
-        else:
-            if machine[6] is '':
-                machine_status = u'Out of service'
-            else:
-                machine_status = u'In use'
-
-        if machine_status is u'In use':
-            time_left = int(machine[1])
-        else:
-            time_left = -1 if machine[6] is '' else machine[6]
-        di.append({
+        machines.append({
             'machine_name': machine_name,
+            'machine_type': machine_type,
             'machine_status': machine_status,
-            'time_left': time_left
+            'machine_id': machine_id
         })
 
-    return di
+    if machine:
+        try:
+            machines = filter(lambda m: m['machine_name'] == machine, machines)[0]
+        except IndexError:
+            raise NoSuchMachineException(machine)
+
+    return machines
+
+
+class NoSuchMachineException(Exception):
+    pass
