@@ -5,7 +5,7 @@ import timeout_decorator
 from PittAPI import shuttle
 from . import PittServerError
 
-
+@unittest.skip
 class ShuttleTest(unittest.TestCase):
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
     def test_get_map_vehicle_points(self):

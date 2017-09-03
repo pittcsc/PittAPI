@@ -4,7 +4,7 @@ import timeout_decorator
 from PittAPI import lab
 from . import PittServerError, DEFAULT_TIMEOUT
 
-
+@unittest.skip
 class LabTest(unittest.TestCase):
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_alumni(self):

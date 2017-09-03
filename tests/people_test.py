@@ -4,7 +4,7 @@ import timeout_decorator
 from PittAPI import people
 from . import PittServerError
 
-
+@unittest.skip
 class PeopleTest(unittest.TestCase):
     @timeout_decorator.timeout(120, timeout_exception=PittServerError)
     def test_people_get_person(self):

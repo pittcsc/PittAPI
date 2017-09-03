@@ -5,7 +5,7 @@ import timeout_decorator
 from PittAPI import news
 from . import PittServerError
 
-
+@unittest.skip
 class NewsTest(unittest.TestCase):
     @timeout_decorator.timeout(30, timeout_exception=PittServerError)
     def test_get_news_default(self):

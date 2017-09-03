@@ -9,7 +9,7 @@ try:
 except IndexError:
     TERM = ''
 
-
+@unittest.skip
 class TextbookTest(unittest.TestCase):
     def test_term_validation(self):
         validate = textbook._validate_term
@@ -66,7 +66,7 @@ class TextbookTest(unittest.TestCase):
     def test_get_textbook(self):
         self.assertRaises(TypeError, textbook.get_textbook, '0000', 'CS', '401')
 
-
+@unittest.skip
 @unittest.skipIf(len(TERM) == 0, 'Wasn\'t able to fetch correct terms to test with.')
 class TextbookAPITest(unittest.TestCase):
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
