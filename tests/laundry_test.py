@@ -9,6 +9,7 @@ class PittServerDownException(Exception):
     """Raise when a Pitt server is down or timing out"""
 
 
+@unittest.skip
 class LaundryTest(unittest.TestCase):
     @timeout_decorator.timeout(30, timeout_exception=PittServerDownException)
     def test_laundry_get_status_simple_towers(self):
