@@ -9,36 +9,39 @@ try:
 except IndexError:
     TERM = ''
 
-@unittest.skip
+
 class TextbookTest(unittest.TestCase):
+    def setUp(self):
+        self.validate = textbook._validate_term
     def test_term_validation(self):
-        validate = textbook._validate_term
-
         if len(TERM) != 0:
-            self.assertEqual(validate(TERM), TERM)
+            self.assertEqual(self.validate(TERM), TERM)
         else:
-            self.assertEqual(validate('2000'), '2000')
-            self.assertRaises(ValueError, validate, '1')
-            self.assertRaises(ValueError, validate, 'a')
+            self.assertEqual(self.validate('2000'), '2000')
+            self.assertRaises(ValueError, self.validate, '1')
+            self.assertRaises(ValueError, self.validate, 'a')
 
-        self.assertRaises(ValueError, validate, '100')
+        self.assertRaises(ValueError, self.validate, '100')
 
-    def test_validate_course(self):
-        validate = textbook._validate_course
+    def test_validate_course_correct_input(self):
+        self.assertEqual(self.validate('0000'), '0000')
+        self.assertEqual(self.validate('0001'), '0001')
+        self.assertEqual(self.validate('0012'), '0012')
+        self.assertEqual(self.validate('0123'), '0123')
+        self.assertEqual(self.validate('1234'), '1234')
+        self.assertEqual(self.validate('9999'), '9999')
 
-        # Testing correct input
-        self.assertEqual(validate('0000'), '0000')
-        self.assertEqual(validate('1234'), '1234')
+    def test_validate_course_improper_input(self):
+        self.assertEqual(self.validate(''), '0000')
+        self.assertEqual(self.validate('0'), '0000')
+        self.assertEqual(self.validate('1'), '0001')
+        self.assertEqual(self.validate('12'), '0012')
+        self.assertEqual(self.validate('123'), '0123')
 
-        # Testing improper input
-        self.assertEqual(validate('1'), '0001')
-        self.assertEqual(validate('12'), '0012')
-        self.assertEqual(validate('123'), '0123')
-
-        # Testing incorrect input
-        self.assertRaises(ValueError, validate, '00000')
-        self.assertRaises(ValueError, validate, '11111')
-        self.assertRaises(ValueError, validate, 'hi')
+    def test_validate_course_incorrect_input(self):
+        self.assertRaises(ValueError, self.validate, '00000')
+        self.assertRaises(ValueError, self.validate, '11111')
+        self.assertRaises(ValueError, self.validate, 'hi')
 
     def test_construct_query(self):
         construct = textbook._construct_query
