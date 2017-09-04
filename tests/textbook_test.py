@@ -17,11 +17,11 @@ class TextbookTest(unittest.TestCase):
 
     def test_term_validation(self):
         if len(TERM) != 0:
-            self.assertEqual(self.validate(TERM), TERM)
-        else:
-            self.assertEqual(self.validate('2000'), '2000')
-            self.assertRaises(ValueError, self.validate, '1')
-            self.assertRaises(ValueError, self.validate, 'a')
+            self.assertEqual(self.validate_term(TERM), TERM)
+
+        self.assertEqual(self.validate_term('2000'), '2000')
+        self.assertRaises(ValueError, self.validate_term, '1')
+        self.assertRaises(ValueError, self.validate_term, 'a')
 
         self.assertRaises(ValueError, self.validate, '100')
 
@@ -33,13 +33,13 @@ class TextbookTest(unittest.TestCase):
         self.assertEqual(self.validate_course('9999'), '9999')
 
     def test_validate_course_improper_input(self):
+        self.assertEqual(ValueError, self.validate_course, '')
         self.assertEqual(self.validate_course('0'), '0000')
         self.assertEqual(self.validate_course('1'), '0001')
         self.assertEqual(self.validate_course('12'), '0012')
         self.assertEqual(self.validate_course('123'), '0123')
 
     def test_validate_course_incorrect_input(self):
-        self.assertEqual(ValueError, self.validate_course, '')
         self.assertEqual(ValueError, self.validate_course, '0000')
         self.assertRaises(ValueError, self.validate_course, '00000')
         self.assertRaises(ValueError, self.validate_course, '11111')
