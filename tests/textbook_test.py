@@ -13,6 +13,7 @@ except IndexError:
 class TextbookTest(unittest.TestCase):
     def setUp(self):
         self.validate = textbook._validate_term
+
     def test_term_validation(self):
         if len(TERM) != 0:
             self.assertEqual(self.validate(TERM), TERM)
@@ -24,7 +25,6 @@ class TextbookTest(unittest.TestCase):
         self.assertRaises(ValueError, self.validate, '100')
 
     def test_validate_course_correct_input(self):
-        self.assertEqual(self.validate('0000'), '0000')
         self.assertEqual(self.validate('0001'), '0001')
         self.assertEqual(self.validate('0012'), '0012')
         self.assertEqual(self.validate('0123'), '0123')
@@ -32,13 +32,14 @@ class TextbookTest(unittest.TestCase):
         self.assertEqual(self.validate('9999'), '9999')
 
     def test_validate_course_improper_input(self):
-        self.assertEqual(self.validate(''), '0000')
         self.assertEqual(self.validate('0'), '0000')
         self.assertEqual(self.validate('1'), '0001')
         self.assertEqual(self.validate('12'), '0012')
         self.assertEqual(self.validate('123'), '0123')
 
     def test_validate_course_incorrect_input(self):
+        self.assertEqual(ValueError, self.validate, '')
+        self.assertEqual(ValueError, self.validate, '0000')
         self.assertRaises(ValueError, self.validate, '00000')
         self.assertRaises(ValueError, self.validate, '11111')
         self.assertRaises(ValueError, self.validate, 'hi')
