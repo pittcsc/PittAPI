@@ -21,6 +21,7 @@ import requests
 from html.parser import HTMLParser
 
 LIBRARY_URL = "http://pitt.summon.serialssolutions.com/api/search"
+sess = requests.session()
 
 class HTMLStrip(HTMLParser):
     def __init__(self):
@@ -31,8 +32,6 @@ class HTMLStrip(HTMLParser):
         self.data.append(d)
     def get_data(self):
         return ''.join(self.data)
-
-sess = requests.session()
 
 def get_documents(query, page=1):
     """Return ten resource results from the specified page"""
@@ -54,9 +53,10 @@ def get_document_by_bookmark(bookmark):
     resp = sess.get(LIBRARY_URL, params=payload)
     resp = resp.json()
 
-    for error in resp.get("errors"):
-        if error['code'] == 'invalid.bookmark.format':
-            raise ValueError("Invalid bookmark")
+    if resp.get("errors"):
+        for error in resp.get("errors"):
+            if error['code'] == 'invalid.bookmark.format':
+                raise ValueError("Invalid bookmark")
 
     results = _extract_results(resp)
     return results
@@ -71,10 +71,9 @@ def _extract_results(json):
         'page_count': json['page_count'],
         'record_count': json['record_count'],
         'page_number': json['query']['page_number'],
-        'facet_fields': _extract_facets(json['facet_fields'])
+        'facet_fields': _extract_facets(json['facet_fields']),
+        'documents': _extract_documents(json['documents'])
         }
-
-    results['documents'] = _extract_documents(json['documents'])
 
     return results
 
@@ -83,7 +82,8 @@ def _extract_documents(documents):
 
     keep_keys = ['bookmarks', 'content_types', 'subject_terms', 'languages', \
         'isbns', 'full_title', 'publishers', 'publication_years', 'discipline', \
-        'authors', 'abstracts', 'link', 'lc_call_numbers']
+        'authors', 'abstracts', 'link', 'lc_call_numbers', 'has_fulltext', \
+        'fulltext_link']
 
     for doc in documents:
         new_doc = {}
