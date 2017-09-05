@@ -37,4 +37,4 @@ class LibraryTest(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_invalid_bookmark(self):
-        self.assertRaises(ValueError, library.get_document_by_bookmark(), "abcd")
+        self.assertRaises(ValueError, library.get_document_by_bookmark, "abcd")
