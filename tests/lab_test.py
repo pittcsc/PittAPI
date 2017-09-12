@@ -1,49 +1,39 @@
 import unittest
-import timeout_decorator
 
 from PittAPI import lab
-from . import PittServerError, DEFAULT_TIMEOUT
 
 @unittest.skip
 class LabTest(unittest.TestCase):
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_alumni(self):
         results = lab.get_status("ALUMNI")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_benedum(self):
         results = lab.get_status("BENEDUM")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_cathg27(self):
         results = lab.get_status("CATH_G27")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_cathg62(self):
         results = lab.get_status("CATH_G62")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
-
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_lawrence(self):
         results = lab.get_status("LAWRENCE")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_hillman(self):
         results = lab.get_status("HILLMAN")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_sutherland(self):
         results = lab.get_status("SUTH")
         self.assertIsInstance(results, dict)
