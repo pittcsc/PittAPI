@@ -67,8 +67,24 @@ class TextbookTest(unittest.TestCase):
 
         self.assertRaises(LookupError, find, test_data, 6)
 
+    @responses.activate
     def test_get_textbook(self):
         self.assertRaises(TypeError, textbook.get_textbook, '0000', 'CS', '401')
+
+    @responses.activate
+    def test_invalid_course_name(self):
+        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '000', 'EXIST', None)
+
+    @responses.activate
+    def test_invalid_instructor(self):
+        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '447', 'EXIST', None)
+
+    @responses.activate
+    def test_invalid_section(self):
+        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '401',  None, '1060')
+
+    def test_get_textbook_no_section_or_instructor(self):
+        self.assertRaises(TypeError, textbook.get_textbook, TERM, 'CS', '401', None, None)
 
     @responses.activate
     def test_textbook_get_textbook(self):
@@ -110,15 +126,3 @@ class TextbookAPITest(unittest.TestCase):
     @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_invalid_department_code(self):
         self.assertRaises(ValueError, textbook.get_textbook, TERM, 'TEST', '000', 'EXIST', None)
-
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
-    def test_invalid_course_name(self):
-        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '000', 'EXIST', None)
-
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
-    def test_invalid_instructor(self):
-        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '447', 'EXIST', None)
-
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
-    def test_invalid_section(self):
-        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '401',  None, '1060')
