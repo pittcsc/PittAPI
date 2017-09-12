@@ -11,14 +11,11 @@ TERM = '1000'
 SCRIPT_PATH = os.path.dirname(__file__)
 
 
-@responses.activate
 class TextbookTest(unittest.TestCase):
+    @responses.activate
     def setUp(self):
         self.validate_term = textbook._validate_term
         self.validate_course = textbook._validate_course
-        with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses.json')) as f:
-            responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
-                          json=json.load(f), status=201)
 
     @unittest.skip
     def test_term_validation(self):
@@ -74,19 +71,45 @@ class TextbookTest(unittest.TestCase):
 
         self.assertRaises(LookupError, find, test_data, 6)
 
+    @responses.activate
     def test_get_textbook(self):
+        with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses.json')) as f:
+            responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                          json=json.load(f), status=201)
+
         self.assertRaises(TypeError, textbook.get_textbook, '0000', 'CS', '401')
 
+
+    @responses.activate
     def test_invalid_course_name(self):
+        with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses.json')) as f:
+            responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                          json=json.load(f), status=201)
+
         self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '000', 'EXIST', None)
 
+    @responses.activate
     def test_invalid_instructor(self):
+        with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses.json')) as f:
+            responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                          json=json.load(f), status=201)
+
         self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '447', 'EXIST', None)
 
+    @responses.activate
     def test_invalid_section(self):
-        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '401', None, '1060')
+        with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses.json')) as f:
+            responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                          json=json.load(f), status=201)
 
+        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '401', None, '9999')
+
+    @responses.activate
     def test_get_textbook_no_section_or_instructor(self):
+        with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses.json')) as f:
+            responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                          json=json.load(f), status=201)
+
         self.assertRaises(TypeError, textbook.get_textbook, TERM, 'CS', '401', None, None)
 
     def test_textbook_get_textbook(self):
