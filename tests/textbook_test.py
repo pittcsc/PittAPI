@@ -1,4 +1,6 @@
 import responses
+import json
+import os
 import unittest
 import timeout_decorator
 
@@ -6,12 +8,17 @@ from PittAPI import textbook
 from . import PittServerError, DEFAULT_TIMEOUT
 
 TERM = '1000'
+SCRIPT_PATH = os.path.dirname(__file__)
 
 
+@responses.activate
 class TextbookTest(unittest.TestCase):
     def setUp(self):
         self.validate_term = textbook._validate_term
         self.validate_course = textbook._validate_course
+        with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses.json')) as f:
+            responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                          json=json.load(f), status=201)
 
     @unittest.skip
     def test_term_validation(self):
@@ -67,30 +74,25 @@ class TextbookTest(unittest.TestCase):
 
         self.assertRaises(LookupError, find, test_data, 6)
 
-    @responses.activate
     def test_get_textbook(self):
         self.assertRaises(TypeError, textbook.get_textbook, '0000', 'CS', '401')
 
-    @responses.activate
     def test_invalid_course_name(self):
         self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '000', 'EXIST', None)
 
-    @responses.activate
     def test_invalid_instructor(self):
         self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '447', 'EXIST', None)
 
-    @responses.activate
     def test_invalid_section(self):
-        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '401',  None, '1060')
+        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '401', None, '1060')
 
     def test_get_textbook_no_section_or_instructor(self):
         self.assertRaises(TypeError, textbook.get_textbook, TERM, 'CS', '401', None, None)
 
-    @responses.activate
     def test_textbook_get_textbook(self):
-        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/books?id=2096322' , json='[{"id":"2096322_9780133744057_0","isbn":"9780133744057","pf_id":null,"new_item_id":"1440565:N","used_item_id":null,"required":"Required","sort_order":["0","1","Data Struct.+Abstract.W/Java-W/Access"],"cover_image_url":"//coverimages.verbacompete.com/09aa6a70-fd2b-5a75-9d41-63a28c87de1a.jpg","title":"Data Struct.+Abstract.W/Java-W/Access","author":"Carrano","notes":null,"citation":"\u003Cem\u003EData Struct.+Abstract.W/Java-W/Access\u003C/em\u003E by Carrano. Pearson Education, 4th Edition, 2014. (ISBN: 9780133744057).","metadata":{"section_id":"2096322","section_code":"22768","term_name":"Fall 17"},"offers":[{"isbn":"9780133744057","retailer":"bookstore","item_id":"1440565:N","condition":"new","title":null,"currency":null,"merchant":"bookstore","rental_days":null,"retailer_name":"University Store","metadata":null,"in_cart":null,"selected":null,"total":"176.2","retailer_order":0,"comments":"Pick it up or ship it!","special_comment":"Pick it up or ship it!","store_branded":true,"data_source":"bookstore","description":"From University Store on Fifth","seller_rating":null,"fcondition":"New","fprice":"$176.20","discounted_shipping":null,"can_checkout":true,"feedback_count":null,"location":null,"price":"176.2","shipping":0,"variant":"new","id":"bookstore_9780133744057_new_1440565:N"},{"isbn":"9780133744057","retailer":"bookstore","item_id":"1440565:NR","condition":"new_rental","title":null,"currency":null,"merchant":"bookstore","rental_days":null,"retailer_name":"University Store","metadata":null,"in_cart":null,"selected":null,"total":"116.4","retailer_order":0,"comments":"Pick it up or ship it!","special_comment":"Pick it up or ship it!","store_branded":true,"data_source":"bookstore","description":"From University Store on Fifth","seller_rating":null,"fcondition":"New Rental","fprice":"$116.40","discounted_shipping":null,"can_checkout":true,"feedback_count":null,"location":null,"price":"116.4","shipping":0,"variant":"rental","id":"bookstore_9780133744057_new_rental_1440565:NR"},{"isbn":"9780133744057","retailer":"bookstore","item_id":"1440565:UR","condition":"used_rental","title":null,"currency":null,"merchant":"bookstore","rental_days":null,"retailer_name":"University Store","metadata":null,"in_cart":null,"selected":null,"total":"72.35","retailer_order":0,"comments":"Books Arriving Every Day-Check Frequently!","special_comment":"Pick it up or ship it!","store_branded":true,"data_source":"bookstore","description":"From University Store on Fifth","seller_rating":null,"fcondition":"Used Rental","fprice":"$72.35","discounted_shipping":null,"can_checkout":false,"feedback_count":null,"location":null,"price":"72.35","shipping":0,"variant":"rental","id":"bookstore_9780133744057_used_rental_1440565:UR"}],"section_id":null,"db_section_id":null,"inclusive_access":false,"catalog_id":23376,"edition":"4","copyright_year":"2015"}]', status=200)
-
-
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/books?id=2096322',
+                      json='[{"id":"2096322_9780133744057_0","isbn":"9780133744057","pf_id":null,"new_item_id":"1440565:N","used_item_id":null,"required":"Required","sort_order":["0","1","Data Struct.+Abstract.W/Java-W/Access"],"cover_image_url":"//coverimages.verbacompete.com/09aa6a70-fd2b-5a75-9d41-63a28c87de1a.jpg","title":"Data Struct.+Abstract.W/Java-W/Access","author":"Carrano","notes":null,"citation":"\u003Cem\u003EData Struct.+Abstract.W/Java-W/Access\u003C/em\u003E by Carrano. Pearson Education, 4th Edition, 2014. (ISBN: 9780133744057).","metadata":{"section_id":"2096322","section_code":"22768","term_name":"Fall 17"},"offers":[{"isbn":"9780133744057","retailer":"bookstore","item_id":"1440565:N","condition":"new","title":null,"currency":null,"merchant":"bookstore","rental_days":null,"retailer_name":"University Store","metadata":null,"in_cart":null,"selected":null,"total":"176.2","retailer_order":0,"comments":"Pick it up or ship it!","special_comment":"Pick it up or ship it!","store_branded":true,"data_source":"bookstore","description":"From University Store on Fifth","seller_rating":null,"fcondition":"New","fprice":"$176.20","discounted_shipping":null,"can_checkout":true,"feedback_count":null,"location":null,"price":"176.2","shipping":0,"variant":"new","id":"bookstore_9780133744057_new_1440565:N"},{"isbn":"9780133744057","retailer":"bookstore","item_id":"1440565:NR","condition":"new_rental","title":null,"currency":null,"merchant":"bookstore","rental_days":null,"retailer_name":"University Store","metadata":null,"in_cart":null,"selected":null,"total":"116.4","retailer_order":0,"comments":"Pick it up or ship it!","special_comment":"Pick it up or ship it!","store_branded":true,"data_source":"bookstore","description":"From University Store on Fifth","seller_rating":null,"fcondition":"New Rental","fprice":"$116.40","discounted_shipping":null,"can_checkout":true,"feedback_count":null,"location":null,"price":"116.4","shipping":0,"variant":"rental","id":"bookstore_9780133744057_new_rental_1440565:NR"},{"isbn":"9780133744057","retailer":"bookstore","item_id":"1440565:UR","condition":"used_rental","title":null,"currency":null,"merchant":"bookstore","rental_days":null,"retailer_name":"University Store","metadata":null,"in_cart":null,"selected":null,"total":"72.35","retailer_order":0,"comments":"Books Arriving Every Day-Check Frequently!","special_comment":"Pick it up or ship it!","store_branded":true,"data_source":"bookstore","description":"From University Store on Fifth","seller_rating":null,"fcondition":"Used Rental","fprice":"$72.35","discounted_shipping":null,"can_checkout":false,"feedback_count":null,"location":null,"price":"72.35","shipping":0,"variant":"rental","id":"bookstore_9780133744057_used_rental_1440565:UR"}],"section_id":null,"db_section_id":null,"inclusive_access":false,"catalog_id":23376,"edition":"4","copyright_year":"2015"}]',
+                      status=200)
 
 
 @unittest.skip
