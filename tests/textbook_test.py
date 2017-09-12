@@ -18,10 +18,8 @@ class TextbookTest(unittest.TestCase):
         with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses_STAT.json')) as f:
             self.stat_data = json.load(f)
 
-    @unittest.skip
     def test_term_validation(self):
-        if len(TERM) != 0:
-            self.assertEqual(self.validate_term(TERM), TERM)
+        self.assertEqual(self.validate_term(TERM), TERM)
 
         self.assertEqual(self.validate_term('2000'), '2000')
         self.assertRaises(ValueError, self.validate_term, '1')
@@ -71,6 +69,18 @@ class TextbookTest(unittest.TestCase):
             self.assertEqual(find(test_data, i), i ** 2)
 
         self.assertRaises(LookupError, find, test_data, 6)
+
+    def test_filter_dictionary(self):
+        test_dict = {
+            'a': 1,
+            'b': 2,
+            'c': 3
+        }
+        test_key = ['a', 'c']
+        self.assertEquals(
+            textbook._filter_dictionary(
+                test_dict, test_key), {'a': 1, 'c': 3}
+        )
 
     @responses.activate
     def test_get_textbook(self):
