@@ -1,6 +1,4 @@
-import pprint
 import unittest
-import timeout_decorator
 
 from PittAPI import laundry
 

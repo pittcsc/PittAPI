@@ -135,6 +135,7 @@ def _extract_id(response, course, instructor, section):
     """Gathers sections from departments and finds course id by
      instructor name or section number.
      """
+    print(course, section, instructor, response.json())
     sections = _find_sections(response.json(), course)
     error = 0
     try:
