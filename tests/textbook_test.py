@@ -19,15 +19,19 @@ class TextbookTest(unittest.TestCase):
         with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses_STAT.json')) as f:
             self.stat_data = json.load(f)
 
-    @unittest.skip
     def test_term_validation(self):
+        textbook.TERMS = ['1000']
         self.assertEqual(self.validate_term(TERM), TERM)
 
+    def test_term_validation_no_terms(self):
+        textbook.TERMS = []
         self.assertEqual(self.validate_term('2000'), '2000')
+
+    def test_term_validation_invalid(self):
         self.assertRaises(ValueError, self.validate_term, '1')
         self.assertRaises(ValueError, self.validate_term, 'a')
-
-        self.assertRaises(ValueError, self.validate, '100')
+        self.assertRaises(ValueError, self.validate_term, '100')
+        self.assertRaises(ValueError, self.validate_term, '10000')
 
     @responses.activate
     def test_fetch_term_codes_no_internet(self):
