@@ -28,6 +28,14 @@ class TextbookTest(unittest.TestCase):
         self.assertEqual(self.validate_term('2000'), '2000')
 
     def test_term_validation_invalid(self):
+        textbook.TERMS = ['1000']
+        self.assertRaises(ValueError, self.validate_term, '1')
+        self.assertRaises(ValueError, self.validate_term, 'a')
+        self.assertRaises(ValueError, self.validate_term, '100')
+        self.assertRaises(ValueError, self.validate_term, '10000')
+
+    def test_term_validation_invalid_no_terms(self):
+        textbook.TERMS = []
         self.assertRaises(ValueError, self.validate_term, '1')
         self.assertRaises(ValueError, self.validate_term, 'a')
         self.assertRaises(ValueError, self.validate_term, '100')
