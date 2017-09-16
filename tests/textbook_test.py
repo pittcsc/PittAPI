@@ -29,6 +29,18 @@ class TextbookTest(unittest.TestCase):
 
         self.assertRaises(ValueError, self.validate, '100')
 
+    @responses.activate
+    def test_fetch_term_codes_no_internet(self):
+        self.assertEqual(textbook._fetch_term_codes(), [])
+
+
+    @responses.activate
+    def test_fetch_term_codes(self):
+        with open(os.path.join(SCRIPT_PATH, 'samples/textbook_term.html')) as f:
+            responses.add(responses.GET, 'http://pitt.verbacompare.com/',
+                          body=''.join(f.readlines()), status=200)
+        self.assertEqual(textbook._fetch_term_codes(), ['2985'])
+
     def test_validate_course_correct_input(self):
         self.assertEqual(self.validate_course('0000'), '0000')
         self.assertEqual(self.validate_course('0001'), '0001')
