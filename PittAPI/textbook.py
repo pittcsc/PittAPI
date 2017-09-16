@@ -209,7 +209,10 @@ def get_textbooks(term, courses):
     )
     section_ids = [
         _extract_id(*course)
-        for course in _fetch_course(courses, dict(zip(departments, responses)))
+        for course in _fetch_course(courses, dict(zip(
+            sorted(departments),
+            sorted(responses, key=lambda resp: resp.json()[0]['name'])
+        )))
     ]
     return _extract_books(section_ids)
 

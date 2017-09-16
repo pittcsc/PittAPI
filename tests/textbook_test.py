@@ -139,12 +139,12 @@ class TextbookTest(unittest.TestCase):
         responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
                       json=self.cs_data, status=201)
         responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22594&term_id=1000',
-                      json=self.stat_data, status=201)
+                      json=self.stat_data, status=200)
         multi_book_test = textbook.get_textbooks(
             term=TERM,
             courses=[
-                {'department': 'CS', 'course': '445', 'section': '1030'},
-                {'department': 'STAT', 'course': '1000', 'instructor': 'WANG'}])
+                {'department': 'STAT', 'course': '1000', 'instructor': 'WANG'},
+                {'department': 'CS', 'course': '445', 'section': '1030'}])
         self.assertIsInstance(multi_book_test, list)
 
     def test_invalid_department_code(self):
