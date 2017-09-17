@@ -19,8 +19,10 @@ class TextbookTest(unittest.TestCase):
         with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses_STAT.json')) as f:
             self.stat_data = json.load(f)
 
+    def setUp(self):
+        textbook.TERMS = [TERM]
+
     def test_term_validation(self):
-        textbook.TERMS = ['1000']
         self.assertEqual(self.validate_term(TERM), TERM)
 
     def test_term_validation_no_terms(self):
@@ -28,7 +30,6 @@ class TextbookTest(unittest.TestCase):
         self.assertEqual(self.validate_term('2000'), '2000')
 
     def test_term_validation_invalid(self):
-        textbook.TERMS = ['1000']
         self.assertRaises(ValueError, self.validate_term, '1')
         self.assertRaises(ValueError, self.validate_term, 'a')
         self.assertRaises(ValueError, self.validate_term, '100')
@@ -44,7 +45,6 @@ class TextbookTest(unittest.TestCase):
     @responses.activate
     def test_fetch_term_codes_no_internet(self):
         self.assertEqual(textbook._fetch_term_codes(), [])
-
 
     @responses.activate
     def test_fetch_term_codes(self):
@@ -95,6 +95,11 @@ class TextbookTest(unittest.TestCase):
             self.assertEqual(find(test_data, i), i ** 2)
 
         self.assertRaises(LookupError, find, test_data, 6)
+
+    @responses.activate
+    def test_extract_id(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=201)
 
     def test_filter_dictionary(self):
         test_dict = {

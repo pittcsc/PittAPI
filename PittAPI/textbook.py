@@ -16,33 +16,12 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-import json
 import warnings
 
 import grequests
 import requests
-from bs4 import BeautifulSoup
-from requests.exceptions import ConnectionError as RequestsConnectionError
 
 BASE_URL = 'http://pitt.verbacompare.com/'
-
-
-def _fetch_term_codes():
-    """Fetches current valid term codes"""
-    try:
-        page = requests.get(BASE_URL)
-    except RequestsConnectionError:
-        return []
-    script = BeautifulSoup(page.text, 'lxml').findAll('script')[-2].text
-    data = json.loads(script[script.find('['):script.find(']') + 1])
-    terms = [
-        item['id']
-        for item in data
-    ]
-    return terms
-
-
-TERMS = _fetch_term_codes()
 CODES = [
     'ADMJ', 'ADMPS', 'AFRCNA', 'AFROTC', 'ANTH', 'ARABIC', 'ARTSC', 'ASL', 'ASTRON', 'ATHLTR', 'BACC', 'BCHS', 'BECN',
     'BFIN', 'BHRM', 'BIND', 'BIOENG', 'BIOETH', 'BIOINF', 'BIOSC', 'BIOST', 'BMIS', 'BMKT', 'BOAH', 'BORG', 'BQOM',
@@ -81,12 +60,7 @@ def _construct_query(query, *args):
 
 def _validate_term(term):
     """Validates term is a string and check if it is valid."""
-    if len(TERMS) == 0:
-        warnings.warn('Wasn\'t able to validate term. Assuming term code is valid.')
-        if len(term) == 4 and term.isdigit():
-            return term
-        raise ValueError("Invalid term")
-    if term in TERMS:
+    if len(term) == 4 and term.isdigit():
         return term
     raise ValueError("Invalid term")
 
@@ -102,6 +76,13 @@ def _validate_course(course):
         return course
     return '0' * (4 - len(course)) + course
 
+
+def _validate_response(response):
+    pass
+
+
+def _validate_responses(responses):
+    pass
 
 def _filter_dictionary(d, keys):
     """Creates new dictionary from selecting certain
