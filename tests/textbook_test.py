@@ -19,6 +19,71 @@ class TextbookTest(unittest.TestCase):
         with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses_STAT.json')) as f:
             self.stat_data = json.load(f)
 
+    @responses.activate
+    def test_textbook_get_textbook(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        instructor_test = textbook.get_textbook(
+            term=TERM,
+            department='CS',
+            course='445',
+            instructor='GARRISON III'
+        )
+
+        section_test = textbook.get_textbook(
+            term=TERM,
+            department='CS',
+            course='445',
+            section='1030'
+        )
+        self.assertIsInstance(instructor_test, list)
+        self.assertIsInstance(section_test, list)
+
+    @responses.activate
+    def test_textbook_get_textbooks(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22594&term_id=1000',
+                      json=self.stat_data, status=200)
+        multi_book_test = textbook.get_textbooks(
+            term=TERM,
+            courses=[
+                {'department': 'STAT', 'course': '1000', 'instructor': 'WANG'},
+                {'department': 'CS', 'course': '445', 'section': '1030'}])
+        self.assertIsInstance(multi_book_test, list)
+
+    @responses.activate
+    def test_get_textbook_invalid_term(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        self.assertRaises(TypeError, textbook.get_textbook, '0000', 'CS', '401')
+
+    @responses.activate
+    def test_get_textbook_invalid_subject(self):
+        # TODO(@azharichenko): Added better subject verification in future update
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        self.assertRaises(ValueError, textbook.get_textbook, TERM, 'Computer Science', '000', 'EXIST', None)
+
+    @responses.activate
+    def test_get_textbook_invalid_instructor(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '447', 'EXIST', None)
+
+    @responses.activate
+    def test_get_textbook_invalid_section(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '401', None, '9999')
+
+    @responses.activate
+    def test_get_textbook_invalid_section_and_instructor(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        self.assertRaises(TypeError, textbook.get_textbook, TERM, 'CS', '401', None, None)
+
+
     def test_term_validation(self):
         self.assertEqual(self.validate_term(TERM), TERM)
 
@@ -88,68 +153,8 @@ class TextbookTest(unittest.TestCase):
                 test_dict, test_key), {'a': 1, 'c': 3}
         )
 
-    @responses.activate
-    def test_get_textbook(self):
-        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
-                      json=self.cs_data, status=200)
-        self.assertRaises(TypeError, textbook.get_textbook, '0000', 'CS', '401')
 
-    @responses.activate
-    def test_invalid_course_name(self):
-        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
-                      json=self.cs_data, status=200)
-        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '000', 'EXIST', None)
 
-    @responses.activate
-    def test_invalid_instructor(self):
-        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
-                      json=self.cs_data, status=200)
-        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '447', 'EXIST', None)
-
-    @responses.activate
-    def test_invalid_section(self):
-        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
-                      json=self.cs_data, status=200)
-        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '401', None, '9999')
-
-    @responses.activate
-    def test_get_textbook_no_section_or_instructor(self):
-        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
-                      json=self.cs_data, status=200)
-        self.assertRaises(TypeError, textbook.get_textbook, TERM, 'CS', '401', None, None)
-
-    @responses.activate
-    def test_textbook_get_textbook(self):
-        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
-                      json=self.cs_data, status=200)
-        instructor_test = textbook.get_textbook(
-            term=TERM,
-            department='CS',
-            course='445',
-            instructor='GARRISON III'
-        )
-
-        section_test = textbook.get_textbook(
-            term=TERM,
-            department='CS',
-            course='445',
-            section='1030'
-        )
-        self.assertIsInstance(instructor_test, list)
-        self.assertIsInstance(section_test, list)
-
-    @responses.activate
-    def test_textbook_get_textbooks(self):
-        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
-                      json=self.cs_data, status=200)
-        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22594&term_id=1000',
-                      json=self.stat_data, status=200)
-        multi_book_test = textbook.get_textbooks(
-            term=TERM,
-            courses=[
-                {'department': 'STAT', 'course': '1000', 'instructor': 'WANG'},
-                {'department': 'CS', 'course': '445', 'section': '1030'}])
-        self.assertIsInstance(multi_book_test, list)
 
     def test_invalid_department_code(self):
         self.assertRaises(ValueError, textbook.get_textbook, TERM, 'TEST', '000', 'EXIST', None)
