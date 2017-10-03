@@ -57,17 +57,6 @@ def _validate_course(course):
     return '0' * (4 - len(course)) + course
 
 
-def _validate_response(resp):
-    return (resp.status_code == 200) and (resp.text != '[]')
-
-
-def _validate_responses(responses):
-    for resp in responses:
-        if not _validate_response(resp):
-            return False
-    return True
-
-
 def _filter_dictionary(d, keys):
     """Creates new dictionary from selecting certain
     key value pairs from another dictionary
