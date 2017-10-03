@@ -24,7 +24,7 @@ from bs4 import BeautifulSoup
 from PittAPI import course
 from . import PittServerError, DEFAULT_TIMEOUT
 
-TERM = '2177'
+TERM = course.TERMS[0]
 HEADER_DATA = '<th width="9%">Subject</th><th>Catalog #</th><th>Credits/Units</th>'
 
 class CourseTest(unittest.TestCase):
@@ -70,8 +70,8 @@ class CourseTest(unittest.TestCase):
         self.assertRaises(ValueError, course.get_class, '1', '10045')
 
     def test_term_validation(self):
-        self.assertEqual(course._validate_term('2177'), TERM)
-        self.assertEqual(course._validate_term(2177), TERM)
+        self.assertEqual(course._validate_term(TERM), TERM)
+        self.assertEqual(course._validate_term(int(TERM)), TERM)
         self.assertRaises(ValueError, course._validate_term, '1')
 
     def test_column_header_extraction(self):
