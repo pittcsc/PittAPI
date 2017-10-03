@@ -42,7 +42,7 @@ def get_locations():
     return get_locations_by_status()
 
 
-def get_locations_by_status(status: str=None) -> List[Dict[str,str]]:
+def get_locations_by_status(status: str=None) -> List[Dict[str,Any]]:
     # status can be nil, open, or closed
     # None     - returns all dining locations
     # 'all'    - same as None (or anything else)

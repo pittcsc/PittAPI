@@ -113,7 +113,7 @@ def _extract_course_data(header: List[str], course: Any) -> Dict[str,str]:
         return data
 
 
-def get_class(term: str, class_number: str) -> Dict[str,str]:
+def get_class(term: str, class_number: str) -> Dict[str,Any]:
     """Returns dictionary of details about a class."""
     payload = {
         'TERM': _validate_term(term),
@@ -130,7 +130,7 @@ def get_class(term: str, class_number: str) -> Dict[str,str]:
     return class_dict
 
 
-def _extract_description(text: str) -> Dict[str,str]:
+def _extract_description(text: str) -> Dict[str,Any]:
     """Extracts class description from web page"""
     soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
     description = {

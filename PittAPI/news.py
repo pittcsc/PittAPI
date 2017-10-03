@@ -21,7 +21,7 @@ import re
 import math
 import requests
 import grequests
-from typing import Dict, List
+from typing import Dict, List, Any
 
 sess = requests.session()
 
@@ -44,7 +44,7 @@ def _load_n_items(feed: str, max_news_items: int):
     return responses
 
 
-def get_news(feed: str='main_news', max_news_items: int=10) -> List[Dict[str,str]]:
+def get_news(feed: str='main_news', max_news_items: int=10) -> List[Dict[str,Any]]:
     # feed indicates the desired news feed
     # 'main_news'      - main news
     # 'cssd'           - student announcements, on my pitt
