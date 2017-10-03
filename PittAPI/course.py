@@ -20,6 +20,7 @@ import warnings
 
 import requests
 import re
+from typing import List, Dict, Tuple, Any
 from bs4 import BeautifulSoup, SoupStrainer
 
 URL = 'http://www.courses.as.pitt.edu/'
@@ -42,7 +43,7 @@ DAY_PROGRAM, SAT_PROGRAM = 'CGSDAY', 'CGSSAT'
 TERMS = re.compile("2..[147]")
 
 
-def get_courses(term, code):
+def get_courses(term: str, code: str) -> List[Dict[str,str]]:
     """Returns a list of dictionaries containing all courses queried from code."""
     col_headers, course_data = _retrieve_courses_from_url(
         url=URL + _get_subject_query(code, term)
@@ -51,7 +52,7 @@ def get_courses(term, code):
     return courses
 
 
-def _get_subject_query(code, term):
+def _get_subject_query(code: str, term: str) -> str:
     """Builds query based on code entered."""
     code, term = code.upper(), _validate_term(term)
     if code in CODES:
@@ -67,9 +68,9 @@ def _get_subject_query(code, term):
     raise ValueError("Invalid subject")
 
 
-def _validate_term(term):
+def _validate_term(term: str) -> str:
     """Validates term is a string and check if it is valid."""
-    if not isinstance(term, str):
+    if not isinstance(term, str): #This check could be removed if everything works as intended
         warnings.warn('Term value should be a string.')
         term = str(term)
     if TERMS.match(term):
@@ -77,7 +78,8 @@ def _validate_term(term):
     raise ValueError("Invalid term")
 
 
-def _retrieve_courses_from_url(url):
+# TODO: Write type definition for bs objects (annotated as Any for now)
+def _retrieve_courses_from_url(url: str) -> Tuple[List[str], Any]:
     """Returns a tuple of column header keys and list of course data."""
     page = requests.get(url)
     soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['table', 'tr', 'th']))
@@ -85,7 +87,7 @@ def _retrieve_courses_from_url(url):
     return courses
 
 
-def _extract_header(data):
+def _extract_header(data: Any) -> List[str]:
     """Extracts column headers and converts it into keys for a future dictionary."""
     header = []
     for tag in data:
@@ -97,7 +99,7 @@ def _extract_header(data):
     return header
 
 
-def _extract_course_data(header, course):
+def _extract_course_data(header: List[str], course: Any) -> Dict[str,str]:
     """Constructs a dictionary from column header labels(subject, class number, etc.) and course data."""
     data = {}
     for item, value in zip(header, course.findAll('td')):
@@ -111,7 +113,7 @@ def _extract_course_data(header, course):
         return data
 
 
-def get_class(term, class_number):
+def get_class(term: str, class_number: str) -> Dict[str,str]:
     """Returns dictionary of details about a class."""
     payload = {
         'TERM': _validate_term(term),
@@ -128,7 +130,7 @@ def get_class(term, class_number):
     return class_dict
 
 
-def _extract_description(text):
+def _extract_description(text: str) -> Dict[str,str]:
     """Extracts class description from web page"""
     soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
     description = {
@@ -137,7 +139,7 @@ def _extract_description(text):
 
     return description
 
-def _extract_details(text):
+def _extract_details(text: str) -> Dict[str,str]:
     """Extracts class number, classroom, section, date, and time from web page"""
     soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
     row = soup.findAll('td', {'class': 'style1'})
