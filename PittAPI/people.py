@@ -26,7 +26,7 @@ PEOPLE_URL = "https://m.pitt.edu/people/search.json"
 DETAIL_URL = "https://m.pitt.edu/people/detail.json"
 
 
-def get_person(query: str, max_people: int = 10) -> List[Dict[str,str]]:
+def get_person(query: str, max_people: int = 10) -> List[Dict[str,Any]]:
     """ """
     url_list = [item for l_list in _get_person_url(query, max_people) for item in l_list]
     results = [_get_person_details(url) for url in url_list]
@@ -35,7 +35,7 @@ def get_person(query: str, max_people: int = 10) -> List[Dict[str,str]]:
 
     return persons[:max_people]
 
-def _extract_person(item: Dict[str,Any]) -> Dict[str,str]:
+def _extract_person(item: Dict[str,Any]) -> Dict[str,Any]:
     """ """
     person = {
         'name': item["fields"]["title"],
