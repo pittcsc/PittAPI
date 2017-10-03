@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import requests
 import grequests
+from typing import Dict
 
 sess = requests.session()
 
@@ -41,7 +42,7 @@ def get_locations():
     return get_locations_by_status()
 
 
-def get_locations_by_status(status=None):
+def get_locations_by_status(status: str=None) -> List[Dict[str,str]]:
     # status can be nil, open, or closed
     # None     - returns all dining locations
     # 'all'    - same as None (or anything else)
@@ -96,7 +97,7 @@ def get_locations_by_status(status=None):
 #    return []
 
 
-def _encode_dining_location(string):
+def _encode_dining_location(string: str) -> str:
     # changes full name into dict key name
     string = string.lower()
     string = string.replace(' ', '_')

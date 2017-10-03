@@ -22,6 +22,8 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
+from typing import Dict, List
+
 session = requests.session()
 
 location_dict = {
@@ -36,7 +38,7 @@ location_dict = {
 }
 
 
-def get_status_simple(building_name):
+def get_status_simple(building_name: str) -> Dict[str,str]:
     """
     :returns: a dictionary with free washers and dryers as well as total washers
     and dryers for given building
@@ -75,7 +77,7 @@ def get_status_simple(building_name):
     return di
 
 
-def get_status_detailed(building_name):
+def get_status_detailed(building_name: str) -> List[Dict[str,str]]:
     building_name = building_name.upper()
 
     # Get a cookie
@@ -113,7 +115,7 @@ def get_status_detailed(building_name):
 
     cleaned_resp = [x for x in cleaned_resp if len(x) == 10]
 
-    di = []
+    di = [] # type: List[Dict[str,str]]
     for machine in cleaned_resp:
         time_left = -1
         machine_name = "{}_{}".format(machine[9], machine[3])
