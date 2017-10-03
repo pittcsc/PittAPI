@@ -6,4 +6,5 @@ lxml
 nose
 nose-cov
 nose-timer
+typing
 virtualenv
