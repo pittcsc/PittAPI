@@ -23,7 +23,6 @@ import re
 from bs4 import BeautifulSoup, SoupStrainer
 
 URL = 'http://www.courses.as.pitt.edu/'
-
 CODES = [
     'ADMPS', 'AFRCNA', 'ANTH', 'ARABIC', 'ASL', 'ARTSC', 'ASTRON', 'BIOETH', 'BIOSC', 'CHEM', 'CHLIT', 'CHIN', 'CLASS',
     'COMMRC', 'CS', 'EAS', 'ECON', 'ENGCMP', 'ENGFLM', 'ENGLIT', 'ENGWRT', 'FP', 'FR', 'FTDA', 'FTDB', 'FTDC', 'GEOL',
@@ -37,14 +36,6 @@ CODES = [
 REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', 'IF', 'IFN', 'I', 'A']
 PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST', 'URBNST', 'SELF', 'GSWS']
 DAY_PROGRAM, SAT_PROGRAM = 'CGSDAY', 'CGSSAT'
-
-def _retrieve_term_codes():
-    """Returns a list of all current term codes from course web page."""
-    page = requests.get(URL)
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['input'])).findAll('input')
-    return [tag.attrs['value'] for tag in soup[:3]]
-
-TERMS = _retrieve_term_codes()
 
 def get_courses(term, code):
     """Returns a list of dictionaries containing all courses queried from code."""
@@ -73,10 +64,8 @@ def _get_subject_query(code, term):
 
 def _validate_term(term):
     """Validates term is a string and check if it is valid."""
-    if not isinstance(term, str):
-        warnings.warn('Term value should be a string.')
-        term = str(term)
-    if TERMS.match(term):
+    months = [1, 4 ,7]
+    if int(term / 1000) == 2 and (term % 10) in months:
         return term
     raise ValueError("Invalid term")
 
