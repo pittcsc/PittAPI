@@ -21,7 +21,6 @@ import unittest
 
 from PittAPI import lab
 
-@unittest.skip
 class LabTest(unittest.TestCase):
     def test_get_status_alumni(self):
         results = lab.get_status("ALUMNI")
@@ -86,3 +85,12 @@ class LabTest(unittest.TestCase):
         info = lab._extract_machines(data)
         self.assertIsInstance(info, list)
         self.assertEqual(info, [123, 456, 789, 3])
+
+    def test_validate_lab(self):
+        for loc in lab.LOCATIONS:
+            self.assertEquals(lab._validate_lab(loc), loc)
+        for loc in lab.LOCATIONS:
+            self.assertEquals(lab._validate_lab(loc.lower()), loc)
+
+    def test_validate_lab_invalid(self):
+        self.assertRaises(ValueError, lab._validate_lab, 'Hello')
