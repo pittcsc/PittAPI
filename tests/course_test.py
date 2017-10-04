@@ -23,10 +23,10 @@ from bs4 import BeautifulSoup
 
 from PittAPI import course
 
-TERM = course.TERMS[0]
+TERM = '1000'
 HEADER_DATA = '<th width="9%">Subject</th><th>Catalog #</th><th>Credits/Units</th>'
 
-@unittest.skip
+
 class CourseTest(unittest.TestCase):
     def test_get_courses(self):
         self.assertIsInstance(course.get_courses(TERM, 'CS'), list)
