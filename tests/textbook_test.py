@@ -16,47 +16,121 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
+
+import responses
+import json
+import os
 import unittest
-import timeout_decorator
 
 from PittAPI import textbook
-from . import PittServerError, DEFAULT_TIMEOUT
 
-try:
-    TERM = textbook.TERMS[0]
-except IndexError:
-    TERM = ''
+TERM = '1000'
+SCRIPT_PATH = os.path.dirname(__file__)
 
 
 class TextbookTest(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
+        self.validate_term = textbook._validate_term
+        self.validate_course = textbook._validate_course
+        with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses_CS.json')) as f:
+            self.cs_data = json.load(f)
+        with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses_STAT.json')) as f:
+            self.stat_data = json.load(f)
+
+    @responses.activate
+    def test_textbook_get_textbook(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        instructor_test = textbook.get_textbook(
+            term=TERM,
+            department='CS',
+            course='445',
+            instructor='GARRISON III'
+        )
+
+        section_test = textbook.get_textbook(
+            term=TERM,
+            department='CS',
+            course='445',
+            section='1030'
+        )
+        self.assertIsInstance(instructor_test, list)
+        self.assertIsInstance(section_test, list)
+
+    @responses.activate
+    def test_textbook_get_textbooks(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22594&term_id=1000',
+                      json=self.stat_data, status=200)
+        multi_book_test = textbook.get_textbooks(
+            term=TERM,
+            courses=[
+                {'department': 'STAT', 'course': '1000', 'instructor': 'WANG'},
+                {'department': 'CS', 'course': '445', 'section': '1030'}])
+        self.assertIsInstance(multi_book_test, list)
+
+    @responses.activate
+    def test_get_textbook_invalid_term(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        self.assertRaises(TypeError, textbook.get_textbook, '0000', 'CS', '401')
+
+    @responses.activate
+    def test_get_textbook_invalid_subject(self):
+        # TODO(@azharichenko): Added better subject verification in future update
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        self.assertRaises(ValueError, textbook.get_textbook, TERM, 'Computer Science', '000', 'EXIST', None)
+
+    @responses.activate
+    def test_get_textbook_invalid_instructor(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '447', 'EXIST', None)
+
+    @responses.activate
+    def test_get_textbook_invalid_section(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '401', None, '9999')
+
+    @responses.activate
+    def test_get_textbook_invalid_section_and_instructor(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=200)
+        self.assertRaises(TypeError, textbook.get_textbook, TERM, 'CS', '401', None, None)
+
+
     def test_term_validation(self):
-        validate = textbook._validate_term
+        self.assertEqual(self.validate_term(TERM), TERM)
 
-        if len(TERM) != 0:
-            self.assertEqual(validate(TERM), TERM)
-        else:
-            self.assertEqual(validate('2000'), '2000')
-            self.assertRaises(ValueError, validate, '1')
-            self.assertRaises(ValueError, validate, 'a')
+    def test_term_validation_invalid(self):
+        self.assertRaises(ValueError, self.validate_term, '1')
+        self.assertRaises(ValueError, self.validate_term, 'a')
+        self.assertRaises(ValueError, self.validate_term, '100')
+        self.assertRaises(ValueError, self.validate_term, '10000')
 
-        self.assertRaises(ValueError, validate, '100')
+    def test_validate_course_correct_input(self):
+        self.assertEqual(self.validate_course('0000'), '0000')
+        self.assertEqual(self.validate_course('0001'), '0001')
+        self.assertEqual(self.validate_course('0012'), '0012')
+        self.assertEqual(self.validate_course('0123'), '0123')
+        self.assertEqual(self.validate_course('1234'), '1234')
+        self.assertEqual(self.validate_course('9999'), '9999')
 
-    def test_validate_course(self):
-        validate = textbook._validate_course
+    def test_validate_course_improper_input(self):
+        self.assertEqual(self.validate_course('0'), '0000')
+        self.assertEqual(self.validate_course('1'), '0001')
+        self.assertEqual(self.validate_course('12'), '0012')
+        self.assertEqual(self.validate_course('123'), '0123')
 
-        # Testing correct input
-        self.assertEqual(validate('0000'), '0000')
-        self.assertEqual(validate('1234'), '1234')
-
-        # Testing improper input
-        self.assertEqual(validate('1'), '0001')
-        self.assertEqual(validate('12'), '0012')
-        self.assertEqual(validate('123'), '0123')
-
-        # Testing incorrect input
-        self.assertRaises(ValueError, validate, '00000')
-        self.assertRaises(ValueError, validate, '11111')
-        self.assertRaises(ValueError, validate, 'hi')
+    def test_validate_course_incorrect_input(self):
+        self.assertRaises(ValueError, self.validate_course, '')
+        self.assertRaises(ValueError, self.validate_course, '00000')
+        self.assertRaises(ValueError, self.validate_course, '11111')
+        self.assertRaises(ValueError, self.validate_course, 'hi')
 
     def test_construct_query(self):
         construct = textbook._construct_query
@@ -81,52 +155,25 @@ class TextbookTest(unittest.TestCase):
 
         self.assertRaises(LookupError, find, test_data, 6)
 
-    def test_get_textbook(self):
-        self.assertRaises(TypeError, textbook.get_textbook, '0000', 'CS', '401')
+    @responses.activate
+    def test_extract_id(self):
+        responses.add(responses.GET, 'http://pitt.verbacompare.com/compare/courses/?id=22457&term_id=1000',
+                      json=self.cs_data, status=201)
 
-
-@unittest.skipIf(len(TERM) == 0, 'Wasn\'t able to fetch correct terms to test with.')
-class TextbookAPITest(unittest.TestCase):
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
-    def test_textbook_get_textbook(self):
-        instructor_test = textbook.get_textbook(
-            term=TERM,
-            department='CS',
-            course='445',
-            instructor='GARRISON III'
+    def test_filter_dictionary(self):
+        test_dict = {
+            'a': 1,
+            'b': 2,
+            'c': 3
+        }
+        test_key = ['a', 'c']
+        self.assertEqual(
+            textbook._filter_dictionary(
+                test_dict, test_key), {'a': 1, 'c': 3}
         )
 
-        section_test = textbook.get_textbook(
-            term=TERM,
-            department='CS',
-            course='445',
-            section='1010'
-        )
-        self.assertIsInstance(instructor_test, list)
-        self.assertIsInstance(section_test, list)
 
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
-    def test_textbook_get_textbooks(self):
-        multi_book_test = textbook.get_textbooks(
-            term=TERM,
-            courses=[
-                {'department': 'CS', 'course': '445', 'section': '1010'},
-                {'department': 'STAT', 'course': '1000', 'instructor': 'YANG'}])
-        self.assertIsInstance(multi_book_test, list)
 
-    @unittest.skip
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
+
     def test_invalid_department_code(self):
         self.assertRaises(ValueError, textbook.get_textbook, TERM, 'TEST', '000', 'EXIST', None)
-
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
-    def test_invalid_course_name(self):
-        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '000', 'EXIST', None)
-
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
-    def test_invalid_instructor(self):
-        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '447', 'EXIST', None)
-
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
-    def test_invalid_section(self):
-        self.assertRaises(LookupError, textbook.get_textbook, TERM, 'CS', '401',  None, '1060')
