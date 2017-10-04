@@ -18,47 +18,76 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 """
 
 import unittest
+import responses
 
 from PittAPI import lab
 
-@unittest.skip
+TEST_DATA = ('<span>Alumni Lab is currently closed.  Benedum Lab is currently closed.  Cathedral G27 Lab is currently  '
+             'closed.  Cathedral G62 Lab is currently closed.  David Lawrence Lab is open: 35 Windows, 1 Mac, 2 Linux  '
+             'Hillman Lab is open: 52 Windows, 0 Macs, 2 Linux  Sutherland Lab is currently closed.</span')
+
+
 class LabTest(unittest.TestCase):
+    @responses.activate
     def test_get_status_alumni(self):
+        responses.add(responses.GET, lab.URL,
+                      body=TEST_DATA, status=200)
         results = lab.get_status("ALUMNI")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
+    @responses.activate
     def test_get_status_benedum(self):
+        responses.add(responses.GET, lab.URL,
+                      body=TEST_DATA, status=200)
         results = lab.get_status("BENEDUM")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
+    @responses.activate
     def test_get_status_cathg27(self):
+        responses.add(responses.GET, lab.URL,
+                      body=TEST_DATA, status=200)
         results = lab.get_status("CATH_G27")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
+    @responses.activate
     def test_get_status_cathg62(self):
+        responses.add(responses.GET, lab.URL,
+                      body=TEST_DATA, status=200)
         results = lab.get_status("CATH_G62")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
+    @responses.activate
     def test_get_status_lawrence(self):
+        responses.add(responses.GET, lab.URL,
+                      body=TEST_DATA, status=200)
         results = lab.get_status("LAWRENCE")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
+    @responses.activate
     def test_get_status_hillman(self):
+        responses.add(responses.GET, lab.URL,
+                      body=TEST_DATA, status=200)
         results = lab.get_status("HILLMAN")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
+    @responses.activate
     def test_get_status_sutherland(self):
+        responses.add(responses.GET, lab.URL,
+                      body=TEST_DATA, status=200)
         results = lab.get_status("SUTH")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
+    @responses.activate
     def test_fetch_labs(self):
+        responses.add(responses.GET, lab.URL,
+                      body=TEST_DATA, status=200)
         self.assertIsInstance(lab._fetch_labs(), list)
 
     def test_lab_name_validation(self):
@@ -86,3 +115,12 @@ class LabTest(unittest.TestCase):
         info = lab._extract_machines(data)
         self.assertIsInstance(info, list)
         self.assertEqual(info, [123, 456, 789, 3])
+
+    def test_validate_lab(self):
+        for loc in lab.LOCATIONS:
+            self.assertEquals(lab._validate_lab(loc), loc)
+        for loc in lab.LOCATIONS:
+            self.assertEquals(lab._validate_lab(loc.lower()), loc)
+
+    def test_validate_lab_invalid(self):
+        self.assertRaises(ValueError, lab._validate_lab, 'Hello')
