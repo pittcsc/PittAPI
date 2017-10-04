@@ -65,7 +65,7 @@ def _get_subject_query(code, term):
 
 def _validate_term(term):
     """Validates term is a string and check if it is valid."""
-    if re.compile("2..[147]").match(term):
+    if re.compile("2\d\d[147]").match(term):
         return term
     raise ValueError("Invalid term")
 
