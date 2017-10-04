@@ -18,12 +18,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 """
 
 import unittest
+import responses
 
 from bs4 import BeautifulSoup
 
 from PittAPI import course
 
-TERM = '1000'
+TERM = '2001'
+
 HEADER_DATA = '<th width="9%">Subject</th><th>Catalog #</th><th>Credits/Units</th>'
 
 
