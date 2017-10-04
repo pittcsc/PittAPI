@@ -19,18 +19,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import unittest
 
-from PittAPI import shuttle
+from PittAPI import library
 
 @unittest.skip
-class ShuttleTest(unittest.TestCase):
-    def test_get_map_vehicle_points(self):
-        self.assertIsInstance(shuttle.get_map_vehicle_points(), list)
+class LibraryTest(unittest.TestCase):
+    def test_get_documents(self):
+        self.assertIsInstance(library.get_documents("water"), dict)
 
-    def test_get_route_stop_arrivals(self):
-        self.assertIsInstance(shuttle.get_route_stop_arrivals(), list)
+    def test_get_document_by_bookmark(self):
+        bookmark_test = library.get_document_by_bookmark("ePnHCXMw42LgT" +
+            "QStzc4rAe_hSmEGbaYyt7QAHThpwMYgouGcGJDo6hSkCezyGQI7SJYmZgacDKzhQ" +
+            "LXAWkDazTXE2UMXdOZRPHT8Ih50Ha6hBehic_yyKlhkYVM48RbmFiamxibGAFlyLRc")
+        self.assertIsInstance(bookmark_test, dict)
 
-    def test_vehicle_route_stop_estimates(self):
-        self.assertIsInstance(shuttle.get_vehicle_route_stop_estimates(25), list)
-
-    def test_get_routes(self):
-        self.assertIsInstance(shuttle.get_routes(), list)
+    def test_invalid_bookmark(self):
+        self.assertRaises(ValueError, library.get_document_by_bookmark, "abcd")
