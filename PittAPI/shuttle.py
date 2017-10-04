@@ -18,7 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 '''
 
 import requests
-from typing import List, Dict
+from typing import List, Dict, Any
 
 sess = requests.session()
 

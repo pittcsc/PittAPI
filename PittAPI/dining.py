@@ -19,7 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import requests
 import grequests
-from typing import Dict, List
+from typing import Dict, List, Any
 
 sess = requests.session()
 
