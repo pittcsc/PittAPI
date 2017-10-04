@@ -1,9 +1,10 @@
 BeautifulSoup4
 Requests
+responses
 grequests
 lxml
-timeout-decorator
 nose
 nose-cov
 nose-timer
+typing
 virtualenv
