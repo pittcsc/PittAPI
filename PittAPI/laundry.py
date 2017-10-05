@@ -22,7 +22,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-from typing import Dict, List
+from typing import Dict, List, Union
 
 session = requests.session()
 
@@ -77,7 +77,7 @@ def get_status_simple(building_name: str) -> Dict[str,str]:
     return di
 
 
-def get_status_detailed(building_name: str) -> List[Dict[str,str]]:
+def get_status_detailed(building_name: str) -> List[Dict[str,Union[str,int]]]:
     building_name = building_name.upper()
 
     # Get a cookie
@@ -88,34 +88,34 @@ def get_status_detailed(building_name: str) -> List[Dict[str,str]]:
     # Get the weird laundry data
     headers = {"Cookie": "PHPSESSID={}".format(cookie)}
     response = requests.get("http://www.laundryview.com/dynamicRoomData.php?location={}".format(
-        location_dict[building_name]), headers=headers).text
-    resp_split = response.split('&')[3:]
+        location_dict[building_name]), headers=headers)
+    resp_split = response.text.split('&')[3:]
 
-    cleaned_resp = []
+    cleaned_resp = []  # type: List[List[str]]
     for status_string in resp_split:
         if "machine" not in status_string:
             continue
         machine_name = status_string[:status_string.index('=')].replace('Status', '') #type: str
         status_string = status_string[status_string.index('=') + 1:].strip()
 
-        old_machine_split = status_string.split("\n") #type: List[str]
-        old_machine_split[0] += machine_name
+        status_lines = status_string.split("\n") #type: List[str]
+        status_lines[0] += machine_name
 
         try:
-            old_machine_split[1] += machine_name
+            status_lines[1] += machine_name
         except IndexError:
             pass
 
-        machine_split = [x.split(':') for x in old_machine_split]
-        cleaned_resp.append(machine_split[0])
+        split_status_lines = [x.split(':') for x in status_lines]
+        cleaned_resp.append(split_status_lines[0])
         try:
-            cleaned_resp.append(machine_split[1])
+            cleaned_resp.append(split_status_lines[1])
         except IndexError:
             pass
 
     cleaned_resp = [x for x in cleaned_resp if len(x) == 10]
 
-    di = [] # type: List[Dict[str,str]]
+    di = [] # type: List[Dict[str,Union[str,int]]]
     for machine in cleaned_resp:
         time_left = -1
         machine_name = "{}_{}".format(machine[9], machine[3])
