@@ -20,8 +20,8 @@ import warnings
 
 import requests
 import re
-from bs4 import BeautifulSoup, SoupStrainer, Tag, ResultSet
 from typing import Any, Dict, List, Tuple
+from bs4 import BeautifulSoup, SoupStrainer, Tag, ResultSet
 
 URL = 'http://www.courses.as.pitt.edu/'
 
