@@ -20,13 +20,8 @@ import warnings
 
 import requests
 import re
-<<<<<<< 60849fc6a3935c79dbdc76258b2c124b79c68665
-from typing import List, Dict, Tuple, Any
-from bs4 import BeautifulSoup, SoupStrainer
-=======
 from bs4 import BeautifulSoup, SoupStrainer, Tag, ResultSet
 from typing import Any, Dict, List, Tuple
->>>>>>> Add type annotations to course.py
 
 URL = 'http://www.courses.as.pitt.edu/'
 
