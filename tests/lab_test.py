@@ -107,8 +107,8 @@ class LabTest(unittest.TestCase):
         self.assertEqual(open[keys[0]], 'open')
 
         for key in keys[1:]:
-            self.assertEqual(closed[key], 0)
-            self.assertEqual(open[key], 1)
+            self.assertEqual(closed[key], '0')
+            self.assertEqual(open[key], '1')
 
     def test_extract_machines(self):
         data = '123 hello_world, 456 macOS, 789 cool, 3 nice'

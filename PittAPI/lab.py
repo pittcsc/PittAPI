@@ -60,7 +60,7 @@ def _extract_machines(data: str) -> List[int]:
     return machines
 
 
-def _make_status(state: str, win: int=0, mac: int=0, linux: int=0) -> Dict[str,Union[str,int]]:
+def _make_status(state: str, win: int=0, mac: int=0, linux: int=0) -> Dict[str,str]:
     """Creates proper dictionary response for getting lab status."""
     return {
         'status': state,
