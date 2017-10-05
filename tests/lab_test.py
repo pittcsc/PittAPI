@@ -1,49 +1,58 @@
+"""
+The Pitt API, to access workable data of the University of Pittsburgh
+Copyright (C) 2015 Ritwik Gupta
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+
 import unittest
-import timeout_decorator
 
 from PittAPI import lab
-from . import PittServerError, DEFAULT_TIMEOUT
 
-
+@unittest.skip
 class LabTest(unittest.TestCase):
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_alumni(self):
         results = lab.get_status("ALUMNI")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_benedum(self):
         results = lab.get_status("BENEDUM")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_cathg27(self):
         results = lab.get_status("CATH_G27")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_cathg62(self):
         results = lab.get_status("CATH_G62")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
-
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_lawrence(self):
         results = lab.get_status("LAWRENCE")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_hillman(self):
         results = lab.get_status("HILLMAN")
         self.assertIsInstance(results, dict)
         self.assertTrue("status" in results.keys())
 
-    @timeout_decorator.timeout(DEFAULT_TIMEOUT, timeout_exception=PittServerError)
     def test_get_status_sutherland(self):
         results = lab.get_status("SUTH")
         self.assertIsInstance(results, dict)

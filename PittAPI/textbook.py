@@ -1,26 +1,6 @@
-"""
-The Pitt API, to access workable data of the University of Pittsburgh
-Copyright (C) 2015 Ritwik Gupta
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""
-import json
-import warnings
-
 import grequests
 import requests
+
 from bs4 import BeautifulSoup
 from typing import List, Dict, Any, Callable, Generator, Tuple
 
@@ -49,9 +29,9 @@ QUERIES = {
     'books': 'compare/books?id={}'
 }
 LOOKUP_ERRORS = {
-    1: 'instructor {1}.',
-    2: 'section {2}.',
-    3: 'instructor {1} or section {2}.'
+    1: 'section {1}.',
+    2: 'instructor {2}.',
+    3: 'section {1} or instructor {2}.'
 }
 
 
@@ -116,16 +96,16 @@ def _extract_id(response, course: str, instructor: str, section: str) -> str:
     sections = _find_sections(response.json(), course)
     error = 0
     try:
-        if instructor is not None:
-            return _find_course_id_by_instructor(sections, instructor.upper())
-    except LookupError:
-        error += 1
-    try:
         if section is not None:
             return _find_course_id_by_section(sections, section)
     except LookupError:
+        error += 1
+    try:
+        if instructor is not None:
+            return _find_course_id_by_instructor(sections, instructor.upper())
+    except LookupError:
         error += 2
-    raise LookupError('Unable to find course by ' + LOOKUP_ERRORS[error].format(instructor, section))
+    raise LookupError('Unable to find course by ' + LOOKUP_ERRORS[error].format(section, instructor))
 
 
 def _extract_books(ids: List[str]) -> List[Dict[str,str]]:
@@ -181,13 +161,22 @@ def get_textbooks(term: str, courses: List[Dict[str,str]]) -> List[Dict[str,str]
     departments = {course['department'] for course in courses}
     responses = grequests.map(
         [
-            grequests.get(BASE_URL + _construct_query('courses', _get_department_number(department), term), timeout=10)
+            grequests.get(
+                BASE_URL + _construct_query(
+                    'courses',
+                    _get_department_number(department),
+                    _validate_term(term)
+                ), timeout=10
+            )
             for department in departments
         ]
     )
     section_ids = [
         _extract_id(*course)
-        for course in _fetch_course(courses, dict(zip(departments, responses)))
+        for course in _fetch_course(courses, dict(zip(
+            sorted(departments),
+            sorted(responses, key=lambda resp: resp.json()[0]['name'])
+        )))
     ]
     return _extract_books(section_ids)
 
@@ -197,6 +186,12 @@ def get_textbook(term: str, department: str, course: str, instructor:str=None, s
     has_section_or_instructor = (instructor is not None) or (section is not None)
     if not has_section_or_instructor:
         raise TypeError('get_textbook() is missing a instructor or section argument')
-    response = requests.get(BASE_URL + _construct_query('courses', _get_department_number(department), term))
+    response = requests.get(
+        BASE_URL + _construct_query(
+            'courses',
+            _get_department_number(department),
+            _validate_term(term)
+        )
+    )
     section_id = _extract_id(response, department + _validate_course(course), instructor, section)
     return _extract_books([section_id])
