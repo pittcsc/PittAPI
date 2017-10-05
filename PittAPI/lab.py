@@ -29,7 +29,7 @@ LOCATIONS = ['ALUMNI', 'BENEDUM', 'CATH_G27', 'CATH_G62', 'LAWRENCE', 'HILLMAN',
 URL = 'http://labinformation.cssd.pitt.edu/'
 
 
-def get_status(lab_name: str) -> Dict[str,Union[str,int]]:
+def get_status(lab_name: str) -> Dict[str,str]:
     """Returns a dictionary with status and amount of OS machines."""
     lab_name, labs = _validate_lab(lab_name), _fetch_labs()
     status, *machines = labs[LOCATIONS.index(lab_name)].split(':')
