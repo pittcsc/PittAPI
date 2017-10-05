@@ -81,8 +81,8 @@ def get_status_detailed(building_name: str) -> List[Dict[str,str]]:
     building_name = building_name.upper()
 
     # Get a cookie
-    response = requests.get("http://www.laundryview.com/laundry_room.php?view=c&lr={}".format(location_dict[building_name]))
-    cookie = response.headers["Set-Cookie"]
+    first_response = requests.get("http://www.laundryview.com/laundry_room.php?view=c&lr={}".format(location_dict[building_name]))
+    cookie = first_response.headers["Set-Cookie"]
     cookie = cookie[cookie.index("=") + 1:cookie.index(";")]
 
     # Get the weird laundry data
@@ -95,18 +95,18 @@ def get_status_detailed(building_name: str) -> List[Dict[str,str]]:
     for status_string in resp_split:
         if "machine" not in status_string:
             continue
-        machine_name = status_string[:status_string.index('=')].replace('Status', '')
+        machine_name = status_string[:status_string.index('=')].replace('Status', '') #type: str
         status_string = status_string[status_string.index('=') + 1:].strip()
 
-        machine_split = status_string.split("\n")
-        machine_split[0] += machine_name
+        old_machine_split = status_string.split("\n") #type: List[str]
+        old_machine_split[0] += machine_name
 
         try:
-            machine_split[1] += machine_name
+            old_machine_split[1] += machine_name
         except IndexError:
             pass
 
-        machine_split = [x.split(':') for x in machine_split]
+        machine_split = [x.split(':') for x in old_machine_split]
         cleaned_resp.append(machine_split[0])
         try:
             cleaned_resp.append(machine_split[1])
@@ -132,11 +132,11 @@ def get_status_detailed(building_name: str) -> List[Dict[str,str]]:
         if machine_status is u'In use':
             time_left = int(machine[1])
         else:
-            time_left = -1 if machine[6] is '' else machine[6]
+            time_left = -1 if machine[6] is '' else int(machine[6])
         di.append({
             'machine_name': machine_name,
             'machine_status': machine_status,
-            'time_left': time_left
+            'time_left': str(time_left)
         })
 
     return di

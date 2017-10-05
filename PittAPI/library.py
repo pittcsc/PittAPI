@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import requests
 from html.parser import HTMLParser
+from typing import List, Dict
 
 LIBRARY_URL = "http://pitt.summon.serialssolutions.com/api/search"
 sess = requests.session()
@@ -27,13 +28,13 @@ class HTMLStrip(HTMLParser):
     def __init__(self):
         super().__init__()
         self.reset()
-        self.data = []
-    def handle_data(self, d):
+        self.data = [] #type: List[str]
+    def handle_data(self, d: str):
         self.data.append(d)
-    def get_data(self):
+    def get_data(self) -> str:
         return ''.join(self.data)
 
-def get_documents(query, page=1):
+def get_documents(query: str, page: int=1) -> Dict[str,str]:
     """Return ten resource results from the specified page"""
     if page > 50:
         # Max supported page number is 50
