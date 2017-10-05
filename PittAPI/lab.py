@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import requests
 from bs4 import BeautifulSoup
+from typing import Dict, List, Union
 
 from typing import List, Dict
 
@@ -28,7 +29,7 @@ LOCATIONS = ['ALUMNI', 'BENEDUM', 'CATH_G27', 'CATH_G62', 'LAWRENCE', 'HILLMAN',
 URL = 'http://labinformation.cssd.pitt.edu/'
 
 
-def get_status(lab_name: str) -> Dict[str,str]:
+def get_status(lab_name: str) -> Dict[str,Union[str,int]]:
     """Returns a dictionary with status and amount of OS machines."""
     lab_name, labs = _validate_lab(lab_name), _fetch_labs()
     status, *machines = labs[LOCATIONS.index(lab_name)].split(':')
@@ -59,7 +60,7 @@ def _extract_machines(data: str) -> List[int]:
     return machines
 
 
-def _make_status(state: str, win: int = 0, mac: int = 0, linux: int = 0) -> Dict[str, str]:
+def _make_status(state: str, win: int=0, mac: int=0, linux: int=0) -> Dict[str,Union[str,int]]:
     """Creates proper dictionary response for getting lab status."""
     return {
         'status': state,
@@ -67,6 +68,7 @@ def _make_status(state: str, win: int = 0, mac: int = 0, linux: int = 0) -> Dict
         'mac': str(mac),
         'linux': str(linux)
     }
+
 
 def _validate_lab(lab: str) -> str:
     """Corrects case of lab name and checks whether it's valid."""
