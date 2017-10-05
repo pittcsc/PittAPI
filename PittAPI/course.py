@@ -39,15 +39,8 @@ REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', '
 PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST', 'URBNST', 'SELF', 'GSWS']
 DAY_PROGRAM, SAT_PROGRAM = 'CGSDAY', 'CGSSAT'
 
-def _retrieve_term_codes():
-    """Returns a list of all current term codes from course web page."""
-    page = requests.get(URL)
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['input'])).findAll('input')
-    return [tag.attrs['value'] for tag in soup[:3]]
+def get_courses(term, code):
 
-TERMS = _retrieve_term_codes()
-
-def get_courses(term: str, code: str) -> List[Dict[str,str]]:
     """Returns a list of dictionaries containing all courses queried from code."""
     col_headers, course_data = _retrieve_courses_from_url(
         url=URL + _get_subject_query(code, term)
@@ -74,10 +67,9 @@ def _get_subject_query(code: str, term: str) -> str:
 
 def _validate_term(term: str) -> str:
     """Validates term is a string and check if it is valid."""
-    if not isinstance(term, str): #This check could be removed if everything works as intended
-        warnings.warn('Term value should be a string.')
-        term = str(term)
-    if TERMS.match(term):
+
+    valid_terms = re.compile('2\d\d[147]')
+    if valid_terms.match(str(term)):
         return term
     raise ValueError("Invalid term")
 
