@@ -60,7 +60,7 @@ def _extract_machines(data: str) -> List[int]:
     return machines
 
 
-def _make_status(state: str, win: int = 0, mac: int = 0, linux: int = 0) -> Dict[str,str]:
+def _make_status(state: str, win: int = 0, mac: int = 0, linux: int = 0) -> Dict[str, str]:
     """Creates proper dictionary response for getting lab status."""
     return {
         'status': state,
@@ -68,7 +68,6 @@ def _make_status(state: str, win: int = 0, mac: int = 0, linux: int = 0) -> Dict
         'mac': str(mac),
         'linux': str(linux)
     }
-
 
 def _validate_lab(lab: str) -> str:
     """Corrects case of lab name and checks whether it's valid."""
