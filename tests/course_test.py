@@ -17,6 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+import os
 import unittest
 import responses
 
@@ -25,13 +26,21 @@ from bs4 import BeautifulSoup
 from PittAPI import course
 
 TERM = 2001
+SCRIPT_PATH = os.path.dirname(__file__)
 HEADER_DATA = '<th width="9%">Subject</th><th>Catalog #</th><th>Credits/Units</th>'
 
 
 class CourseTest(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
+        with open(os.path.join(SCRIPT_PATH, 'samples', 'course_cs.html')) as f:
+            self.cs_data = ''.join(f.readlines())
+
+    @responses.activate
     def test_get_courses(self):
+        responses.add(responses.GET, 'http://www.courses.as.pitt.edu/results-subja.asp?TERM=2001&SUBJ=CS',
+                      body=self.cs_data, status=200)
         self.assertIsInstance(course.get_courses(TERM, 'CS'), list)
-        self.assertIsInstance(course.get_courses(TERM, 'BIOSC'), list)
 
     def test_get_courses_programs_query(self):
         self.assertIsInstance(course.get_courses(TERM, course.PROGRAMS[0]), list)
@@ -73,10 +82,10 @@ class CourseTest(unittest.TestCase):
         self.assertEquals(course._get_subject_query(course.SAT_PROGRAM, TERM), 'results-satCGSa.asp?TERM=2001')
 
     def test_get_subject_query_invalid_code(self):
-        pass
+        self.assertRaises(ValueError, course._get_subject_query, 'AAA', TERM)
 
     def test_get_subject_query_invalid_term(self):
-        pass
+        self.assertRaises(ValueError, course._get_subject_query, course.CODES[0], '0000')
 
     def test_term_validation(self):
         self.assertEqual(course._validate_term(TERM), TERM)
