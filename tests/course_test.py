@@ -55,6 +55,7 @@ class CourseTest(unittest.TestCase):
         self.assertRaises(ValueError, course.get_courses, '1', 'CS')
         self.assertRaises(ValueError, course.get_class, '1', '10045')
 
+    @unittest.skip
     def test_get_class(self):
         self.assertIsInstance(course.get_class(TERM, '10045'), dict)
 
@@ -65,7 +66,11 @@ class CourseTest(unittest.TestCase):
         pass
 
     def test_get_subject_query(self):
-        pass
+        self.assertEquals(course._get_subject_query(course.CODES[0], TERM), 'results-subja.asp?TERM=2001&SUBJ=ADMPS')
+        self.assertEquals(course._get_subject_query(course.PROGRAMS[0], TERM), 'results-subjspeciala.asp?TERM=2001&SUBJ=CLST')
+        self.assertEquals(course._get_subject_query(course.REQUIREMENTS[0], TERM), 'results-genedreqa.asp?TERM=2001&REQ=G')
+        self.assertEquals(course._get_subject_query(course.DAY_PROGRAM, TERM), 'results-dayCGSa.asp?TERM=2001')
+        self.assertEquals(course._get_subject_query(course.SAT_PROGRAM, TERM), 'results-satCGSa.asp?TERM=2001')
 
     def test_get_subject_query_invalid_code(self):
         pass

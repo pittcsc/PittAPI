@@ -57,9 +57,9 @@ def _get_subject_query(code, term):
     elif code in REQUIREMENTS:
         return 'results-genedreqa.asp?TERM={}&REQ={}'.format(term, code)
     elif code in DAY_PROGRAM:
-        return '/results-dayCGSa.asp?TERM={}'.format(term)
+        return 'results-dayCGSa.asp?TERM={}'.format(term)
     elif code in SAT_PROGRAM:
-        return '/results-satCGSa.asp?TERM={}'.format(term)
+        return 'results-satCGSa.asp?TERM={}'.format(term)
     raise ValueError("Invalid subject")
 
 
