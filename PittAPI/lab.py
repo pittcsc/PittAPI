@@ -19,7 +19,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import requests
 from bs4 import BeautifulSoup
-
 from typing import List, Dict
 
 session = requests.session()
