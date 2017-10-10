@@ -98,6 +98,7 @@ def _extract_course_data(header, course):
         data[item] = value.text.strip().translate({'\r': '', '\n': '', '\t': ''}).replace('\xa0', '')
         if not data[item]:
             data[item] = 'Not Decided'
+        print(data[item])
     try:
         # TODO(azharichenko): Look into why there is an empty column header
         del data['']

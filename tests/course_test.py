@@ -44,18 +44,6 @@ class CourseTest(unittest.TestCase):
                       body=self.cs_data, status=200)
         self.assertIsInstance(course.get_courses(TERM, 'CS'), list)
 
-    def test_get_courses_programs_query(self):
-        self.assertIsInstance(course.get_courses(TERM, course.PROGRAMS[0]), list)
-
-    def test_get_courses_requirement_query(self):
-        self.assertIsInstance(course.get_courses(TERM, course.REQUIREMENTS[0]), list)
-
-    def test_get_courses_day_query(self):
-        self.assertIsInstance(course.get_courses(TERM, course.DAY_PROGRAM), list)
-
-    def test_get_courses_sat_query(self):
-        self.assertIsInstance(course.get_courses(TERM, course.SAT_PROGRAM), list)
-
     def test_get_course_invalid_class_number(self):
         self.assertRaises(ValueError, course.get_class, TERM, '0')
 
@@ -64,7 +52,6 @@ class CourseTest(unittest.TestCase):
 
     def test_get_course_invalid_term(self):
         self.assertRaises(ValueError, course.get_courses, '1', 'CS')
-        self.assertRaises(ValueError, course.get_class, '1', '10045')
 
     @responses.activate
     def test_get_class(self):
@@ -73,10 +60,7 @@ class CourseTest(unittest.TestCase):
         self.assertIsInstance(course.get_class(TERM, '10001'), dict)
 
     def test_get_class_invalid_term(self):
-        pass
-
-    def test_get_class_invalid_class_number(self):
-        pass
+        self.assertRaises(ValueError, course.get_class, '1', '10045')
 
     def test_get_subject_query(self):
         self.assertEquals(course._get_subject_query(course.CODES[0], TERM), 'results-subja.asp?TERM=2001&SUBJ=ADMPS')
@@ -96,9 +80,6 @@ class CourseTest(unittest.TestCase):
 
     def test_term_validation_invalid_term(self):
         self.assertRaises(ValueError, course._validate_term, '1')
-
-    def test_retrieve_courses_from_url(self):
-        pass
 
     def test_extract_header(self):
         column_titles = BeautifulSoup(HEADER_DATA, 'lxml').findAll('th')
