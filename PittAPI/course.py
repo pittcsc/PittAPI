@@ -58,9 +58,9 @@ def _get_subject_query(code: str, term: str) -> str:
     elif code in REQUIREMENTS:
         return 'results-genedreqa.asp?TERM={}&REQ={}'.format(term, code)
     elif code in DAY_PROGRAM:
-        return '/results-dayCGSa.asp?TERM={}'.format(term)
+        return 'results-dayCGSa.asp?TERM={}'.format(term)
     elif code in SAT_PROGRAM:
-        return '/results-satCGSa.asp?TERM={}'.format(term)
+        return 'results-satCGSa.asp?TERM={}'.format(term)
     raise ValueError("Invalid subject")
 
 
@@ -100,6 +100,7 @@ def _extract_course_data(header: List[str], course: Tag) -> Dict[str,str]:
         data[item] = value.text.strip().translate({'\r': '', '\n': '', '\t': ''}).replace('\xa0', '')
         if not data[item]:
             data[item] = 'Not Decided'
+        print(data[item])
     try:
         # TODO(azharichenko): Look into why there is an empty column header
         del data['']
