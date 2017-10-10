@@ -35,6 +35,8 @@ class CourseTest(unittest.TestCase):
         unittest.TestCase.__init__(self, *args, **kwargs)
         with open(os.path.join(SCRIPT_PATH, 'samples', 'course_cs.html')) as f:
             self.cs_data = ''.join(f.readlines())
+        with open(os.path.join(SCRIPT_PATH, 'samples', 'course_class_cs.html')) as f:
+            self.cs_class_data = ''.join(f.readlines())
 
     @responses.activate
     def test_get_courses(self):
@@ -64,9 +66,11 @@ class CourseTest(unittest.TestCase):
         self.assertRaises(ValueError, course.get_courses, '1', 'CS')
         self.assertRaises(ValueError, course.get_class, '1', '10045')
 
-    @unittest.skip
+    @responses.activate
     def test_get_class(self):
-        self.assertIsInstance(course.get_class(TERM, '10045'), dict)
+        responses.add(responses.GET, 'http://www.courses.as.pitt.edu/detail.asp?TERM=2001&CLASSNUM=10001',
+                      body=self.cs_class_data, status=200)
+        self.assertIsInstance(course.get_class(TERM, '10001'), dict)
 
     def test_get_class_invalid_term(self):
         pass
