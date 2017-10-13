@@ -1,4 +1,4 @@
-'''
+"""
 The Pitt API, to access workable data of the University of Pittsburgh
 Copyright (C) 2015 Ritwik Gupta
 
@@ -15,31 +15,31 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-'''
+"""
 
-import requests
 import grequests
 from typing import Dict, List, Any
 
+
 def _get_all_locations():
     request_objs = []
-    for i in range(0, 3):
-        payload = (
-            ("_kgoui_object", "kgoui_Rcontent_I2"),
-            ("feed", "dining_locations"),
-            ("start", i*10)
-        )
+    for i in range(3):
+        payload = {
+            "_kgoui_object": "kgoui_Rcontent_I2",
+            "feed": "dining_locations",
+            "start": i * 10
+        }
         request_objs.append(grequests.get("https://m.pitt.edu/dining/index.json", params=payload))
-
     resps = grequests.imap(request_objs)
     return resps
 
 
 def get_locations():
-    return get_locations_by_status()
+    """Gets information about all dining locations"""
+    return get_locations_by_status(None)
 
 
-def get_locations_by_status(status: str=None) -> List[Dict[str,Any]]:
+def get_locations_by_status(status: str) -> List[Dict[str, Any]]:
     # status can be nil, open, or closed
     # None     - returns all dining locations
     # 'all'    - same as None (or anything else)
@@ -47,14 +47,15 @@ def get_locations_by_status(status: str=None) -> List[Dict[str,Any]]:
     # 'closed' - returns closed dining locations
 
     dining_locations = []
+    resps = [
+        r.json()["response"]['regions'][0]["contents"]
+        for r in _get_all_locations()
+    ]
 
-    resps = _get_all_locations()
-    resps = [r.json()["response"]['regions'][0]["contents"] for r in resps]
-
-    for content in resps:
-        for item in content:
+    for location in resps:
+        for content in location:
             data = {}
-            fields = item["fields"]
+            fields = content["fields"]
             if fields["type"] == "loadMore":
                 continue
 
@@ -67,20 +68,20 @@ def get_locations_by_status(status: str=None) -> List[Dict[str,Any]]:
                 data["hours"] = fields["eventDate"]["formatted"]
             except TypeError:
                 data["hours"] = "unavailable"
+
             dining_locations.append(data)
 
-    dining_locations = [dict(t) for t in set([tuple(d.items()) for d in dining_locations])]
     return dining_locations
 
 
-#def get_location_by_name(location):
-#    try:
-#        return get_locations()[location]
-#    except:
-#        raise ValueError('The dining location is invalid')
+    # def get_location_by_name(location):
+    #    try:
+    #        return get_locations()[location]
+    #    except:
+    #        raise ValueError('The dining location is invalid')
 
 
-#def get_location_menu(location=None, date=None):
+    # def get_location_menu(location=None, date=None):
     # location can only be market, market's subordinates, and cathedral cafe
     # if location is none, return all menus, and date will be ignored
     # date has to be a day of the week, or if empty will return menus for all days of the week
@@ -91,21 +92,4 @@ def get_locations_by_status(status: str=None) -> List[Dict[str,Any]]:
     # https://www.pc.pitt.edu/dining/menus/basicKneads.php
     # https://www.pc.pitt.edu/dining/menus/magellans.php
     # https://www.pc.pitt.edu/dining/locations/cathedralCafe.php
-#    return []
-
-
-def _encode_dining_location(string: str) -> str:
-    # changes full name into dict key name
-    string = string.lower()
-    string = string.replace(' ', '_')
-    string = string.replace('_-_', '-')
-    string = string.replace('hilman', 'hillman')
-    string = string.replace('_library', '')
-    string = string.replace('_hall', '')
-    string = string.replace('litchfield_', '')
-    string = string.replace(u'\xe9', 'e')
-    string = string.replace('_science_center', '')
-    string = string.replace('_events_center_food_court', '')
-    string = string.replace('wesley_w._posvar,_second_floor', 'posvar')
-    string = string.replace('_law_building', '')
-    return string
+    #    return []
