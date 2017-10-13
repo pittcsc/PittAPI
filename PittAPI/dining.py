@@ -20,7 +20,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import grequests
 from typing import Dict, List, Any
 
-
 def _get_all_locations():
     request_objs = []
     for i in range(3):
