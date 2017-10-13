@@ -19,16 +19,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import requests
 import grequests
-from typing import Dict, List
-
-sess = requests.session()
-
+from typing import Dict, List, Any
 
 def _get_all_locations():
     request_objs = []
-    for i in range(0,3):
+    for i in range(0, 3):
         payload = (
-            ("_region", "kgoui_Rcontent_I1_Ritems"),
+            ("_kgoui_object", "kgoui_Rcontent_I2"),
             ("feed", "dining_locations"),
             ("start", i*10)
         )
@@ -42,7 +39,7 @@ def get_locations():
     return get_locations_by_status()
 
 
-def get_locations_by_status(status: str=None) -> List[Dict[str,str]]:
+def get_locations_by_status(status: str=None) -> List[Dict[str,Any]]:
     # status can be nil, open, or closed
     # None     - returns all dining locations
     # 'all'    - same as None (or anything else)
@@ -52,7 +49,7 @@ def get_locations_by_status(status: str=None) -> List[Dict[str,str]]:
     dining_locations = []
 
     resps = _get_all_locations()
-    resps = [r.json()["response"]["contents"] for r in resps]
+    resps = [r.json()["response"]['regions'][0]["contents"] for r in resps]
 
     for content in resps:
         for item in content:
