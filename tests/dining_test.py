@@ -21,6 +21,7 @@ import unittest
 
 from PittAPI import dining
 
+
 class DiningTest(unittest.TestCase):
     def test_get_dining_locations(self):
         self.assertIsInstance(dining.get_locations(), list)

@@ -22,6 +22,7 @@ from typing import Dict, List, Any
 
 
 def _get_all_locations():
+    """Creates generator of responses to fetch data on all dining locations"""
     request_objs = []
     for i in range(3):
         payload = {
@@ -58,6 +59,9 @@ def get_locations_by_status(status: str) -> List[Dict[str, Any]]:
             fields = content["fields"]
             if fields["type"] == "loadMore":
                 continue
+            if status in ['open', 'closed']:
+                if status != fields['status']:
+                    continue
 
             if isinstance(fields["title"], dict):
                 data["name"] = fields["title"]["value"]
