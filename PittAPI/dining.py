@@ -22,7 +22,7 @@ from typing import Dict, List, Any
 
 
 def _get_all_locations():
-    """Creates generator of responses to fetch data on all dining locations"""
+    """Creates a generator of responses to fetch data on all dining locations"""
     request_objs = []
     for i in range(3):
         payload = {

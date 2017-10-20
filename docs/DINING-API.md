@@ -10,11 +10,11 @@ Returns all dining locations
 
 ---
 
-### **get_locations_by_status(status=None)**
+### **get_locations_by_status(status)**
 
 #### **Parameters**:
   - `status`: Status of locations (default is all)
-    - All locations: `None` or `"all"`
+    - All locations: `None`
     - Open locations: `"open"`
     - Closed locations: `"closed"`
 
