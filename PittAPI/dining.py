@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import grequests
 from typing import Dict, List, Any
 
+
 def _get_all_locations():
     """Creates generator of responses to fetch data on all dining locations"""
     request_objs = []
@@ -40,11 +41,10 @@ def get_locations():
 
 
 def get_locations_by_status(status: str) -> List[Dict[str, Any]]:
-    # status can be nil, open, or closed
-    # None     - returns all dining locations
-    # 'all'    - same as None (or anything else)
-    # 'open'   - returns open dining locations
-    # 'closed' - returns closed dining locations
+    """status can be nil, open, or closed
+    None    - returns all dining locations
+    'open'   - returns open dining locations
+    'closed' - returns closed dining locations"""
 
     dining_locations = []
     resps = [
@@ -77,22 +77,21 @@ def get_locations_by_status(status: str) -> List[Dict[str, Any]]:
     return dining_locations
 
 
-    # def get_location_by_name(location):
-    #    try:
-    #        return get_locations()[location]
-    #    except:
-    #        raise ValueError('The dining location is invalid')
+# def get_location_by_name(location):
+#    try:
+#        return get_locations()[location]
+#    except:
+#        raise ValueError('The dining location is invalid')
 
-
-    # def get_location_menu(location=None, date=None):
-    # location can only be market, market's subordinates, and cathedral cafe
-    # if location is none, return all menus, and date will be ignored
-    # date has to be a day of the week, or if empty will return menus for all days of the week
-    #
-    # https://www.pc.pitt.edu/dining/menus/flyingStar.php
-    # https://www.pc.pitt.edu/dining/menus/bellaTrattoria.php
-    # https://www.pc.pitt.edu/dining/menus/basicKneads.php
-    # https://www.pc.pitt.edu/dining/menus/basicKneads.php
-    # https://www.pc.pitt.edu/dining/menus/magellans.php
-    # https://www.pc.pitt.edu/dining/locations/cathedralCafe.php
-    #    return []
+# def get_location_menu(location=None, date=None):
+# location can only be market, market's subordinates, and cathedral cafe
+# if location is none, return all menus, and date will be ignored
+# date has to be a day of the week, or if empty will return menus for all days of the week
+#
+# https://www.pc.pitt.edu/dining/menus/flyingStar.php
+# https://www.pc.pitt.edu/dining/menus/bellaTrattoria.php
+# https://www.pc.pitt.edu/dining/menus/basicKneads.php
+# https://www.pc.pitt.edu/dining/menus/basicKneads.php
+# https://www.pc.pitt.edu/dining/menus/magellans.php
+# https://www.pc.pitt.edu/dining/locations/cathedralCafe.php
+#    return []
