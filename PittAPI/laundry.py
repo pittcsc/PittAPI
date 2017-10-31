@@ -23,7 +23,7 @@ location_lookup = {
 }
 
 
-def get_overall_status(building_name):
+def get_status_simple(building_name: str) -> Dict[str,str]:
     """
     :returns: a dictionary with free washers and dryers as well as total washers
               and dryers for given building
@@ -59,7 +59,8 @@ def get_overall_status(building_name):
 
 
 
-def get_status_detailed(building_name, machine=None):
+def get_status_detailed(building_name: str) -> List[Dict[str,str]]:
+    building_name = building_name.upper()
     """
     :returns: A list of washers and dryers for the passed
               building location with their statuses
@@ -100,7 +101,40 @@ def get_status_detailed(building_name, machine=None):
                            encode('ascii', 'ignore')
         machine_type = 'washer' if is_washer else 'dryer'
 
-        machines.append({
+
+        try:
+            machine_split[1] += machine_name
+        except IndexError:
+            pass
+
+        machine_split = [x.split(':') for x in machine_split]
+        cleaned_resp.append(machine_split[0])
+        try:
+            cleaned_resp.append(machine_split[1])
+        except IndexError:
+            pass
+
+    cleaned_resp = [x for x in cleaned_resp if len(x) == 10]
+
+    di = [] # type: List[Dict[str,str]]
+    for machine in cleaned_resp:
+        time_left = -1
+        machine_name = "{}_{}".format(machine[9], machine[3])
+        machine_status = ""
+
+        if machine[0] is '1':
+            machine_status = u'Free'
+        else:
+            if machine[6] is '':
+                machine_status = u'Out of service'
+            else:
+                machine_status = u'In use'
+
+        if machine_status is u'In use':
+            time_left = int(machine[1])
+        else:
+            time_left = -1 if machine[6] is '' else machine[6]
+        di.append({
             'machine_name': machine_name,
             'machine_type': machine_type,
             'machine_status': machine_status,
