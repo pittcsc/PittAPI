@@ -10,8 +10,12 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
-# ugh, update when codes change
-location_lookup = {
+
+from typing import Dict, List, Union
+
+session = requests.session()
+
+location_dict = {
     'TOWERS': '2430136',
     'BRACKENRIDGE': '2430119',
     'HOLLAND': '2430137',
@@ -59,7 +63,7 @@ def get_status_simple(building_name: str) -> Dict[str,str]:
 
 
 
-def get_status_detailed(building_name: str) -> List[Dict[str,str]]:
+def get_status_detailed(building_name: str) -> List[Dict[str,Union[str,int]]]:
     building_name = building_name.upper()
     """
     :returns: A list of washers and dryers for the passed
@@ -101,22 +105,21 @@ def get_status_detailed(building_name: str) -> List[Dict[str,str]]:
                            encode('ascii', 'ignore')
         machine_type = 'washer' if is_washer else 'dryer'
 
-
         try:
-            machine_split[1] += machine_name
+            status_lines[1] += machine_name
         except IndexError:
             pass
 
-        machine_split = [x.split(':') for x in machine_split]
-        cleaned_resp.append(machine_split[0])
+        split_status_lines = [x.split(':') for x in status_lines]
+        cleaned_resp.append(split_status_lines[0])
         try:
-            cleaned_resp.append(machine_split[1])
+            cleaned_resp.append(split_status_lines[1])
         except IndexError:
             pass
 
     cleaned_resp = [x for x in cleaned_resp if len(x) == 10]
 
-    di = [] # type: List[Dict[str,str]]
+    di = [] # type: List[Dict[str,Union[str,int]]]
     for machine in cleaned_resp:
         time_left = -1
         machine_name = "{}_{}".format(machine[9], machine[3])
@@ -133,12 +136,13 @@ def get_status_detailed(building_name: str) -> List[Dict[str,str]]:
         if machine_status is u'In use':
             time_left = int(machine[1])
         else:
-            time_left = -1 if machine[6] is '' else machine[6]
+            time_left = -1 if machine[6] is '' else int(machine[6])
         di.append({
             'machine_name': machine_name,
             'machine_type': machine_type,
             'machine_status': machine_status,
             'machine_id': machine_id
+            'time_left': str(time_left)
         })
 
     if machine:

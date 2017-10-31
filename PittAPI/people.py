@@ -20,12 +20,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import urllib.parse
 
 import grequests
+from typing import List, Dict, Iterator, Any
 
 PEOPLE_URL = "https://m.pitt.edu/people/search.json"
 DETAIL_URL = "https://m.pitt.edu/people/detail.json"
 
 
-def get_person(query, max_people=10):
+def get_person(query: str, max_people: int = 10) -> List[Dict[str,Any]]:
     """ """
     url_list = [item for l_list in _get_person_url(query, max_people) for item in l_list]
     results = [_get_person_details(url) for url in url_list]
@@ -34,7 +35,7 @@ def get_person(query, max_people=10):
 
     return persons[:max_people]
 
-def _extract_person(item):
+def _extract_person(item: Dict[str,Any]) -> Dict[str,Any]:
     """ """
     person = {
         'name': item["fields"]["title"],
@@ -48,7 +49,7 @@ def _extract_person(item):
     return person
 
 
-def _get_person_details(url):
+def _get_person_details(url: str):
     """ """
     payload = {
         "id": url,
@@ -59,7 +60,7 @@ def _get_person_details(url):
     return grequests.get(DETAIL_URL, params=payload_str)
 
 
-def _get_person_url(query, max_people):
+def _get_person_url(query: str, max_people: int) -> List[Iterator[str]]:
     """ """
     request_objs = []
 
