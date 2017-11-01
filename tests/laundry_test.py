@@ -21,7 +21,7 @@ import unittest
 
 from PittAPI import laundry
 
-@unittest.skip
+
 class LaundryTest(unittest.TestCase):
     def test_laundry_get_status_simple_towers(self):
         self.assertIsInstance(laundry.get_status_simple("TOWERS"), dict)
