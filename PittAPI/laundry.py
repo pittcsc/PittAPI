@@ -120,14 +120,10 @@ def get_status_detailed(building_name: str, machine=None) -> List[Dict[str, Unio
             'machine_id': machine_id
         })
 
-    if machine:
+    if machine is not None:
         try:
             machines = filter(lambda m: m['machine_name'] == machine, machines)[0]
         except IndexError:
-            raise NoSuchMachineException(machine)
+            raise KeyError(machine + ' is not a valid machine.')
 
     return machines
-
-
-class NoSuchMachineException(Exception):
-    pass
