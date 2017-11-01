@@ -112,12 +112,14 @@ def get_status_detailed(building_name: str, machine=None) -> List[Dict[str, Unio
         machine_name = li.text.split(machine_status)[0] \
             .encode('ascii', 'ignore')
         machine_type = 'washer' if is_washer else 'dryer'
+        time_left = int(machine_status[:machine_status.find(' ')]) if 'mins left' in machine_status else -1
 
         machines.append({
-            'machine_name': machine_name,
+            'machine_name': str(machine_name),
             'machine_type': machine_type,
             'machine_status': machine_status,
-            'machine_id': machine_id
+            'machine_id': machine_id,
+            'time_left': time_left
         })
 
     if machine is not None:
