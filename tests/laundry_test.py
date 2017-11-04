@@ -58,6 +58,3 @@ class LaundryTest(unittest.TestCase):
         )
         status = laundry.get_status_detailed(TEST_BUILDING)
         self.assertIsInstance(status, list)
-        print(status)
-        self.assertEqual(len(status), 10)
-       
