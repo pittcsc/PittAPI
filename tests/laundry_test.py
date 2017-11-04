@@ -17,56 +17,45 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+import os
 import unittest
+import responses
 
 from PittAPI import laundry
 
+SCRIPT_PATH = os.path.dirname(__file__)
+TEST_BUILDING = list(laundry.LOCATION_LOOKUP.keys())[0]
+
 
 class LaundryTest(unittest.TestCase):
-    def test_laundry_get_status_simple_towers(self):
-        self.assertIsInstance(laundry.get_status_simple("TOWERS"), dict)
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
+        with open(os.path.join(SCRIPT_PATH, 'samples/laundry.htm')) as f:
+            self.laundry_data = ''.join(f.readlines())
 
-    def test_laundry_get_status_simple_brackenridge(self):
-        self.assertIsInstance(laundry.get_status_simple("BRACKENRIDGE"), dict)
+    @responses.activate
+    def test_get_status_simple(self):
+        responses.add(
+            responses.GET,
+            'http://m.laundryview.com/submitFunctions.php?monitor=true&lr=' + laundry.LOCATION_LOOKUP[TEST_BUILDING],
+            body=self.laundry_data,
+            status=200
+        )
+        status = laundry.get_status_simple(TEST_BUILDING)
+        self.assertIsInstance(status, dict)
+        self.assertEqual(status['building'], TEST_BUILDING)
+        self.assertEqual(status['free_washers'], 2)
+        self.assertEqual(status['free_dryers'], 2)
+        self.assertEqual(status['total_washers'], 4)
+        self.assertEqual(status['total_dryers'], 4)
 
-    def test_laundry_get_status_simple_holland(self):
-        self.assertIsInstance(laundry.get_status_simple("HOLLAND"), dict)
-
-    def test_laundry_get_status_simple_lothrop(self):
-        self.assertIsInstance(laundry.get_status_simple("LOTHROP"), dict)
-
-    def test_laundry_get_status_simple_mccormick(self):
-        self.assertIsInstance(laundry.get_status_simple("MCCORMICK"), dict)
-
-    def test_laundry_get_status_simple_sutheast(self):
-        self.assertIsInstance(laundry.get_status_simple("SUTH_EAST"), dict)
-
-    def test_laundry_get_status_simple_suthwest(self):
-        self.assertIsInstance(laundry.get_status_simple("SUTH_WEST"), dict)
-
-    def test_laundry_get_status_simple_forbescraig(self):
-        self.assertIsInstance(laundry.get_status_simple("FORBES_CRAIG"), dict)
-
-    def test_laundry_get_status_detailed_towers(self):
-        self.assertIsInstance(laundry.get_status_detailed("TOWERS"), list)
-
-    def test_laundry_get_status_detailed_brackenridge(self):
-        self.assertIsInstance(laundry.get_status_detailed("BRACKENRIDGE"), list)
-
-    def test_laundry_get_status_detailed_holland(self):
-        self.assertIsInstance(laundry.get_status_detailed("HOLLAND"), list)
-
-    def test_laundry_get_status_detailed_lothrop(self):
-        self.assertIsInstance(laundry.get_status_detailed("LOTHROP"), list)
-
-    def test_laundry_get_status_detailed_mccormick(self):
-        self.assertIsInstance(laundry.get_status_detailed("MCCORMICK"), list)
-
-    def test_laundry_get_status_detailed_sutheast(self):
-        self.assertIsInstance(laundry.get_status_detailed("SUTH_EAST"), list)
-
-    def test_laundry_get_status_detailed_suthwest(self):
-        self.assertIsInstance(laundry.get_status_detailed("SUTH_WEST"), list)
-
-    def test_laundry_get_status_detailed_forbescraig(self):
-        self.assertIsInstance(laundry.get_status_detailed("FORBES_CRAIG"), list)
+    def test_get_status_detailed(self):
+        responses.add(
+            responses.GET,
+            'http://m.laundryview.com/submitFunctions.php?monitor=true&lr=' + laundry.LOCATION_LOOKUP[TEST_BUILDING],
+            body=self.laundry_data,
+            status=200
+        )
+        status = laundry.get_status_detailed(TEST_BUILDING)
+        self.assertIsInstance(status, list)
+        self.assertEqual(len(status), 10)
