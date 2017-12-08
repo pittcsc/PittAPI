@@ -39,19 +39,19 @@ class CourseTest(unittest.TestCase):
             self.cs_class_data = ''.join(f.readlines())
 
     @responses.activate
-    def test_get_courses(self):
+    def test_get_classes(self):
         responses.add(responses.GET, 'http://www.courses.as.pitt.edu/results-subja.asp?TERM=2001&SUBJ=CS',
                       body=self.cs_data, status=200)
-        self.assertIsInstance(course.get_courses(TERM, 'CS'), list)
+        self.assertIsInstance(course.get_classes(TERM, 'CS'), list)
 
     def test_get_course_invalid_class_number(self):
         self.assertRaises(ValueError, course.get_class, TERM, '0')
 
     def test_get_course_invalid_subject(self):
-        self.assertRaises(ValueError, course.get_courses, TERM, 'AAA')
+        self.assertRaises(ValueError, course.get_classes, TERM, 'AAA')
 
     def test_get_course_invalid_term(self):
-        self.assertRaises(ValueError, course.get_courses, '1', 'CS')
+        self.assertRaises(ValueError, course.get_classes, '1', 'CS')
 
     @responses.activate
     def test_get_class(self):
