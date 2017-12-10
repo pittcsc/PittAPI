@@ -1,4 +1,4 @@
-'''
+"""
 The Pitt API, to access workable data of the University of Pittsburgh
 Copyright (C) 2015 Ritwik Gupta
 
@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-'''
+"""
 import warnings
 
 import requests
@@ -39,13 +39,23 @@ REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', '
 PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST', 'URBNST', 'SELF', 'GSWS']
 DAY_PROGRAM, SAT_PROGRAM = 'CGSDAY', 'CGSSAT'
 
-def get_courses(term: str, code: str) -> List[Dict[str,str]]:
-    """Returns a list of dictionaries containing all courses queried from code."""
+
+def get_classes(term: str, code: str) -> List[Dict[str, str]]:
+    """Returns a list of dictionaries containing all classes queried from code."""
     col_headers, course_data = _retrieve_courses_from_url(
         url=URL + _get_subject_query(code, term)
     )
     courses = [_extract_course_data(col_headers, course) for course in course_data]
     return courses
+
+
+def get_courses(term: str, code: str) -> List[Dict[str,str]]:
+    """Returns a list of dictionaries containing all class queried from code.
+    This is now deprecated since the name of the function doesn't accurately reflect
+    the data returned. Functionality will still be maintained till until a newer version
+    of the API."""
+    warnings.warn("Warning get_courses() is deprecated, please use get_classes() instead.")
+    return get_classes(term, code)
 
 
 def _get_subject_query(code: str, term: str) -> str:

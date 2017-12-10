@@ -3,7 +3,7 @@
 
 # Course API
 
-### **get_courses(term, code)**
+### **get_classes(term, code)**
 
 #### **Parameters**:
   - `term`: Term number | Example: `2171`
@@ -79,4 +79,48 @@ course.get_class(term='2174', class_number='23138')
  'special_indicators': ['WRIT'],
  'term': '2174',
  'time': ['09:30 AM', '10:45 AM']}
+```
+
+---
+
+### Deprecated
+
+### **get_courses(term, code)**
+
+#### **Parameters**:
+  - `term`: Term number | Example: `2171`
+  - `code`: Subject\Program\Requirement abbreviation | Example: `CS`
+
+#### **Returns**:
+Returns a list of dictionaries containing the data for all SUBJECT classes in TERM
+
+#### **Example**:
+
+###### **Code**:
+```python
+course.get_courses(term='2171', code='cs')
+```
+
+###### **Sample Output**:
+```python
+[
+  {
+    'catalog_number': u'0004',
+    'class_number': u'10160',
+    'credits': u'3 cr.',
+    'instructor': u'Not Decided',
+    'subject': u'CS',
+    'term': u'2171 \xa0AT',
+    'title': u'Intro Computer Progrmmng-Basic' },
+  {
+    'catalog_number': u'1530',
+    'class_number': u'11526',
+    'credits': u'3 cr.',
+    'instructor': u'Laboon,William J',
+    'subject': u'CS',
+    'term': u'2171 \xa0AT',
+    'title': u'Software Engineering'
+    }
+]
+
 ```

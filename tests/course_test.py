@@ -39,19 +39,25 @@ class CourseTest(unittest.TestCase):
             self.cs_class_data = ''.join(f.readlines())
 
     @responses.activate
+    def test_get_classes(self):
+        responses.add(responses.GET, 'http://www.courses.as.pitt.edu/results-subja.asp?TERM=2001&SUBJ=CS',
+                      body=self.cs_data, status=200)
+        self.assertIsInstance(course.get_classes(TERM, 'CS'), list)
+
+    @responses.activate
     def test_get_courses(self):
         responses.add(responses.GET, 'http://www.courses.as.pitt.edu/results-subja.asp?TERM=2001&SUBJ=CS',
                       body=self.cs_data, status=200)
         self.assertIsInstance(course.get_courses(TERM, 'CS'), list)
 
-    def test_get_course_invalid_class_number(self):
+    def test_get_class_invalid_class_number(self):
         self.assertRaises(ValueError, course.get_class, TERM, '0')
 
-    def test_get_course_invalid_subject(self):
-        self.assertRaises(ValueError, course.get_courses, TERM, 'AAA')
+    def test_get_classes_invalid_subject(self):
+        self.assertRaises(ValueError, course.get_classes, TERM, 'AAA')
 
-    def test_get_course_invalid_term(self):
-        self.assertRaises(ValueError, course.get_courses, '1', 'CS')
+    def test_get_classes_invalid_term(self):
+        self.assertRaises(ValueError, course.get_classes, '1', 'CS')
 
     @responses.activate
     def test_get_class(self):
@@ -64,8 +70,10 @@ class CourseTest(unittest.TestCase):
 
     def test_get_subject_query(self):
         self.assertEquals(course._get_subject_query(course.CODES[0], TERM), 'results-subja.asp?TERM=2001&SUBJ=ADMPS')
-        self.assertEquals(course._get_subject_query(course.PROGRAMS[0], TERM), 'results-subjspeciala.asp?TERM=2001&SUBJ=CLST')
-        self.assertEquals(course._get_subject_query(course.REQUIREMENTS[0], TERM), 'results-genedreqa.asp?TERM=2001&REQ=G')
+        self.assertEquals(course._get_subject_query(course.PROGRAMS[0], TERM),
+                          'results-subjspeciala.asp?TERM=2001&SUBJ=CLST')
+        self.assertEquals(course._get_subject_query(course.REQUIREMENTS[0], TERM),
+                          'results-genedreqa.asp?TERM=2001&REQ=G')
         self.assertEquals(course._get_subject_query(course.DAY_PROGRAM, TERM), 'results-dayCGSa.asp?TERM=2001')
         self.assertEquals(course._get_subject_query(course.SAT_PROGRAM, TERM), 'results-satCGSa.asp?TERM=2001')
 
