@@ -46,7 +46,7 @@ def _extract_person(item: Dict[str,Any]) -> Dict[str,Any]:
     kgoui_person = item['response']['regions'][0]['contents'][0]['fields'] \
                        ['item']['value']['kgoDeflatedData']['attributes']
 
-    person = {FIELD_MAP[key]:kgoui_person[key] for key in kgoui_person if key in FIELD_MAP}
+    person = {FIELD_MAP[key]:kgoui_person[key].strip() for key in kgoui_person if key in FIELD_MAP}
     return person
 
 
