@@ -22,6 +22,15 @@ from typing import List, Dict, Iterator, Any
 
 PEOPLE_URL = "https://m.pitt.edu/people/search.json"
 DETAIL_URL = "https://m.pitt.edu/people/detail.json"
+FIELD_MAP = {
+    "ldap:cn" : "name",
+    "ldap:buildingname": "address",
+    "kgoperson:phone" : "phone",
+    "ldap:ou" : "school",
+    "kgoperson:email" : "email",
+    "ldap:url" : "webpage",
+    "ldap:nickname" : "nickname",
+}
 
 def get_person(query: str, max_people: int=10) -> List[Dict[str,Any]]:
     """ Returns a list of people """
@@ -37,10 +46,8 @@ def _extract_person(item: Dict[str,Any]) -> Dict[str,Any]:
     kgoui_person = item['response']['regions'][0]['contents'][0]['fields'] \
                        ['item']['value']['kgoDeflatedData']['attributes']
 
-    person = {
-        'name': ''
-    }
-    return kgoui_person
+    person = {FIELD_MAP[key]:kgoui_person[key] for key in kgoui_person if key in FIELD_MAP}
+    return person
 
 
 
