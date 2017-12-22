@@ -26,7 +26,7 @@ FIELD_MAP = {
     "ldap:cn" : "name",
     "ldap:buildingname": "address",
     "kgoperson:phone" : "phone",
-    "ldap:ou" : "school",
+    "ldap:ou" : "department",
     "kgoperson:email" : "email",
     "ldap:url" : "webpage",
     "ldap:nickname" : "nickname",
