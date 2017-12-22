@@ -25,21 +25,12 @@ people.get_person('Jane')
 [
   {
     "name": "Jane Doe",
-    "fields": [
-      {
-        "unit": "Dietrich Sch Arts and Sciences"
-      }
-    ]
+    "email": "jdoe@pitt.edu",
+    "phone": "(999)999-999"
   },
   {
     "name": "Janedo Smith",
-    "fields": [
-      {
-        "email": "doesnotexist@pitt.edu"
-      },
-      {
-        "unit": "School of Dental Medicine"
-      }
+    "school": "School of Dental Medicine"
     ]
   },
   ...
