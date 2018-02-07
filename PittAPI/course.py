@@ -76,7 +76,6 @@ def _get_subject_query(code: str, term: str) -> str:
 
 def _validate_term(term: str) -> str:
     """Validates term is a string and check if it is valid."""
-
     valid_terms = re.compile('2\d\d[147]')
     if valid_terms.match(str(term)):
         return term
@@ -110,7 +109,6 @@ def _extract_course_data(header: List[str], course: Tag) -> Dict[str,str]:
         data[item] = value.text.strip().translate({'\r': '', '\n': '', '\t': ''}).replace('\xa0', '')
         if not data[item]:
             data[item] = 'Not Decided'
-        print(data[item])
     try:
         # TODO(azharichenko): Look into why there is an empty column header
         del data['']
