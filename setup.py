@@ -32,7 +32,7 @@ setup(
 
     # Author details
     author='University of Pittsburgh Computer Science Club',
-    author_email='',
+    author_email='pittcsc@gmail.com',
 
     # Choose your license
     license='MIT',
