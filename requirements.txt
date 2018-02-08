@@ -1,4 +1,5 @@
 BeautifulSoup4
+coverage==4.4
 Requests
 responses
 grequests
