@@ -11,16 +11,21 @@ Usage examples
 
 .. code:: python
 
-    from PittAPI import course, laundry, lab, dining
+    from PittAPI import course, dining, lab, laundry, library, news, people, shuttle, textbook
 
     ### Courses
     # Will return a list of dictionaries containing courses in subject
-    big_dict = course.get_classes(term="2177", code="CS")
+    big_dict = course.get_classes(term="2191", code="CS")
     # Will return a list of dictionaries containing courses that fulfill requirement
-    big_dict = course.get_classes(term="2177", code="Q")
+    big_dict = course.get_classes(term="2191", code="Q")
     # Will return a dictionary with a details about the class
-    description = course.get_class(term="2177", class_number="10163")
-
+    description = course.get_class(term="2191", class_number="10901")
+    
+    ### Textbook
+    # Will return a list of dictionaries containing textbooks for a class
+    # term number comes from pitt.verbacompare.com
+    small_dict = textbook.get_textbook(term="3150", department="CS", course="445", instructor="RAMIREZ")
+    
     ### Laundry
     # Will return a dictionary with amount of washers and dryers
     # in use vs. total washers and dryers at building
