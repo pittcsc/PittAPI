@@ -31,7 +31,7 @@ Usage examples
     big_dict = library.get_documents(query="computer")
     
     ### News
-    # Will return a list of dictionaries containng news from main news feed
+    # Will return a list of dictionaries containing news from main news feed
     medium_dict = news.get_news()
 
     ### Laundry
@@ -43,6 +43,10 @@ Usage examples
     # Will return a dictionary with status of the lab, and amount
     # of machines with a certain OS
     small_dict = lab.get_status(lab_name="ALUMNI")
+    
+    ### Shuttle
+    # Will return a list of dictionaries containing routes of shuttles
+    big_dict = shuttle.get_routes()
     
     ### People
     # Will return a list of people based on the query
