@@ -5,3 +5,4 @@ sample.py
 
 .coverage
 .ropeproject/
+venv/
