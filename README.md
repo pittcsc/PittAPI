@@ -44,20 +44,6 @@ two = dining.get_location_by_name(u"cup_&_chaucer-hillman")
 Run tests with `python3 -m "nose" --with-coverage --cov PittAPI/ --with-timer tests/*`.  
 If your `python -v` is 3+, replace `python3` with `python`.
 
-## TODO
-* [x] Make the laundry detailed method work
-* [x] Test the computer lab status API and make it return a dictionary
-* [ ] Working on the DiningAPI
-    * [x] Have the DiningAPI return a dict instead of a list
-    * [x] Have a separate method for `get_locations_by_status` and `get_locations`
-        * [x] `get_locations_by_status` is what is currently implemented
-        * [x] `get_locations` is the same as what is currently implemented with no arguments
-            * [x] but with a good-looking dictionary
-    * [x] Implement the `get_location_by_name` method
-    * [ ] Implement the `get_location_menu` method
-    * [x] Implement the helper methods `_encode_location` and `_decode_location`
-* [x] Change all string processing to unicode (dropped Py2.7 support, fixed :smile:)
-
 ## License
 
 This project is licensed under the terms of the [GPLv2 license](LICENSE).
