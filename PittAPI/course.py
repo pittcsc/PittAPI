@@ -1,4 +1,4 @@
-'''
+"""
 The Pitt API, to access workable data of the University of Pittsburgh
 Copyright (C) 2015 Ritwik Gupta
 
@@ -15,12 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-'''
+"""
 import warnings
 
 import requests
 import re
-from bs4 import BeautifulSoup, SoupStrainer
+from typing import Any, Dict, List, Tuple
+from bs4 import BeautifulSoup, SoupStrainer, Tag, ResultSet
 
 URL = 'http://www.courses.as.pitt.edu/'
 
@@ -38,16 +39,9 @@ REQUIREMENTS = ['G', 'W', 'Q', 'LIT', 'MA', 'EX', 'PH', 'SS', 'HS', 'NS', 'L', '
 PROGRAMS = ['CLST', 'ENV', 'FILMST', 'MRST', 'URBNST', 'SELF', 'GSWS']
 DAY_PROGRAM, SAT_PROGRAM = 'CGSDAY', 'CGSSAT'
 
-def _retrieve_term_codes():
-    """Returns a list of all current term codes from course web page."""
-    page = requests.get(URL)
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['input'])).findAll('input')
-    return [tag.attrs['value'] for tag in soup[:3]]
 
-TERMS = _retrieve_term_codes()
-
-def get_courses(term, code):
-    """Returns a list of dictionaries containing all courses queried from code."""
+def get_classes(term: str, code: str) -> List[Dict[str, str]]:
+    """Returns a list of dictionaries containing all classes queried from code."""
     col_headers, course_data = _retrieve_courses_from_url(
         url=URL + _get_subject_query(code, term)
     )
@@ -55,7 +49,16 @@ def get_courses(term, code):
     return courses
 
 
-def _get_subject_query(code, term):
+def get_courses(term: str, code: str) -> List[Dict[str,str]]:
+    """Returns a list of dictionaries containing all class queried from code.
+    This is now deprecated since the name of the function doesn't accurately reflect
+    the data returned. Functionality will still be maintained till until a newer version
+    of the API."""
+    warnings.warn("Warning get_courses() is deprecated, please use get_classes() instead.")
+    return get_classes(term, code)
+
+
+def _get_subject_query(code: str, term: str) -> str:
     """Builds query based on code entered."""
     code, term = code.upper(), _validate_term(term)
     if code in CODES:
@@ -65,23 +68,21 @@ def _get_subject_query(code, term):
     elif code in REQUIREMENTS:
         return 'results-genedreqa.asp?TERM={}&REQ={}'.format(term, code)
     elif code in DAY_PROGRAM:
-        return '/results-dayCGSa.asp?TERM={}'.format(term)
+        return 'results-dayCGSa.asp?TERM={}'.format(term)
     elif code in SAT_PROGRAM:
-        return '/results-satCGSa.asp?TERM={}'.format(term)
+        return 'results-satCGSa.asp?TERM={}'.format(term)
     raise ValueError("Invalid subject")
 
 
-def _validate_term(term):
+def _validate_term(term: str) -> str:
     """Validates term is a string and check if it is valid."""
-    if not isinstance(term, str):
-        warnings.warn('Term value should be a string.')
-        term = str(term)
-    if TERMS.match(term):
+    valid_terms = re.compile('2\d\d[147]')
+    if valid_terms.match(str(term)):
         return term
     raise ValueError("Invalid term")
 
 
-def _retrieve_courses_from_url(url):
+def _retrieve_courses_from_url(url: str) -> Tuple[List[str],ResultSet]:
     """Returns a tuple of column header keys and list of course data."""
     page = requests.get(url)
     soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['table', 'tr', 'th']))
@@ -89,7 +90,7 @@ def _retrieve_courses_from_url(url):
     return courses
 
 
-def _extract_header(data):
+def _extract_header(data: List[Any]) -> List[str]:
     """Extracts column headers and converts it into keys for a future dictionary."""
     header = []
     for tag in data:
@@ -101,7 +102,7 @@ def _extract_header(data):
     return header
 
 
-def _extract_course_data(header, course):
+def _extract_course_data(header: List[str], course: Tag) -> Dict[str,str]:
     """Constructs a dictionary from column header labels(subject, class number, etc.) and course data."""
     data = {}
     for item, value in zip(header, course.findAll('td')):
@@ -115,7 +116,7 @@ def _extract_course_data(header, course):
         return data
 
 
-def get_class(term, class_number):
+def get_class(term: str, class_number: str) -> Dict[str,Any]:
     """Returns dictionary of details about a class."""
     payload = {
         'TERM': _validate_term(term),
@@ -130,7 +131,7 @@ def get_class(term, class_number):
     return dict(class_details, **{'class_number': class_number, 'term': term})
 
 
-def _extract_description(text):
+def _extract_description(text: str) -> Dict[str,str]:
     """Extracts class description from web page"""
     soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
     description = {
@@ -139,7 +140,8 @@ def _extract_description(text):
 
     return description
 
-def _extract_details(text):
+
+def _extract_details(text: str) -> Dict[str,Any]:
     """Extracts class number, classroom, section, date, and time from web page"""
     soup = BeautifulSoup(text, 'lxml', parse_only=SoupStrainer(['td']))
     row = soup.findAll('td', {'class': 'style1'})

@@ -1,7 +1,11 @@
 import grequests
 import requests
 
+from bs4 import BeautifulSoup
+from typing import List, Dict, Any, Callable, Generator, Tuple
+
 BASE_URL = 'http://pitt.verbacompare.com/'
+
 CODES = [
     'ADMJ', 'ADMPS', 'AFRCNA', 'AFROTC', 'ANTH', 'ARABIC', 'ARTSC', 'ASL', 'ASTRON', 'ATHLTR', 'BACC', 'BCHS', 'BECN',
     'BFIN', 'BHRM', 'BIND', 'BIOENG', 'BIOETH', 'BIOINF', 'BIOSC', 'BIOST', 'BMIS', 'BMKT', 'BOAH', 'BORG', 'BQOM',
@@ -31,21 +35,21 @@ LOOKUP_ERRORS = {
 }
 
 
-def _construct_query(query, *args):
+def _construct_query(query: str, *args) -> str:
     """Constructs query based on which one is requested
     and fills the query in with the given arguments
     """
     return QUERIES[query].format(*args)
 
 
-def _validate_term(term):
+def _validate_term(term: str) -> str:
     """Validates term is a string and check if it is valid."""
     if len(term) == 4 and term.isdigit():
         return term
     raise ValueError("Invalid term")
 
 
-def _validate_course(course):
+def _validate_course(course: str) -> str:
     """Validates course is a four digit number,
      otherwise adds zero(s) to create four digit number or,
      raises an exception.
@@ -57,7 +61,7 @@ def _validate_course(course):
     return '0' * (4 - len(course)) + course
 
 
-def _filter_dictionary(d, keys):
+def _filter_dictionary(d: Dict[Any,Any], keys: List[Any]) -> Dict[Any,Any]:
     """Creates new dictionary from selecting certain
     key value pairs from another dictionary
     """
@@ -68,7 +72,7 @@ def _filter_dictionary(d, keys):
     )
 
 
-def _find_item(id_key, data_key, error_item):
+def _find_item(id_key, data_key, error_item) -> Callable[[Dict[Any,Any], Any], Any]:
     """Finds a dictionary in a list based on its id key, and
     returns a piece of data from the dictionary based on a data key.
     """
@@ -85,7 +89,7 @@ _find_course_id_by_instructor = _find_item('instructor', 'id', 'instructor')
 _find_course_id_by_section = _find_item('name', 'id', 'section')
 
 
-def _extract_id(response, course, instructor, section):
+def _extract_id(response, course: str, instructor: str, section: str) -> str:
     """Gathers sections from departments and finds course id by
      instructor name or section number.
      """
@@ -104,7 +108,7 @@ def _extract_id(response, course, instructor, section):
     raise LookupError('Unable to find course by ' + LOOKUP_ERRORS[error].format(section, instructor))
 
 
-def _extract_books(ids):
+def _extract_books(ids: List[str]) -> List[Dict[str,str]]:
     """Fetches a course's textbook information and returns a list
     of textbooks for the given course.
     """
@@ -127,7 +131,7 @@ class DefaultDict(dict):
         return None
 
 
-def _fetch_course(courses, departments):
+def _fetch_course(courses: List[Dict[str,str]], departments: Dict[str,str]) -> Generator[Tuple[str,str,str,str], None, None]:
     """Generator for fetching a courses information in order"""
     for course in courses:
         course = DefaultDict(course)
@@ -139,7 +143,7 @@ def _fetch_course(courses, departments):
         )
 
 
-def _get_department_number(department_code):
+def _get_department_number(department_code: str) -> int:
     """Temporary solution to finding a department.
     There will be a new method to getting department information
     at a later time.
@@ -152,7 +156,7 @@ def _get_department_number(department_code):
     return department_number
 
 
-def get_textbooks(term, courses):
+def get_textbooks(term: str, courses: List[Dict[str,str]]) -> List[Dict[str,str]]:
     """Retrieves textbooks for multiple courses in the same term."""
     departments = {course['department'] for course in courses}
     responses = grequests.map(
@@ -177,7 +181,7 @@ def get_textbooks(term, courses):
     return _extract_books(section_ids)
 
 
-def get_textbook(term, department, course, instructor=None, section=None):
+def get_textbook(term: str, department: str, course: str, instructor:str=None, section:str=None) -> List[Dict[str,str]]:
     """Retrieves textbooks for a given course."""
     has_section_or_instructor = (instructor is not None) or (section is not None)
     if not has_section_or_instructor:
