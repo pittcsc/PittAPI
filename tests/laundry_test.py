@@ -49,6 +49,7 @@ class LaundryTest(unittest.TestCase):
         self.assertEqual(status['total_washers'], 4)
         self.assertEqual(status['total_dryers'], 4)
 
+    @responses.activate
     def test_get_status_detailed(self):
         responses.add(
             responses.GET,
