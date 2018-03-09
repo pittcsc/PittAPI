@@ -60,8 +60,8 @@ Usage examples
     medium_dict = dining.get_locations_by_status(status="closed")
     # Will return a single dictionary of a dining location,
     # with its name, its open/closed status, and open times (if it exists)
-    one = dining.get_location_by_name(u"taco_bell-schenley_cafe")
-    two = dining.get_location_by_name(u"cup_&_chaucer-hillman")
+    one = dining.get_location_by_name("taco_bell-schenley_cafe")
+    two = dining.get_location_by_name("cup_&_chaucer-hillman")
 
 Tests
 -----
