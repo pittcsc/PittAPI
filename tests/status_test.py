@@ -25,7 +25,7 @@ from pathlib import Path
 
 from PittAPI import status
 
-SAMPLE_PATH = Path('.').parent / 'samples'
+SAMPLE_PATH = Path('.') / 'samples'
 
 
 class StatusTest(unittest.TestCase):
