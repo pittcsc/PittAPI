@@ -25,13 +25,13 @@ from pathlib import Path
 
 from PittAPI import dining
 
-SAMPLE_PATH = Path() / 'samples'
+SAMPLE_PATH = Path() / 'tests' / 'samples'
 
 
 class DiningTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
-        with open(SAMPLE_PATH / 'dining.json') as f:
+        with (SAMPLE_PATH / 'dining.json').open() as f:
             self.dining_data = json.load(f)
 
     @responses.activate

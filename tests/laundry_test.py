@@ -24,14 +24,14 @@ from pathlib import Path
 
 from PittAPI import laundry
 
-SAMPLE_PATH = Path() / 'samples'
+SAMPLE_PATH = Path() / 'tests' / 'samples'
 TEST_BUILDING = list(laundry.LOCATION_LOOKUP.keys())[0]
 
 
 class LaundryTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
-        with open(SAMPLE_PATH / 'laundry.htm') as f:
+        with (SAMPLE_PATH / 'laundry.htm').open() as f:
             self.laundry_data = ''.join(f.readlines())
 
     @responses.activate

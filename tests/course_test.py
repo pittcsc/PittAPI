@@ -17,7 +17,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-
 import unittest
 import responses
 
@@ -28,16 +27,16 @@ from bs4 import BeautifulSoup
 from PittAPI import course
 
 TERM = 2001
-SAMPLE_PATH = Path() / 'samples'
+SAMPLE_PATH = Path() / 'tests' / 'samples'
 HEADER_DATA = '<th width="9%">Subject</th><th>Catalog #</th><th>Credits/Units</th>'
 
 
 class CourseTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
-        with open(SAMPLE_PATH / 'course_cs.html') as f:
+        with (SAMPLE_PATH / 'course_cs.html').open() as f:
             self.cs_data = ''.join(f.readlines())
-        with open(SAMPLE_PATH / 'course_class_cs.html') as f:
+        with (SAMPLE_PATH / 'course_class_cs.html').open() as f:
             self.cs_class_data = ''.join(f.readlines())
 
     @responses.activate

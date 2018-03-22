@@ -26,7 +26,7 @@ from pathlib import Path
 from PittAPI import textbook
 
 TERM = '1000'
-SAMPLE_PATH = Path() / 'samples'
+SAMPLE_PATH = Path() / 'tests' / 'samples'
 
 print(SAMPLE_PATH.absolute())
 
@@ -36,9 +36,9 @@ class TextbookTest(unittest.TestCase):
         unittest.TestCase.__init__(self, *args, **kwargs)
         self.validate_term = textbook._validate_term
         self.validate_course = textbook._validate_course
-        with open(SAMPLE_PATH /'textbook_courses_CS.json') as f:
+        with (SAMPLE_PATH /'textbook_courses_CS.json').open() as f:
             self.cs_data = json.load(f)
-        with open(SAMPLE_PATH / 'textbook_courses_STAT.json') as f:
+        with (SAMPLE_PATH / 'textbook_courses_STAT.json').open() as f:
             self.stat_data = json.load(f)
 
     @responses.activate
