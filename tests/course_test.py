@@ -28,7 +28,7 @@ from bs4 import BeautifulSoup
 from PittAPI import course
 
 TERM = 2001
-SAMPLE_PATH = Path('..') / 'samples'
+SAMPLE_PATH = Path('.').parent / 'samples'
 HEADER_DATA = '<th width="9%">Subject</th><th>Catalog #</th><th>Credits/Units</th>'
 
 

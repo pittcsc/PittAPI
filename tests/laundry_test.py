@@ -24,7 +24,7 @@ from pathlib import Path
 
 from PittAPI import laundry
 
-SAMPLE_PATH = Path('..') / 'samples'
+SAMPLE_PATH = Path('.').parent / 'samples'
 TEST_BUILDING = list(laundry.LOCATION_LOOKUP.keys())[0]
 
 
