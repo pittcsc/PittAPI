@@ -31,7 +31,7 @@ SAMPLE_PATH = Path() / 'tests' / 'samples'
 class StatusTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
-        with (SAMPLE_PATH / 'status.json').open as f:
+        with (SAMPLE_PATH / 'status.json').open() as f:
             self.status_data = json.load(f)
 
     @responses.activate
