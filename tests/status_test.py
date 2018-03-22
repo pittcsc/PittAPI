@@ -18,19 +18,20 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 """
 
 import json
-import os
 import unittest
 import responses
 
+from pathlib import Path
+
 from PittAPI import status
 
-SCRIPT_PATH = os.path.dirname(__file__)
+SAMPLE_PATH = Path.cwd() / 'samples'
 
 
 class StatusTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
-        with open(os.path.join(SCRIPT_PATH, 'samples', 'status.json')) as f:
+        with open(SAMPLE_PATH / 'status.json') as f:
             self.status_data = json.load(f)
 
     @responses.activate

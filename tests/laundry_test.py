@@ -17,20 +17,21 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-import os
 import unittest
 import responses
 
+from pathlib import Path
+
 from PittAPI import laundry
 
-SCRIPT_PATH = os.path.dirname(__file__)
+SAMPLE_PATH = Path.cwd() / 'samples'
 TEST_BUILDING = list(laundry.LOCATION_LOOKUP.keys())[0]
 
 
 class LaundryTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
-        with open(os.path.join(SCRIPT_PATH, 'samples/laundry.htm')) as f:
+        with open(SAMPLE_PATH / 'laundry.htm') as f:
             self.laundry_data = ''.join(f.readlines())
 
     @responses.activate

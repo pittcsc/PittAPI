@@ -19,23 +19,23 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import responses
 import json
-import os
 import unittest
+
+from pathlib import Path
 
 from PittAPI import textbook
 
 TERM = '1000'
-SCRIPT_PATH = os.path.dirname(__file__)
-
+SAMPLE_PATH = Path.cwd() / 'samples'
 
 class TextbookTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
         self.validate_term = textbook._validate_term
         self.validate_course = textbook._validate_course
-        with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses_CS.json')) as f:
+        with open(SAMPLE_PATH /'textbook_courses_CS.json') as f:
             self.cs_data = json.load(f)
-        with open(os.path.join(SCRIPT_PATH, 'samples/textbook_courses_STAT.json')) as f:
+        with open(SAMPLE_PATH / 'textbook_courses_STAT.json') as f:
             self.stat_data = json.load(f)
 
     @responses.activate
