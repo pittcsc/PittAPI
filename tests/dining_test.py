@@ -25,7 +25,7 @@ from pathlib import Path
 
 from PittAPI import dining
 
-SAMPLE_PATH = Path.cwd() / 'tests' / 'samples'
+SAMPLE_PATH = Path('..') / 'samples'
 
 
 class DiningTest(unittest.TestCase):

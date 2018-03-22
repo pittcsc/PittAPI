@@ -26,7 +26,7 @@ from pathlib import Path
 from PittAPI import textbook
 
 TERM = '1000'
-SAMPLE_PATH = Path.cwd() / 'tests' / 'samples'
+SAMPLE_PATH = Path('..') / 'samples'
 
 class TextbookTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
