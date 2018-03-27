@@ -85,7 +85,8 @@ def _validate_term(term: str) -> str:
 def _retrieve_courses_from_url(url: str) -> Tuple[List[str],ResultSet]:
     """Returns a tuple of column header keys and list of course data."""
     page = requests.get(url)
-    soup = BeautifulSoup(page.text, 'lxml', parse_only=SoupStrainer(['table', 'tr', 'th']))
+    page_content = page.text.encode('utf-8')
+    soup = BeautifulSoup(page_content, 'lxml', parse_only=SoupStrainer(['table', 'tr', 'th']))
     courses = _extract_header(soup.findAll('th')), soup.findAll("tr", {"class": ["odd", "even"]})
     return courses
 
