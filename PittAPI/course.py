@@ -24,6 +24,8 @@ from typing import Any, Dict, List, Tuple
 from bs4 import BeautifulSoup, SoupStrainer, Tag, ResultSet
 
 URL = 'http://www.courses.as.pitt.edu/'
+CLASS_RESEARCH_URL =  'https://psmobile.pitt.edu/app/catalog/classSearch'
+COURSE_CATALOG_URL = 'https://psmobile.pitt.edu/app/catalog/listCatalog'
 
 CODES = [
     'ADMPS', 'AFRCNA', 'ANTH', 'ARABIC', 'ASL', 'ARTSC', 'ASTRON', 'BIOETH', 'BIOSC', 'CHEM', 'CHLIT', 'CHIN', 'CLASS',
