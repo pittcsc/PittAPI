@@ -6,3 +6,5 @@ sample.py
 .coverage
 .ropeproject/
 venv/
+
+.idea/
