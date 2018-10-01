@@ -20,9 +20,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import unittest
 import responses
 
-from pathlib import Path
-
-from bs4 import BeautifulSoup
 
 from PittAPI import course
 
