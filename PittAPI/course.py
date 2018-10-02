@@ -20,21 +20,25 @@ import warnings
 
 import requests
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Dict
 from bs4 import BeautifulSoup, SoupStrainer, Tag, ResultSet
 
 CLASS_SEARCH_URL = 'https://psmobile.pitt.edu/app/catalog/classSearch'
 COURSE_CATALOG_URL = 'https://psmobile.pitt.edu/app/catalog/listCatalog'
-CLASS_LIST_URL = 'https://psmobile.pitt.edu/app/catalog/listclasses/2191/CS'
+CLASS_LIST_URL = 'https://psmobile.pitt.edu/app/catalog/listclasses/{term}/{subject}'
 
 
-def get_classes():
+def get_classes(term: int, subject: str) -> Dict:
+    """Returns a list of classes available in term."""
     pass
 
 
-def get_courses():
+def get_class_detail():
+    """Returns information pertaining to a certain class."""
     pass
 
 
-def get_catalog():
+def get_courses(subject: str) -> Dict:
+    """Returns a list of all courses offered under a subject."""
     pass
+
