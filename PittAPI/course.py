@@ -45,10 +45,87 @@ SUBJECTS = ['ADMJ', 'ADMPS', 'AFRCNA', 'AFROTC', 'ANTH', 'ARABIC', 'ARTSC', 'ASL
 CLASS_SEARCH_URL = 'https://psmobile.pitt.edu/app/catalog/classSearch'
 COURSE_CATALOG_URL = 'https://psmobile.pitt.edu/app/catalog/listCatalog'
 CLASS_LIST_URL = 'https://psmobile.pitt.edu/app/catalog/listclasses/{term}/{subject}'
+SECTION_LIST_URL = 'https://psmobile.pitt.edu/app/catalog/listsections/UPITT/{term}/{class_number}/{campus_id}'
 
 
-def get_classes(term: int, subject: str) -> Dict:
+class PittSubject:
+    DEFAULT_CAMPUS = 'PIT/PGH'
+
+    def __init__(self, subject: str):
+        self.subject = subject
+        self.classes = []
+
+    def parse_webpage(self, resp: str):
+        soup = BeautifulSoup(resp.text, 'lxml')
+        classes = soup.find('div', {'class': 'primary-head'}).parent.contents[5]
+
+        for child in classes.children:
+            if child != '\n':
+                class_sections_url = child.attrs['href']
+                class_description = child.find('div', {'class': 'strong section-body'}).text
+                self._add_class(
+                    class_section_url=class_sections_url,
+                    class_description=class_description
+                )
+
+    def _add_class(self, class_section_url, class_description):
+        self.classes.append(PittClass(self, self.subject, class_section_url, class_description))
+
+
+class PittClass:
+    def __init__(self, parent: PittSubject, subject_id: str, class_section_url: str, class_description: str):
+        self.parent_subject = parent
+        self.subject_id = subject_id
+        self.class_number, self.description, *_ = class_description.split(' - ')
+        url_split = class_section_url.split('/')
+        if 'campuses' in class_section_url:
+            self.campus_id = self.parent_subject.DEFAULT_CAMPUS
+            self.internal_class_number = url_split[-1]
+            self.term = url_split[-2]
+            self.section_url = SECTION_LIST_URL.format(
+                term=self.term,
+                class_number=self.class_number,
+                campus_id=self.campus_id
+            )
+        else:
+            self.campus_id = '/'.join(url_split[-2:])
+            self.internal_class_number = url_split[-3]
+            self.term = url_split[-4]
+            self.section_url = class_section_url
+
+    def to_dict(self):
+        pass
+
+    def retrieve_sections(self):
+        pass
+
+    def __repr__(self):
+        return '<Pitt Class | {subject} {class_number}>'.format(subject=self.subject_id, class_number=self.class_number)
+
+
+def _validate_subject(subject: str) -> str:
+    subject  = subject.upper()
+    if subject in SUBJECTS:
+        return subject
+    return ''
+
+
+def _validate_term(term: str) -> bool:
+    pass
+
+
+def get_classes(term: int, subject: str) -> PittSubject:
     """Returns a list of classes available in term."""
+    subject = _validate_subject(subject)
+    url = CLASS_LIST_URL.format(term=term, subject=subject)
+    container = PittSubject(subject=subject)
+    response = requests.get(url)
+    container.parse_webpage(response)
+    return container
+
+
+def get_sections():
+    """Return details on all sections taught in a certain class"""
     pass
 
 
