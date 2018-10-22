@@ -8,3 +8,7 @@ sample.py
 venv/
 
 .idea/
+.vscode
+*.egg-info
+build/
+dist/
