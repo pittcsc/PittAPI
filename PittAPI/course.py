@@ -43,6 +43,7 @@ SUBJECTS = ['ADMJ', 'ADMPS', 'AFRCNA', 'AFROTC', 'ANTH', 'ARABIC', 'ARTSC', 'ASL
             'TELCOM', 'THEA', 'TURKSH', 'UKRAIN', 'URBNST', 'VIET']
 
 CLASS_SEARCH_URL = 'https://psmobile.pitt.edu/app/catalog/classSearch'
+CLASS_SEARCH_API_URL = 'https://psmobile.pitt.edu/app/catalog/getClassSearch'
 COURSE_CATALOG_URL = 'https://psmobile.pitt.edu/app/catalog/listCatalog'
 CLASS_LIST_URL = 'https://psmobile.pitt.edu/app/catalog/listclasses/{term}/{subject}'
 SECTION_LIST_URL = 'https://psmobile.pitt.edu/app/catalog/listsections/UPITT/{term}/{class_number}/{campus_id}'
@@ -57,16 +58,19 @@ class PittSubject:
 
     def parse_webpage(self, resp: str):
         soup = BeautifulSoup(resp.text, 'lxml')
-        classes = soup.find('div', {'class': 'primary-head'}).parent.contents[5]
-
-        for child in classes.children:
-            if child != '\n':
-                class_sections_url = child.attrs['href']
-                class_description = child.find('div', {'class': 'strong section-body'}).text
-                self._add_class(
-                    class_section_url=class_sections_url,
-                    class_description=class_description
-                )
+        classes = soup.find('div', {'class': 'primary-head'}).parent.contents[1:]
+        class_description = ""
+        for child in classes:
+            if any(child != i for i in ['\n', ' ']):
+                if isinstance(child, Tag) and 'class' not in child.attrs:
+                    print(child)
+                    class_sections_url = child.attrs['href']
+                    self._add_class(
+                        class_section_url=class_sections_url,
+                        class_description=class_description
+                    )
+                elif isinstance(child, Tag):
+                        class_description = child.text
 
     def _add_class(self, class_section_url, class_description):
         self.classes.append(PittClass(self, self.subject, class_section_url, class_description))
@@ -104,7 +108,7 @@ class PittClass:
 
 
 def _validate_subject(subject: str) -> str:
-    subject  = subject.upper()
+    subject = subject.upper()
     if subject in SUBJECTS:
         return subject
     return ''
@@ -117,9 +121,23 @@ def _validate_term(term: str) -> bool:
 def get_classes(term: int, subject: str) -> PittSubject:
     """Returns a list of classes available in term."""
     subject = _validate_subject(subject)
-    url = CLASS_LIST_URL.format(term=term, subject=subject)
+
+    # Generate new CSRFToken
+    s = requests.Session()
+    s.get(CLASS_SEARCH_URL)
+
+    payload = {
+        'CSRFToken': s.cookies['CSRFCookie'],
+        'term': term,
+        'campus': 'PIT',
+        'subject': subject,
+        'acad_career': '',
+        'catalog_nbr': '',
+        'class_nbr': ''
+    }
+
+    response = s.post(CLASS_SEARCH_API_URL, data=payload)
     container = PittSubject(subject=subject)
-    response = requests.get(url)
     container.parse_webpage(response)
     return container
 
