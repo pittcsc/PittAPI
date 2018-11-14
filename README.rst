@@ -15,7 +15,10 @@ Usage examples
 
     ### Courses
     # Will return a list of dictionaries containing courses in subject
-    big_dict = course.get_classes(term="2191", code="CS")
+    cs_subject = course.get_classes(term="2191", subject="CS")
+    cs_classes = cs_subject.classes
+
+    # Deprecated
     # Will return a list of dictionaries containing courses that fulfill requirement
     big_dict = course.get_classes(term="2191", code="Q")
     # Will return a dictionary with a details about the class
