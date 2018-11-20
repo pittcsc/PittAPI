@@ -16,12 +16,11 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-import warnings
 
+from datetime import datetime
 import requests
-import re
-from typing import Dict
-from bs4 import BeautifulSoup, SoupStrainer, Tag, ResultSet
+from typing import Dict, Union, List
+from bs4 import BeautifulSoup, Tag
 
 SUBJECTS = ['ADMJ', 'ADMPS', 'AFRCNA', 'AFROTC', 'ANTH', 'ARABIC', 'ARTSC', 'ASL', 'ASTRON', 'ATHLTR', 'BACC', 'BCHS',
             'BECN', 'BFAE', 'BFIN', 'BHRM', 'BIND', 'BIOENG', 'BIOETH', 'BIOINF', 'BIOSC', 'BIOST', 'BMIS', 'BMKT',
@@ -48,54 +47,63 @@ COURSE_CATALOG_URL = 'https://psmobile.pitt.edu/app/catalog/listCatalog'
 CLASS_LIST_URL = 'https://psmobile.pitt.edu/app/catalog/listclasses/{term}/{subject}'
 SECTION_LIST_URL = 'https://psmobile.pitt.edu/app/catalog/listsections/UPITT/{term}/{class_number}/{campus_id}'
 
+extract = lambda s: s.split(': ')[1]
+
 
 class PittSubject:
-    DEFAULT_CAMPUS = 'PIT/PGH'
-
     def __init__(self, subject: str):
         self.subject = subject
-        self.classes = []
+        self.courses = {}
+
+    # def __getitem__(self, item):
+    #     if isinstance(item, int) or isinstance(item, slice):
+    #         return self.courses[item]
 
     def parse_webpage(self, resp: str):
         soup = BeautifulSoup(resp.text, 'lxml')
-        classes = soup.find('div', {'class': 'primary-head'}).parent.contents[1:]
+        classes = soup.find('div', {'class': 'primary-head'}).parent.contents
         class_description = ""
+        course = None
         for child in classes:
             if any(child != i for i in ['\n', ' ']):
                 if isinstance(child, Tag) and 'class' not in child.attrs:
-                    print(child)
                     class_sections_url = child.attrs['href']
                     self._add_class(
                         class_section_url=class_sections_url,
-                        class_description=class_description
+                        course=course,
+                        class_data=child.text.strip().split('\n')
                     )
                 elif isinstance(child, Tag):
-                        class_description = child.text
 
-    def _add_class(self, class_section_url, class_description):
-        self.classes.append(PittClass(self, self.subject, class_section_url, class_description))
+                    class_description = child.text
+                    number, *_ = class_description.split(' - ')
+                    number = number.split(' ')[1]
+                    if number not in self.courses:
+                        self.courses[number] = PittCourse(parent=self, course_number=number, term=2191)
+
+                    course = self.courses[number]
+
+    def _add_class(self, class_section_url, course, class_data):
+        self.courses.append(PittSection(self, course, class_section_url, class_data))
+
+    def __repr__(self):
+        return '< Pitt Subject | {subject} | {num} classes >'.format(subject=self.subject, num=len(self.classes))
 
 
-class PittClass:
-    def __init__(self, parent: PittSubject, subject_id: str, class_section_url: str, class_description: str):
+class PittSection:
+    def __init__(self, parent: PittSubject, course, class_section_url: str, class_data: List[str]):
         self.parent_subject = parent
-        self.subject_id = subject_id
-        self.class_number, self.description, *_ = class_description.split(' - ')
-        url_split = class_section_url.split('/')
-        if 'campuses' in class_section_url:
-            self.campus_id = self.parent_subject.DEFAULT_CAMPUS
-            self.internal_class_number = url_split[-1]
-            self.term = url_split[-2]
-            self.section_url = SECTION_LIST_URL.format(
-                term=self.term,
-                class_number=self.class_number,
-                campus_id=self.campus_id
-            )
-        else:
-            self.campus_id = '/'.join(url_split[-2:])
-            self.internal_class_number = url_split[-3]
-            self.term = url_split[-4]
-            self.section_url = class_section_url
+        self.parent_course = course
+
+        self.section = extract(class_data[0])
+        self.room = extract(class_data[3])
+        self.instructor = extract(class_data[4])
+
+        date = extract(class_data[5]).split(' - ')
+        self.start_date = datetime.strftime(date[0], '%m/%d/%Y')
+        self.end_date = datetime.strftime(date[1], '%m/%d/%Y')
+
+        self.url = class_section_url
 
     def to_dict(self):
         pass
@@ -104,7 +112,26 @@ class PittClass:
         pass
 
     def __repr__(self):
-        return '<Pitt Class | {subject} {class_number}>'.format(subject=self.subject_id, class_number=self.class_number)
+        return '<Pitt Class | {subject} {course_number} | {class_number}>'.format(subject=self.parent_subject.subject,
+                                                                                  course_number=self.parent_course.course_number,
+                                                                                  class_number=self.class_number)
+
+
+class PittCourse:
+    def __init__(self, parent: PittSubject, course_number: str, term: Union[int, str]):
+        self.parent_subject: PittSubject = parent
+        self.number: str = course_number
+        self.term: Union[int, str] = term
+        self.sections: List[PittSection] = []
+
+    def append(self, section: PittSection):
+        self.sections.append(section)
+
+    def __getitem__(self, item):
+        return self.sections[item]
+
+    def __repr__(self):
+        return ''
 
 
 def _validate_subject(subject: str) -> str:
