@@ -53,38 +53,42 @@ extract = lambda s: s.split(': ')[1]
 class PittSubject:
     def __init__(self, subject: str):
         self.subject = subject
-        self.courses = {}
+        self._courses = {}
 
-    # def __getitem__(self, item):
-    #     if isinstance(item, int) or isinstance(item, slice):
-    #         return self.courses[item]
+    def __getitem__(self, item):
+        if isinstance(item, str):
+            item = _validate_course(item)
+            return self._courses[item]
+
+    @property
+    def courses(self):
+        return self._courses
 
     def parse_webpage(self, resp: str):
         soup = BeautifulSoup(resp.text, 'lxml')
         classes = soup.find('div', {'class': 'primary-head'}).parent.contents
-        class_description = ""
         course = None
         for child in classes:
             if any(child != i for i in ['\n', ' ']):
-                if isinstance(child, Tag) and 'class' not in child.attrs:
-                    class_sections_url = child.attrs['href']
-                    self._add_class(
-                        class_section_url=class_sections_url,
-                        course=course,
-                        class_data=child.text.strip().split('\n')
-                    )
-                elif isinstance(child, Tag):
+                if isinstance(child, Tag):
+                    if 'class' not in child.attrs:
+                        class_sections_url = child.attrs['href']
+                        course.append(PittSection(self,
+                                                  class_section_url=class_sections_url,
+                                                  course=course,
+                                                  class_data=child.text.strip().split('\n')
+                                                  ))
+                    elif child.text != '':
+                        class_description = child.text
+                        number, *_ = class_description.split(' - ')
+                        number = number.split(' ')[1]
+                        if number not in self._courses:
+                            self._courses[number] = PittCourse(parent=self, course_number=number, term=2191)
 
-                    class_description = child.text
-                    number, *_ = class_description.split(' - ')
-                    number = number.split(' ')[1]
-                    if number not in self.courses:
-                        self.courses[number] = PittCourse(parent=self, course_number=number, term=2191)
-
-                    course = self.courses[number]
+                        course = self._courses[number]
 
     def _add_class(self, class_section_url, course, class_data):
-        self.courses.append(PittSection(self, course, class_section_url, class_data))
+        self._courses.append((self, course, class_section_url, class_data))
 
     def __repr__(self):
         return '< Pitt Subject | {subject} | {num} classes >'.format(subject=self.subject, num=len(self.classes))
@@ -95,26 +99,27 @@ class PittSection:
         self.parent_subject = parent
         self.parent_course = course
 
-        self.section = extract(class_data[0])
+        class_info = extract(class_data[0]).split(' ')
+        self.section = class_info[0]
+        self.number = class_info[1][1:6]
         self.room = extract(class_data[3])
         self.instructor = extract(class_data[4])
 
-        date = extract(class_data[5]).split(' - ')
-        self.start_date = datetime.strftime(date[0], '%m/%d/%Y')
-        self.end_date = datetime.strftime(date[1], '%m/%d/%Y')
+        # date = extract(class_data[5]).split(' - ')
+        # self.start_date = datetime.strftime(date[0], '%m/%d/%Y')
+        # self.end_date = datetime.strftime(date[1], '%m/%d/%Y')
 
         self.url = class_section_url
 
     def to_dict(self):
         pass
 
-    def retrieve_sections(self):
-        pass
-
     def __repr__(self):
-        return '<Pitt Class | {subject} {course_number} | {class_number}>'.format(subject=self.parent_subject.subject,
-                                                                                  course_number=self.parent_course.course_number,
-                                                                                  class_number=self.class_number)
+        return '<Pitt Section | {subject} {course_number} | {class_number} | {instructor} >'.format(
+            subject=self.parent_subject.subject,
+            course_number=self.parent_course.number,
+            class_number=self.number,
+            instructor=self.instructor)
 
 
 class PittCourse:
@@ -124,14 +129,14 @@ class PittCourse:
         self.term: Union[int, str] = term
         self.sections: List[PittSection] = []
 
-    def append(self, section: PittSection):
-        self.sections.append(section)
-
     def __getitem__(self, item):
         return self.sections[item]
 
+    def append(self, section: PittSection):
+        self.sections.append(section)
+
     def __repr__(self):
-        return ''
+        return '< Pitt Course | {subject} {number} >'.format(subject=self.parent_subject.subject, number=self.number)
 
 
 def _validate_subject(subject: str) -> str:
@@ -143,6 +148,18 @@ def _validate_subject(subject: str) -> str:
 
 def _validate_term(term: str) -> bool:
     pass
+
+
+def _validate_course(course: Union[int, str]) -> str:
+    """Validates that the course name entered is 4 characters long and in string form."""
+    if isinstance(course, int):
+        course = str(course)
+    course_length = len(course)
+    if course_length < 4:
+        return ('0' * (4 - course_length)) + course
+    elif course_length > 4:
+        raise ValueError('Invalid course number.')
+    return course
 
 
 def get_classes(term: int, subject: str) -> PittSubject:
@@ -169,9 +186,28 @@ def get_classes(term: int, subject: str) -> PittSubject:
     return container
 
 
-def get_sections():
+def get_sections(term: Union[int, str], subject: str, course: Union[int, str]) -> PittCourse:
     """Return details on all sections taught in a certain class"""
-    pass
+    course = _validate_course(course)
+
+    # Generate new CSRFToken
+    s = requests.Session()
+    s.get(CLASS_SEARCH_URL)
+
+    payload = {
+        'CSRFToken': s.cookies['CSRFCookie'],
+        'term': term,
+        'campus': 'PIT',
+        'subject': subject,
+        'acad_career': '',
+        'catalog_nbr': course,
+        'class_nbr': ''
+    }
+
+    response = s.post(CLASS_SEARCH_API_URL, data=payload)
+    container = PittCourse(subject=subject)
+    container.parse_webpage(response)
+    return container
 
 
 def get_class_detail():
