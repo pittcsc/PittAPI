@@ -51,8 +51,9 @@ extract = lambda s: s.split(': ')[1]
 
 
 class PittSubject:
-    def __init__(self, subject: str):
+    def __init__(self, subject: str, term: str):
         self.subject = subject
+        self.term = term
         self._courses = {}
 
     def __getitem__(self, item):
@@ -62,7 +63,8 @@ class PittSubject:
 
     @property
     def courses(self):
-        return self._courses
+        """Return list of course numbers offered that semester"""
+        return self.courses.keys()
 
     def parse_webpage(self, resp: str):
         soup = BeautifulSoup(resp.text, 'lxml')
@@ -87,11 +89,8 @@ class PittSubject:
 
                         course = self._courses[number]
 
-    def _add_class(self, class_section_url, course, class_data):
-        self._courses.append((self, course, class_section_url, class_data))
-
     def __repr__(self):
-        return '< Pitt Subject | {subject} | {num} classes >'.format(subject=self.subject, num=len(self.classes))
+        return '< Pitt Subject | {subject} | {num} courses >'.format(subject=self.subject, num=len(self._courses))
 
 
 class PittSection:
@@ -105,9 +104,9 @@ class PittSection:
         self.room = extract(class_data[3])
         self.instructor = extract(class_data[4])
 
-        # date = extract(class_data[5]).split(' - ')
-        # self.start_date = datetime.strftime(date[0], '%m/%d/%Y')
-        # self.end_date = datetime.strftime(date[1], '%m/%d/%Y')
+        date = extract(class_data[5]).split(' - ')
+        self.start_date = datetime.strptime(date[0], '%m/%d/%Y')
+        self.end_date = datetime.strptime(date[1], '%m/%d/%Y')
 
         self.url = class_section_url
 
@@ -180,8 +179,11 @@ def get_classes(term: int, subject: str) -> PittSubject:
         'class_nbr': ''
     }
 
+    if isinstance(term, int):
+        term = str(term)
+
     response = s.post(CLASS_SEARCH_API_URL, data=payload)
-    container = PittSubject(subject=subject)
+    container = PittSubject(subject=subject, term=term)
     container.parse_webpage(response)
     return container
 
