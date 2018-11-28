@@ -64,7 +64,7 @@ class PittSubject:
     @property
     def courses(self):
         """Return list of course numbers offered that semester"""
-        return self.courses.keys()
+        return self._courses.keys()
 
     def parse_webpage(self, resp: str):
         soup = BeautifulSoup(resp.text, 'lxml')
@@ -85,8 +85,7 @@ class PittSubject:
                         number, *_ = class_description.split(' - ')
                         number = number.split(' ')[1]
                         if number not in self._courses:
-                            self._courses[number] = PittCourse(parent=self, course_number=number, term=2191)
-
+                            self._courses[number] = PittCourse(parent=self, course_number=number)
                         course = self._courses[number]
 
     def __repr__(self):
@@ -101,6 +100,15 @@ class PittSection:
         class_info = extract(class_data[0]).split(' ')
         self.section = class_info[0]
         self.number = class_info[1][1:6]
+
+        days_times = extract(class_data[2])
+        self.days = None
+        self.times = None
+        if days_times != 'TBA':
+            days_times = days_times.split(' - ')
+            self.days, times = days_times[0].split(' ')
+            self.times = [times] + [days_times[1]]
+
         self.room = extract(class_data[3])
         self.instructor = extract(class_data[4])
 
@@ -109,6 +117,10 @@ class PittSection:
         self.end_date = datetime.strptime(date[1], '%m/%d/%Y')
 
         self.url = class_section_url
+
+    @property
+    def term(self):
+        return self.parent_subject.term
 
     def to_dict(self):
         pass
@@ -122,14 +134,17 @@ class PittSection:
 
 
 class PittCourse:
-    def __init__(self, parent: PittSubject, course_number: str, term: Union[int, str]):
+    def __init__(self, parent: PittSubject, course_number: str):
         self.parent_subject: PittSubject = parent
         self.number: str = course_number
-        self.term: Union[int, str] = term
         self.sections: List[PittSection] = []
 
     def __getitem__(self, item):
         return self.sections[item]
+
+    @property
+    def term(self):
+        return self.parent_subject.term
 
     def append(self, section: PittSection):
         self.sections.append(section)
