@@ -135,9 +135,9 @@ class PittSection:
 
 class PittCourse:
     def __init__(self, parent: PittSubject, course_number: str):
-        self.parent_subject: PittSubject = parent
-        self.number: str = course_number
-        self.sections: List[PittSection] = []
+        self.parent_subject = parent
+        self.number = course_number
+        self.sections = []
 
     def __getitem__(self, item):
         return self.sections[item]
@@ -176,36 +176,8 @@ def _validate_course(course: Union[int, str]) -> str:
     return course
 
 
-def get_classes(term: int, subject: str) -> PittSubject:
-    """Returns a list of classes available in term."""
-    subject = _validate_subject(subject)
-
-    # Generate new CSRFToken
-    s = requests.Session()
-    s.get(CLASS_SEARCH_URL)
-
-    payload = {
-        'CSRFToken': s.cookies['CSRFCookie'],
-        'term': term,
-        'campus': 'PIT',
-        'subject': subject,
-        'acad_career': '',
-        'catalog_nbr': '',
-        'class_nbr': ''
-    }
-
-    if isinstance(term, int):
-        term = str(term)
-
-    response = s.post(CLASS_SEARCH_API_URL, data=payload)
-    container = PittSubject(subject=subject, term=term)
-    container.parse_webpage(response)
-    return container
-
-
-def get_sections(term: Union[int, str], subject: str, course: Union[int, str]) -> PittCourse:
-    """Return details on all sections taught in a certain class"""
-    course = _validate_course(course)
+def _get_payload(term, subject, course=''):
+    """Make payload for request and generates CSRFToken for the request"""
 
     # Generate new CSRFToken
     s = requests.Session()
@@ -220,8 +192,27 @@ def get_sections(term: Union[int, str], subject: str, course: Union[int, str]) -
         'catalog_nbr': course,
         'class_nbr': ''
     }
+    return s, payload
 
-    response = s.post(CLASS_SEARCH_API_URL, data=payload)
+
+def get_classes(term: int, subject: str) -> PittSubject:
+    """Returns a list of classes available in term."""
+    subject = _validate_subject(subject)
+    session, payload = _get_payload(term, subject)
+    if isinstance(term, int):
+        term = str(term)
+
+    response = session.post(CLASS_SEARCH_API_URL, data=payload)
+    container = PittSubject(subject=subject, term=term)
+    container.parse_webpage(response)
+    return container
+
+
+def get_sections(term: Union[int, str], subject: str, course: Union[int, str]) -> PittCourse:
+    """Return details on all sections taught in a certain class"""
+    course = _validate_course(course)
+    session, payload = _get_payload(term, subject, course)
+    response = session.post(CLASS_SEARCH_API_URL, data=payload)
     container = PittCourse(subject=subject)
     container.parse_webpage(response)
     return container
