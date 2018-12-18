@@ -64,7 +64,7 @@ class PittSubject:
     @property
     def courses(self):
         """Return list of course numbers offered that semester"""
-        return self._courses.keys()
+        return list(self._courses.keys())
 
     def parse_webpage(self, resp: str):
         soup = BeautifulSoup(resp.text, 'lxml')
@@ -89,7 +89,10 @@ class PittSubject:
                         course = self._courses[number]
 
     def __repr__(self):
-        return '< Pitt Subject | {subject} | {num} courses >'.format(subject=self.subject, num=len(self._courses))
+        return '< Pitt Subject  | {term} | {subject} | {num} courses >'.format(
+            term=self.term,
+            subject=self.subject,
+            num=len(self._courses))
 
 
 class PittSection:
@@ -98,7 +101,7 @@ class PittSection:
         self.parent_course = course
 
         class_info = extract(class_data[0]).split(' ')
-        self.section = class_info[0]
+        self.section, self.section_type = class_info[0].split('-')
         self.number = class_info[1][1:6]
 
         days_times = extract(class_data[2])
@@ -107,6 +110,7 @@ class PittSection:
         if days_times != 'TBA':
             days_times = days_times.split(' - ')
             self.days, times = days_times[0].split(' ')
+            self.days = [self.days[i * 2:(i * 2) + 2] for i in range(len(self.days) // 2)]
             self.times = [times] + [days_times[1]]
 
         self.room = extract(class_data[3])
@@ -126,10 +130,12 @@ class PittSection:
         pass
 
     def __repr__(self):
-        return '<Pitt Section | {subject} {course_number} | {class_number} | {instructor} >'.format(
+        return '<Pitt Section | {subject} {course_number} | {section_type} {class_number} | {instructor} >'.format(
+            term=self.term,
             subject=self.parent_subject.subject,
             course_number=self.parent_course.number,
             class_number=self.number,
+            section_type=self.section_type,
             instructor=self.instructor)
 
 
@@ -150,7 +156,10 @@ class PittCourse:
         self.sections.append(section)
 
     def __repr__(self):
-        return '< Pitt Course | {subject} {number} >'.format(subject=self.parent_subject.subject, number=self.number)
+        return '< Pitt Course | {term} | {subject} {number} >'.format(
+            term=self.term,
+            subject=self.parent_subject.subject,
+            number=self.number)
 
 
 def _validate_subject(subject: str) -> str:
@@ -195,7 +204,7 @@ def _get_payload(term, subject, course=''):
     return s, payload
 
 
-def get_classes(term: int, subject: str) -> PittSubject:
+def get_courses(term: int, subject: str) -> PittSubject:
     """Returns a list of classes available in term."""
     subject = _validate_subject(subject)
     session, payload = _get_payload(term, subject)
