@@ -19,7 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import re
 from datetime import datetime
-from typing import Union, List
+from typing import Union, List, Dict
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -49,7 +49,7 @@ CLASS_SEARCH_API_URL = 'https://psmobile.pitt.edu/app/catalog/getClassSearch'
 COURSE_CATALOG_URL = 'https://psmobile.pitt.edu/app/catalog/listCatalog'
 CLASS_LIST_URL = 'https://psmobile.pitt.edu/app/catalog/listclasses/{term}/{subject}'
 SECTION_LIST_URL = 'https://psmobile.pitt.edu/app/catalog/listsections/UPITT/{term}/{class_number}/{campus_id}'
-SECTION_DETAIL_URL = 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/{term}/{class_number}'
+SECTION_DETAIL_URL = 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/{term}/{section_number}'
 
 extract = lambda s: s.split(': ')[1]
 
@@ -102,62 +102,6 @@ class PittSubject:
             num=len(self._courses))
 
 
-class PittSection:
-    def __init__(self, parent: PittSubject, course, class_section_url: str, class_data: List[str]):
-        self.parent_subject = parent
-        self.parent_course = course
-
-        class_info = extract(class_data[0]).split(' ')
-        self.section, self.section_type = class_info[0].split('-')
-        self.number = class_info[1][1:6]
-
-        days_times = extract(class_data[2])
-        self.days = None
-        self.times = None
-        if days_times != 'TBA':
-            days_times = days_times.split(' - ')
-            self.days, times = days_times[0].split(' ')
-            self.days = [self.days[i * 2:(i * 2) + 2] for i in range(len(self.days) // 2)]
-            self.times = [times] + [days_times[1]]
-
-        self.room = extract(class_data[3])
-        self.instructor = extract(class_data[4])
-
-        date = extract(class_data[5]).split(' - ')
-        self.start_date = datetime.strptime(date[0], '%m/%d/%Y')
-        self.end_date = datetime.strptime(date[1], '%m/%d/%Y')
-
-        self.url = class_section_url
-        self._extra = None
-
-    @property
-    def term(self):
-        return self.parent_subject.term
-
-    @property
-    def extra_details(self):
-        if self._extra is not None:
-            return self._extra
-        url = SECTION_DETAIL_URL.format(term=self.term, class_number=self.number)
-
-    def to_dict(self, has_extra_details=False):
-        d = {}
-
-        if has_extra_details:
-            d['extra'] = self.extra_details
-
-        return d
-
-    def __repr__(self):
-        return '<Pitt Section | {subject} {course_number} | {section_type} {class_number} | {instructor} >'.format(
-            term=self.term,
-            subject=self.parent_subject.subject,
-            course_number=self.parent_course.number,
-            class_number=self.number,
-            section_type=self.section_type,
-            instructor=self.instructor)
-
-
 class PittCourse:
     def __init__(self, parent: 'PittSubject', course_number: str):
         self.parent_subject = parent
@@ -184,16 +128,92 @@ class PittCourse:
                     if 'class' not in child.attrs:
                         class_sections_url = child.attrs['href']
                         self.append(PittSection(self.parent_subject,
-                                                  class_section_url=class_sections_url,
-                                                  course=course,
-                                                  class_data=child.text.strip().split('\n')
-                                                  ))
+                                                class_section_url=class_sections_url,
+                                                course=course,
+                                                class_data=child.text.strip().split('\n')
+                                                ))
 
     def __repr__(self):
         return '< Pitt Course | {term} | {subject} {number} >'.format(
             term=self.term,
             subject=self.parent_subject.subject,
             number=self.number)
+
+
+class PittSection:
+    def __init__(self, parent: PittSubject, course, class_section_url: str, class_data: List[str], *,
+                 extra: Dict[str, str] = None, term: str = None, subject: str = None, course_number: str = None):
+        self.parent_subject = parent
+        self.parent_course = course
+
+        # Variables to be used if there isn't a parent subject and/or course
+        self._term = term
+        self._subject = subject
+        self._course_number = course_number
+
+        class_info = extract(class_data[0]).split(' ')
+        self.section, self.section_type = class_info[0].split('-')
+        self.number = class_info[1][1:6]
+
+        days_times = extract(class_data[2])
+        self.days = None
+        self.times = None
+        if days_times != 'TBA':
+            days_times = days_times.split(' - ')
+            self.days, times = days_times[0].split(' ')
+            self.days = [self.days[i * 2:(i * 2) + 2] for i in range(len(self.days) // 2)]
+            self.times = [times] + [days_times[1]]
+
+        self.room = extract(class_data[3])
+        self.instructor = extract(class_data[4])
+
+        date = extract(class_data[5]).split(' - ')
+        self.start_date = datetime.strptime(date[0], '%m/%d/%Y')
+        self.end_date = datetime.strptime(date[1], '%m/%d/%Y')
+
+        self.url = class_section_url
+        self._extra = extra
+
+    @property
+    def term(self):
+        if self.parent_subject is not None:
+            return self.parent_subject.term
+        return self._term
+
+    @property
+    def subject(self):
+        if self.parent_subject is not None:
+            return self.parent_subject.subject
+        return self.subject
+
+    @property
+    def course_number(self):
+        if self.parent_subject is not None:
+            return self.parent_course.number
+        return self._course_number
+
+    @property
+    def extra_details(self):
+        if self._extra is not None:
+            return self._extra
+        url = SECTION_DETAIL_URL.format(term=self.term, section_number=self.number)
+
+    def to_dict(self, has_extra_details=False):
+        d = {}
+
+        if has_extra_details:
+            d['extra'] = self.extra_details
+
+        return d
+
+    def __repr__(self):
+        return '<Pitt Section | {subject} {course_number} | {section_type} {class_number} | {instructor} >'.format(
+            term=self.term,
+            subject=self.subject,
+            course_number=self.course_number,
+            class_number=self.number,
+            section_type=self.section_type,
+            instructor=self.instructor)
 
 
 def _validate_subject(subject: str) -> str:
@@ -256,7 +276,7 @@ def get_term_courses(term: Union[str, int], subject: str) -> PittSubject:
     return container
 
 
-def get_sections(term: Union[int, str], subject: str, course: Union[int, str]) -> PittCourse:
+def get_sections(term: Union[str, int], subject: str, course: Union[str, int]) -> PittCourse:
     """Return details on all sections taught in a certain course"""
     term = _validate_term(term)
     subject = _validate_subject(subject)
@@ -270,7 +290,12 @@ def get_sections(term: Union[int, str], subject: str, course: Union[int, str]) -
     return container
 
 
-def get_section_details(term: Union[int, str], section_number: Union[int, str]):
+def get_section_details(term: Union[str, int], section_number: Union[str, int]) -> PittSubject:
     """Returns information pertaining to a certain section."""
-    pass
-
+    term = _validate_term(term)
+    if isinstance(section_number, int):
+        section_number = str(section_number)
+    url = SECTION_DETAIL_URL.format(term= term, section_number = section_number)
+    subject = ""
+    course = ""
+    container = PittSection(class_section_url=url, subject=subject, course_number=course)
