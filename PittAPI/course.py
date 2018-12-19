@@ -17,9 +17,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+import re
 from datetime import datetime
+from typing import Union, List
+
 import requests
-from typing import Dict, Union, List
 from bs4 import BeautifulSoup, Tag
 
 SUBJECTS = ['ADMJ', 'ADMPS', 'AFRCNA', 'AFROTC', 'ANTH', 'ARABIC', 'ARTSC', 'ASL', 'ASTRON', 'ATHLTR', 'BACC', 'BCHS',
@@ -43,9 +45,11 @@ SUBJECTS = ['ADMJ', 'ADMPS', 'AFRCNA', 'AFROTC', 'ANTH', 'ARABIC', 'ARTSC', 'ASL
 
 CLASS_SEARCH_URL = 'https://psmobile.pitt.edu/app/catalog/classSearch'
 CLASS_SEARCH_API_URL = 'https://psmobile.pitt.edu/app/catalog/getClassSearch'
+
 COURSE_CATALOG_URL = 'https://psmobile.pitt.edu/app/catalog/listCatalog'
 CLASS_LIST_URL = 'https://psmobile.pitt.edu/app/catalog/listclasses/{term}/{subject}'
 SECTION_LIST_URL = 'https://psmobile.pitt.edu/app/catalog/listsections/UPITT/{term}/{class_number}/{campus_id}'
+SECTION_DETAIL_URL = 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/{term}/{class_number}'
 
 extract = lambda s: s.split(': ')[1]
 
@@ -66,7 +70,10 @@ class PittSubject:
         """Return list of course numbers offered that semester"""
         return list(self._courses.keys())
 
-    def parse_webpage(self, resp: str):
+    def append(self, course: 'PittCourse'):
+        pass
+
+    def parse_webpage(self, resp: requests.Response):
         soup = BeautifulSoup(resp.text, 'lxml')
         classes = soup.find('div', {'class': 'primary-head'}).parent.contents
         course = None
@@ -121,13 +128,25 @@ class PittSection:
         self.end_date = datetime.strptime(date[1], '%m/%d/%Y')
 
         self.url = class_section_url
+        self._extra = None
 
     @property
     def term(self):
         return self.parent_subject.term
 
-    def to_dict(self):
-        pass
+    @property
+    def extra_details(self):
+        if self._extra is not None:
+            return self._extra
+        url = SECTION_DETAIL_URL.format(term=self.term, class_number=self.number)
+
+    def to_dict(self, has_extra_details=False):
+        d = {}
+
+        if has_extra_details:
+            d['extra'] = self.extra_details
+
+        return d
 
     def __repr__(self):
         return '<Pitt Section | {subject} {course_number} | {section_type} {class_number} | {instructor} >'.format(
@@ -140,7 +159,7 @@ class PittSection:
 
 
 class PittCourse:
-    def __init__(self, parent: PittSubject, course_number: str):
+    def __init__(self, parent: 'PittSubject', course_number: str):
         self.parent_subject = parent
         self.number = course_number
         self.sections = []
@@ -152,8 +171,23 @@ class PittCourse:
     def term(self):
         return self.parent_subject.term
 
-    def append(self, section: PittSection):
+    def append(self, section: 'PittSection'):
         self.sections.append(section)
+
+    def parse_webpage(self, resp: requests.Response):
+        soup = BeautifulSoup(resp.text, 'lxml')
+        classes = soup.find('div', {'class': 'primary-head'}).parent.contents
+        course = None
+        for child in classes:
+            if any(child != i for i in ['\n', ' ']):
+                if isinstance(child, Tag):
+                    if 'class' not in child.attrs:
+                        class_sections_url = child.attrs['href']
+                        self.append(PittSection(self.parent_subject,
+                                                  class_section_url=class_sections_url,
+                                                  course=course,
+                                                  class_data=child.text.strip().split('\n')
+                                                  ))
 
     def __repr__(self):
         return '< Pitt Course | {term} | {subject} {number} >'.format(
@@ -163,14 +197,21 @@ class PittCourse:
 
 
 def _validate_subject(subject: str) -> str:
+    """Validates that the subject entered is in fact a valid Pitt subject."""
     subject = subject.upper()
     if subject in SUBJECTS:
         return subject
-    return ''
+    raise ValueError("Subject entered isn't a valid Pitt subject.")
 
 
-def _validate_term(term: str) -> bool:
-    pass
+def _validate_term(term: Union[str, int]) -> str:
+    """Validates that the term entered follows the pattern that Pitt does for term codes."""
+    valid_terms = re.compile('2\d\d[147]')
+    if isinstance(term, int):
+        term = str(term)
+    if valid_terms.match(term):
+        return term
+    raise ValueError("Term entered isn't a valid Pitt term.")
 
 
 def _validate_course(course: Union[int, str]) -> str:
@@ -189,11 +230,11 @@ def _get_payload(term, subject, course=''):
     """Make payload for request and generates CSRFToken for the request"""
 
     # Generate new CSRFToken
-    s = requests.Session()
-    s.get(CLASS_SEARCH_URL)
+    session = requests.Session()
+    session.get(CLASS_SEARCH_URL)
 
     payload = {
-        'CSRFToken': s.cookies['CSRFCookie'],
+        'CSRFToken': session.cookies['CSRFCookie'],
         'term': term,
         'campus': 'PIT',
         'subject': subject,
@@ -201,16 +242,14 @@ def _get_payload(term, subject, course=''):
         'catalog_nbr': course,
         'class_nbr': ''
     }
-    return s, payload
+    return session, payload
 
 
-def get_courses(term: int, subject: str) -> PittSubject:
+def get_term_courses(term: Union[str, int], subject: str) -> PittSubject:
     """Returns a list of classes available in term."""
+    term = _validate_term(term)
     subject = _validate_subject(subject)
     session, payload = _get_payload(term, subject)
-    if isinstance(term, int):
-        term = str(term)
-
     response = session.post(CLASS_SEARCH_API_URL, data=payload)
     container = PittSubject(subject=subject, term=term)
     container.parse_webpage(response)
@@ -218,20 +257,20 @@ def get_courses(term: int, subject: str) -> PittSubject:
 
 
 def get_sections(term: Union[int, str], subject: str, course: Union[int, str]) -> PittCourse:
-    """Return details on all sections taught in a certain class"""
+    """Return details on all sections taught in a certain course"""
+    term = _validate_term(term)
+    subject = _validate_subject(subject)
     course = _validate_course(course)
     session, payload = _get_payload(term, subject, course)
     response = session.post(CLASS_SEARCH_API_URL, data=payload)
-    container = PittCourse(subject=subject)
+    subject = PittSubject(subject=subject, term=term)
+    container = PittCourse(parent=subject, course_number=course)
     container.parse_webpage(response)
+    subject.append(container)
     return container
 
 
-def get_class_detail():
-    """Returns information pertaining to a certain class."""
+def get_section_details(term: Union[int, str], section_number: Union[int, str]):
+    """Returns information pertaining to a certain section."""
     pass
 
-
-def get_courses(subject: str) -> Dict:
-    """Returns a list of all courses offered under a subject."""
-    pass
