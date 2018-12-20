@@ -136,15 +136,14 @@ class PittCourse:
     def parse_webpage(self, resp: requests.Response) -> None:
         soup = BeautifulSoup(resp.text, 'lxml')
         classes = soup.find('div', {'class': 'primary-head'}).parent.contents
-        course = None
         for child in classes:
             if any(child != i for i in ['\n', ' ']):
                 if isinstance(child, Tag):
                     if 'class' not in child.attrs:
                         class_sections_url = child.attrs['href']
-                        self.append(PittSection(self.parent_subject,
+                        self.append(PittSection(parent=self.parent_subject,
                                                 class_section_url=class_sections_url,
-                                                course=course,
+                                                course=self,
                                                 class_data=child.text.strip().split('\n')
                                                 ))
 
@@ -160,12 +159,12 @@ class PittCourse:
 
 class PittSection:
     def __init__(self, parent: Union['PittSubject', None], course: Union['PittCourse', None], class_section_url: str,
-                 class_data: Union[List[str], None], *, extra: Dict[str, str] = None):
+                 class_data: Union[List[str], None], *, extra: Dict[str, str] = None, term: Union[str, int] = None):
         self.parent_subject = parent
         self.parent_course = course
 
         # Variables to be used if there isn't a parent subject and/or course
-        self._term = None
+        self._term = term
         self._subject = None
         self._course_number = None
 
@@ -193,22 +192,25 @@ class PittSection:
         self.url = class_section_url
         self._extra = extra
 
-
     @property
     def term(self) -> str:
         if self.parent_subject is not None:
             return self.parent_subject.term
+        elif self.parent_course is not None:
+            return self.parent_course.term
         return self._term
 
     @property
     def subject(self) -> str:
         if self.parent_subject is not None:
             return self.parent_subject.subject
+        elif self.parent_course is not None:
+            return self.parent_course.subject
         return self._subject
 
     @property
     def course_number(self) -> str:
-        if self.parent_subject is not None:
+        if self.parent_course is not None:
             return self.parent_course.number
         return self._course_number
 
@@ -217,16 +219,28 @@ class PittSection:
         if self._extra is not None:
             return self._extra
         resp = requests.get(self.url)
+        soup = BeautifulSoup(resp.text, 'lxml')
+        data = soup.find('div', {'class': 'section-content clearfix'})
+        data = [point for point in data.next_siblings if point != '\n']
+        extract_data = lambda x: x.find('div', {'class': 'pull-right'}).next_element.next_element.next_element
+        self._extra = {
+            'units': extract_data(data[2]),
+            'description': extract_data(data[4]),
+            'preq': extract(extract_data(data[5]))
+        }
+        if 'Class Attributes' in data[6].text:
+            self._extra['class_attributes'] = extract_data(data[6])
+        return self._extra
 
     def parse_webpage(self, resp: requests.Response) -> None:
         soup = BeautifulSoup(resp.text, 'lxml')
         classes = soup.find('div', {'class': 'primary-head'}).parent.contents
-        course = None
         for child in classes:
             if any(child != i for i in ['\n', ' ']):
                 if isinstance(child, Tag):
                     if 'class' not in child.attrs:
                         self.url = child.attrs['href']
+
                         class_data = child.text.strip().split('\n')
                         class_info = extract(class_data[0]).split(' ')
                         self.section, self.section_type = class_info[0].split('-')
@@ -266,6 +280,7 @@ class PittSection:
             'start_date': self.start_date,
             'end_date': self.end_date,
             'section': self.section,
+            'section_type': self.section_type,
             'number': self.number
         }
 
@@ -334,7 +349,7 @@ def _get_payload(term, *, subject='', course='', section=''):
 
 
 def get_term_courses(term: Union[str, int], subject: str) -> PittSubject:
-    """Returns a list of classes available in term."""
+    """Returns a list of courses available in term for a particular subject."""
     term = _validate_term(term)
     subject = _validate_subject(subject)
     session, payload = _get_payload(term, subject=subject)
@@ -363,7 +378,6 @@ def get_section_details(term: Union[str, int], section_number: Union[str, int]) 
         section_number = str(section_number)
     session, payload = _get_payload(term, section=section_number)
     response = session.post(CLASS_SEARCH_API_URL, data=payload)
-    container = PittSection(parent=None, course=None, class_section_url='', class_data=None)
+    container = PittSection(parent=None, course=None, class_section_url='', class_data=None, term=term)
     container.parse_webpage(response)
-
     return container
