@@ -103,8 +103,14 @@ class PittSubject:
 
 
 class PittCourse:
-    def __init__(self, parent: 'PittSubject', course_number: str):
+    def __init__(self, parent: Union['PittSubject', None], course_number: str, *, term: str = None,
+                 subject: str = None):
         self.parent_subject = parent
+
+        # Variables to be used if there isn't a parent subject
+        self._term = term
+        self._subject = subject
+
         self.number = course_number
         self.sections = []
 
@@ -113,7 +119,15 @@ class PittCourse:
 
     @property
     def term(self):
-        return self.parent_subject.term
+        if self.parent_subject is not None:
+            return self.parent_subject.term
+        return self._term
+
+    @property
+    def subject(self):
+        if self.parent_subject is not None:
+            return self.parent_subject.subject
+        return self._subject
 
     def append(self, section: 'PittSection'):
         self.sections.append(section)
@@ -136,13 +150,14 @@ class PittCourse:
     def __repr__(self):
         return '< Pitt Course | {term} | {subject} {number} >'.format(
             term=self.term,
-            subject=self.parent_subject.subject,
+            subject=self.subject,
             number=self.number)
 
 
 class PittSection:
-    def __init__(self, parent: PittSubject, course, class_section_url: str, class_data: List[str], *,
-                 extra: Dict[str, str] = None, term: str = None, subject: str = None, course_number: str = None):
+    def __init__(self, parent: Union['PittSubject', None], course: Union['PittCourse', None], class_section_url: str,
+                 class_data: List[str], *, extra: Dict[str, str] = None, term: str = None, subject: str = None,
+                 course_number: str = None):
         self.parent_subject = parent
         self.parent_course = course
 
@@ -184,7 +199,7 @@ class PittSection:
     def subject(self):
         if self.parent_subject is not None:
             return self.parent_subject.subject
-        return self.subject
+        return self._subject
 
     @property
     def course_number(self):
@@ -283,19 +298,17 @@ def get_sections(term: Union[str, int], subject: str, course: Union[str, int]) -
     course = _validate_course(course)
     session, payload = _get_payload(term, subject, course)
     response = session.post(CLASS_SEARCH_API_URL, data=payload)
-    subject = PittSubject(subject=subject, term=term)
-    container = PittCourse(parent=subject, course_number=course)
+    container = PittCourse(parent=None, course_number=course, term=term, subject=subject)
     container.parse_webpage(response)
-    subject.append(container)
     return container
 
 
-def get_section_details(term: Union[str, int], section_number: Union[str, int]) -> PittSubject:
+def get_section_details(term: Union[str, int], section_number: Union[str, int]) -> PittSection:
     """Returns information pertaining to a certain section."""
     term = _validate_term(term)
     if isinstance(section_number, int):
         section_number = str(section_number)
-    url = SECTION_DETAIL_URL.format(term= term, section_number = section_number)
+    url = SECTION_DETAIL_URL.format(term=term, section_number=section_number)
     subject = ""
     course = ""
     container = PittSection(class_section_url=url, subject=subject, course_number=course)
