@@ -47,8 +47,6 @@ CLASS_SEARCH_URL = 'https://psmobile.pitt.edu/app/catalog/classSearch'
 CLASS_SEARCH_API_URL = 'https://psmobile.pitt.edu/app/catalog/getClassSearch'
 SECTION_DETAIL_URL = 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/{term}/{section_number}'
 
-extract = lambda s: s.split(': ')[1]
-
 
 class PittSubject:
     def __init__(self, subject: str, term: str):
@@ -93,8 +91,8 @@ class PittSubject:
     def to_dict(self, extra_details: bool = False) -> Dict[str, List[Dict[str, Any]]]:
         return {k: v.to_dict(extra_details=extra_details) for k, v in self._courses.items()}
 
-    def __repr__(self):
-        return '< Pitt Subject | {term} | {subject} | {num} courses >'.format(
+    def __str__(self):
+        return 'PittSubject({term}, {subject})'.format(
             term=self.term,
             subject=self.subject,
             num=len(self._courses))
@@ -127,9 +125,6 @@ class PittCourse:
             return self.parent_subject.subject
         return self._subject
 
-    def append(self, section: 'PittSection') -> None:
-        self.sections.append(section)
-
     def parse_webpage(self, resp: requests.Response) -> None:
         soup = BeautifulSoup(resp.text, 'lxml')
         classes = soup.find('div', {'class': 'primary-head'}).parent.contents
@@ -138,17 +133,17 @@ class PittCourse:
                 if isinstance(child, Tag):
                     if 'class' not in child.attrs:
                         class_sections_url = child.attrs['href']
-                        self.append(PittSection(parent=self.parent_subject,
-                                                class_section_url=class_sections_url,
-                                                course=self,
-                                                class_data=child.text.strip().split('\n')
-                                                ))
+                        self.sections.append(PittSection(parent=self.parent_subject,
+                                                         class_section_url=class_sections_url,
+                                                         course=self,
+                                                         class_data=child.text.strip().split('\n')
+                                                         ))
 
     def to_dict(self, extra_details: bool = False) -> List[Dict[str, Any]]:
         return [section.to_dict(extra_details=extra_details) for section in self.sections]
 
-    def __repr__(self) -> str:
-        return '< Pitt Course | {term} | {subject} {number} >'.format(
+    def __str__(self) -> str:
+        return 'PittCourse({term}, {subject}, {number})'.format(
             term=self.term,
             subject=self.subject,
             number=self.number)
@@ -166,28 +161,31 @@ class PittSection:
         self._course_number = None
 
         if class_data is not None:
-            class_info = extract(class_data[0]).split(' ')
-            self.section, self.section_type = class_info[0].split('-')
-            self.number = class_info[1][1:6]
-
-            days_times = extract(class_data[2])
-            self.days = None
-            self.times = None
-            if days_times != 'TBA':
-                days_times = days_times.split(' - ')
-                self.days, times = days_times[0].split(' ')
-                self.days = [self.days[i * 2:(i * 2) + 2] for i in range(len(self.days) // 2)]
-                self.times = [times] + [days_times[1]]
-
-            self.room = extract(class_data[3])
-            self.instructor = extract(class_data[4])
-
-            date = extract(class_data[5]).split(' - ')
-            self.start_date = datetime.strptime(date[0], '%m/%d/%Y')
-            self.end_date = datetime.strptime(date[1], '%m/%d/%Y')
+            self.__set_properties(class_data)
 
         self.url = class_section_url
         self._extra = extra
+
+    def __set_properties(self, data):
+        class_info = self.__extract_data_past_colon(data[0]).split(' ')
+        self.section, self.section_type = class_info[0].split('-')
+        self.number = class_info[1][1:6]
+
+        days_times = self.__extract_data_past_colon(data[2])
+        self.days = None
+        self.times = None
+        if days_times != 'TBA':
+            days_times = days_times.split(' - ')
+            self.days, times = days_times[0].split(' ')
+            self.days = [self.days[i * 2:(i * 2) + 2] for i in range(len(self.days) // 2)]
+            self.times = [times] + [days_times[1]]
+
+        self.room = self.__extract_data_past_colon(data[3])
+        self.instructor = self.__extract_data_past_colon(data[4])
+
+        date = self.__extract_data_past_colon(data[5]).split(' - ')
+        self.start_date = datetime.strptime(date[0], '%m/%d/%Y')
+        self.end_date = datetime.strptime(date[1], '%m/%d/%Y')
 
     @property
     def term(self) -> str:
@@ -211,6 +209,14 @@ class PittSection:
             return self.parent_course.number
         return self._course_number
 
+    @staticmethod
+    def __extract_data_from_div_section(tag: Tag) -> str:
+        return tag.find('div', {'class': 'pull-right'}).next_element.next_element.next_element
+
+    @staticmethod
+    def __extract_data_past_colon(text: str) -> str:
+        return text.split(': ')[1]
+
     @property
     def extra_details(self) -> Dict[str, Any]:
         if self._extra is not None:
@@ -219,14 +225,13 @@ class PittSection:
         soup = BeautifulSoup(resp.text, 'lxml')
         data = soup.find('div', {'class': 'section-content clearfix'})
         data = [point for point in data.next_siblings if point != '\n']
-        extract_data = lambda x: x.find('div', {'class': 'pull-right'}).next_element.next_element.next_element
         self._extra = {
-            'units': extract_data(data[2]),
-            'description': extract_data(data[4]),
-            'preq': extract(extract_data(data[5]))
+            'units': self.__extract_data_from_div_section(data[2]),
+            'description': self.__extract_data_from_div_section(data[4]),
+            'preq': self.__extract_data_past_colon(self.__extract_data_from_div_section(data[5]))
         }
         if 'Class Attributes' in data[6].text:
-            self._extra['class_attributes'] = extract_data(data[6])
+            self._extra['class_attributes'] = self.__extract_data_from_div_section(data[6])
         return self._extra
 
     def parse_webpage(self, resp: requests.Response) -> None:
@@ -237,27 +242,8 @@ class PittSection:
                 if isinstance(child, Tag):
                     if 'class' not in child.attrs:
                         self.url = child.attrs['href']
-
                         class_data = child.text.strip().split('\n')
-                        class_info = extract(class_data[0]).split(' ')
-                        self.section, self.section_type = class_info[0].split('-')
-                        self.number = class_info[1][1:6]
-
-                        days_times = extract(class_data[2])
-                        self.days = None
-                        self.times = None
-                        if days_times != 'TBA':
-                            days_times = days_times.split(' - ')
-                            self.days, times = days_times[0].split(' ')
-                            self.days = [self.days[i * 2:(i * 2) + 2] for i in range(len(self.days) // 2)]
-                            self.times = [times] + [days_times[1]]
-
-                        self.room = extract(class_data[3])
-                        self.instructor = extract(class_data[4])
-
-                        date = extract(class_data[5]).split(' - ')
-                        self.start_date = datetime.strptime(date[0], '%m/%d/%Y')
-                        self.end_date = datetime.strptime(date[1], '%m/%d/%Y')
+                        self.__set_properties(class_data)
 
                     elif child.text != '':
                         class_description = child.text
@@ -286,8 +272,8 @@ class PittSection:
 
         return data
 
-    def __repr__(self) -> str:
-        return '<Pitt Section | {subject} {course_number} | {section_type} {class_number} | {instructor} >'.format(
+    def __str__(self) -> str:
+        return 'PittSection({subject}, {course_number}, {section_type}, {class_number}, {instructor})'.format(
             term=self.term,
             subject=self.subject,
             course_number=self.course_number,

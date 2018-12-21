@@ -45,7 +45,6 @@ class ShuttleTest(unittest.TestCase):
         self.assertIsInstance(shuttle.get_route_stop_arrivals(), list)
 
     @responses.activate
-    @unittest.skip
     def test_vehicle_route_stop_estimates(self):
         responses.add(
             method=responses.GET,
