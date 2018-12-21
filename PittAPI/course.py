@@ -68,9 +68,6 @@ class PittSubject:
         """Return list of course numbers offered that semester"""
         return list(self._courses.keys())
 
-    def append(self, course: 'PittCourse'):
-        pass
-
     def parse_webpage(self, resp: requests.Response) -> None:
         soup = BeautifulSoup(resp.text, 'lxml')
         classes = soup.find('div', {'class': 'primary-head'}).parent.contents

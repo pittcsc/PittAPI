@@ -20,9 +20,30 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import unittest
 import responses
 
-
 from PittAPI import course
 
 
 class CourseTest(unittest.TestCase):
-    pass
+    def test_validate_subject(self):
+        for subject in course.SUBJECTS:
+            self.assertEqual(course._validate_subject(subject), subject)
+        self.assertRaises(ValueError, course._validate_subject, 'TEST')
+
+    def test_validate_term(self):
+        # If convert to string
+        self.assertTrue(isinstance(course._validate_term(2191), str))
+
+        self.assertEqual(course._validate_term(2191), '2191')
+        self.assertEqual(course._validate_term('2191'), '2191')
+
+        self.assertRaises(ValueError, course._validate_term, '214')
+        self.assertRaises(ValueError, course._validate_term, '1111')
+        self.assertRaises(ValueError, course._validate_term, '12345')
+
+    def test_validate_course(self):
+        self.assertEqual(course._validate_course(''), '0000')
+        self.assertEqual(course._validate_course('7'), '0007')
+        self.assertEqual(course._validate_course('0007'), '0007')
+        self.assertEqual(course._validate_course('449'), '0449')
+        self.assertEqual(course._validate_course('1501'), '1501')
+        self.assertRaises(ValueError, course._validate_course, '10000')
