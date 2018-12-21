@@ -75,7 +75,7 @@ class PittSubject:
                 if isinstance(child, Tag):
                     if 'class' not in child.attrs:
                         class_sections_url = child.attrs['href']
-                        course.append(PittSection(self,
+                        course.sections.append(PittSection(self,
                                                   class_section_url=class_sections_url,
                                                   course=course,
                                                   class_data=child.text.strip().split('\n')
@@ -302,8 +302,14 @@ def _validate_term(term: Union[str, int]) -> str:
 
 def _validate_course(course: Union[int, str]) -> str:
     """Validates that the course name entered is 4 characters long and in string form."""
+    if course == '':
+        raise ValueError('Invalid course number.')
     if isinstance(course, int):
+        if course <= 0:
+            raise ValueError('Invalid course number.')
         course = str(course)
+    if not course.isdigit():
+        raise ValueError('Invalid course number.')
     course_length = len(course)
     if course_length < 4:
         return ('0' * (4 - course_length)) + course
