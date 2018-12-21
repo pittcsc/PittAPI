@@ -77,3 +77,15 @@ class CourseTest(unittest.TestCase):
             payload = course._get_payload('2194', subject='CS', course='1501', section='27740')[-1]
             for k, v in payload.items():
                 self.assertEqual(v, TRUE_PAYLOAD[k])
+
+
+class PittSubjectTest(unittest.TestCase):
+    pass
+
+
+class PittCourseTest(unittest.TestCase):
+    pass
+
+
+class PittSectionTest(unittest.TestCase):
+    pass

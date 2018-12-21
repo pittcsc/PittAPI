@@ -17,6 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+import json
 import re
 from datetime import datetime
 from typing import Union, List, Dict, Any
@@ -76,10 +77,10 @@ class PittSubject:
                     if 'class' not in child.attrs:
                         class_sections_url = child.attrs['href']
                         course.sections.append(PittSection(self,
-                                                  class_section_url=class_sections_url,
-                                                  course=course,
-                                                  class_data=child.text.strip().split('\n')
-                                                  ))
+                                                           class_section_url=class_sections_url,
+                                                           course=course,
+                                                           class_data=child.text.strip().split('\n')
+                                                           ))
                     elif child.text != '':
                         class_description = child.text
                         number, *_ = class_description.split(' - ')
@@ -96,6 +97,9 @@ class PittSubject:
             term=self.term,
             subject=self.subject,
             num=len(self._courses))
+
+    def __repr__(self):
+        return json.dumps(self.to_dict())
 
 
 class PittCourse:
@@ -147,6 +151,9 @@ class PittCourse:
             term=self.term,
             subject=self.subject,
             number=self.number)
+
+    def __repr__(self):
+        return json.dumps(self.to_dict())
 
 
 class PittSection:
@@ -260,8 +267,8 @@ class PittSection:
             'times': self.times,
             'room': self.room,
             'instructor': self.instructor,
-            'start_date': self.start_date,
-            'end_date': self.end_date,
+            'start_date': str(self.start_date),
+            'end_date': str(self.end_date),
             'section': self.section,
             'section_type': self.section_type,
             'number': self.number
@@ -280,6 +287,9 @@ class PittSection:
             class_number=self.number,
             section_type=self.section_type,
             instructor=self.instructor)
+
+    def __repr__(self):
+        return json.dumps(self.to_dict())
 
 
 def _validate_subject(subject: str) -> str:
