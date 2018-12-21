@@ -15,15 +15,11 @@ Usage examples
 
     ### Courses
     # Will return a list of dictionaries containing courses in subject
-    cs_subject = course.get_classes(term="2191", subject="CS")
-    cs_classes = cs_subject.classes
+    cs_subject = course.get_term_courses(term='2194', subject='CS')
+    cs_course = cs_subject['1501']
+    cs_section_list = cs_course.sections
+    big_dict = cs_section_list[0].to_dict()
 
-    # Deprecated
-    # Will return a list of dictionaries containing courses that fulfill requirement
-    big_dict = course.get_classes(term="2191", code="Q")
-    # Will return a dictionary with a details about the class
-    description = course.get_class(term="2191", class_number="10901")
-    
     ### Textbook
     # Will return a list of dictionaries containing textbooks for a class
     # term number comes from pitt.verbacompare.com
