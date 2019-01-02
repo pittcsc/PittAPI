@@ -204,7 +204,75 @@ Return a `PittSection` object containing information for a particular section
 ---
 
 ## PittAPI.course.PittSubject
+- __courses__
+    - Returns a list of the numbers for the courses offered in that subject for a certain term
+    - Ex. `['0004', '0007', ...]`
+- __subject__
+    - The subject code
+- __term__
+    - The term number
+- __to_dict(extra_details=False)__
+    - Returns the object in a dictionary representation
+    - __Warning__: If extra details is set to true it might take incredibly long since it needs to request the web page for each section.
 
 ## PittAPI.course.PittCourse
+- __number__
+    - The course number
+- __parent_subject__
+    - Returns the `PittSubject` that the course is under
+    - This will be `None` if course was requested with `get_course_sections`
+    - __Note:__ Never get `term` and/or `subject` from the `parent_subject` because it can be `None` use the properties of this class since it will always contain that information.
+- __sections__
+    - List of PittSections for all sections of the course being offered
+- __subject__
+    - The subject code
+- __term__
+    - The term number
+- __to_dict(extra_details=False)__
+    - Returns the object in a dictionary representation
+    - __Warning__: If extra details is set to true it might take incredibly long since it needs to request the web page for each section.
 
 ## PittAPI.course.PittSubject
+- __course_number__
+    - The course number
+- __days__
+    - Returns a list of what days of the week the class occurs on
+    - Ex. `['Mo', 'We']`
+- __end_date__
+    - Returns a `datetime.datetime` object containing the end date of the class
+- __extra_details__
+    - Returns an dictionary containing extra details about the section including units, description, perquisites, and if present class attributes (if it meets a requirement such as writing).
+    - __Note:__ If called for the first time it will make a request for the section's page
+- __instructor__
+    - The instructor of the course
+- __number__
+    - The section number
+- __parent_course__
+    - Returns the `PittCourse` that the course is under
+    - This will be `None` if course was requested with `get_section_details`
+    - __Note:__ Never get `term`, `subject`, and/or `number`(course number) from the `parent_course` because it can be `None` use the properties of this class since it will always contain that information.
+- __parent_subject__
+    - Returns the `PittSubject` that the course is under
+    - This will be `None` if course was requested with `get_section_details`
+    - __Note:__ Never get `term` and/or `subject` from the `parent_subject` because it can be `None` use the properties of this class since it will always contain that information.
+- __room__
+    - The room the section is located in
+- __section__
+    - The number for the section (this is different from the `number`)
+- __section_type__
+    - The type of the section (Lecture, Recitation, etc.)
+    - Ex. `'LEC'`
+- __start_date__
+    - Returns a `datetime.datetime` object containing the start date of the class
+- __subject__
+    - The subject code
+- __term__
+    - The term number
+- __times__
+    - Returns a list of strings containing the start time and end time of the section
+    - Ex. `['9:30am', '10:45am']`
+- __to_dict(extra_details=False)__
+    - Returns the object in a dictionary representation
+    - __Warning__: If extra details is set to true it might take incredibly long since it needs to request the web page for each section.
+- __url__
+    - The url for web page associated with this section
