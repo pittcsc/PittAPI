@@ -117,7 +117,7 @@ class CourseTest(unittest.TestCase):
             self.assertIsInstance(subject_dict, dict)
             subject_repr = repr(cs_subject)
 
-            for absolute in zip( ['0004', '0007']):
+            for absolute in ['0004', '0007']:
                 self.assertTrue(absolute in cs_subject.courses)
             self.assertEqual(str(cs_subject), 'PittSubject(2194, CS)')
 
