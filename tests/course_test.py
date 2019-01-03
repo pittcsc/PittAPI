@@ -107,7 +107,7 @@ class CourseTest(unittest.TestCase):
         with patch('requests.Session') as mock:
             mock.return_value = MockSession(self.cs_subject_data)
             cs_subject = course.get_term_courses('2194', 'CS')
-            self.assertEqual(cs_subject.courses[0], '0004')
+            self.assertTrue('0004' in cs_subject.courses)
 
             self.assertEqual(cs_subject['0004'].number, cs_subject.courses[0])
             self.assertRaises(ValueError, cs_subject.__getitem__, '1111')
