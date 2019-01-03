@@ -107,9 +107,9 @@ class CourseTest(unittest.TestCase):
         with patch('requests.Session') as mock:
             mock.return_value = MockSession(self.cs_subject_data)
             cs_subject = course.get_term_courses('2194', 'CS')
-            self.assertTrue(cs_subject.courses[0] == '0004')
+            self.assertEqual(cs_subject.courses[0], '0004')
 
-            self.assertTrue(cs_subject['0004'].number == cs_subject.courses[0])
+            self.assertEqual(cs_subject['0004'].number, cs_subject.courses[0])
             self.assertRaises(ValueError, cs_subject.__getitem__, '1111')
             self.assertRaises(ValueError, cs_subject.__getitem__, 4)
             subject_dict = cs_subject.to_dict()
@@ -120,7 +120,6 @@ class CourseTest(unittest.TestCase):
                 self.assertEqual(x, y)
             self.assertEqual(str(cs_subject), 'PittSubject(2194, CS)')
 
-
             self.assertEqual(cs_subject['0004'].term, '2194')
             self.assertEqual(cs_subject['0004'].subject, 'CS')
             self.assertEqual(cs_subject['0004'][0].term, '2194')
@@ -130,7 +129,7 @@ class CourseTest(unittest.TestCase):
         with patch('requests.Session') as mock:
             mock.return_value = MockSession(self.cs_course_data)
             cs_course = course.get_course_sections('2194', 'CS', '0007')
-            self.assertTrue(cs_course.number == '0007')
+            self.assertEqual(cs_course.number, '0007')
             self.assertEqual(cs_course[0], cs_course.sections[0])
             self.assertEqual(cs_course.term, '2194')
             self.assertEqual(cs_course.subject, 'CS')
