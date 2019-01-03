@@ -17,6 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+import json
 import unittest
 import responses
 from unittest.mock import patch
@@ -113,14 +114,16 @@ class CourseTest(unittest.TestCase):
             self.assertRaises(ValueError, cs_subject.__getitem__, '1111')
             self.assertRaises(ValueError, cs_subject.__getitem__, 4)
 
-            subject_dict = cs_subject.to_dict()
-            self.assertIsInstance(subject_dict, dict)
-            subject_repr = repr(cs_subject)
-
+            self.assertIsInstance(cs_subject.to_dict(), dict)
+            self.assertEqual(repr(cs_subject), json.dumps(cs_subject.to_dict()))
             for absolute in ['0004', '0007']:
                 self.assertTrue(absolute in cs_subject.courses)
             self.assertEqual(str(cs_subject), 'PittSubject(2194, CS)')
 
+    def test_get_term_courses_parent(self):
+        with patch('requests.Session') as mock:
+            mock.return_value = MockSession(self.cs_subject_data)
+            cs_subject = course.get_term_courses('2194', 'CS')
             self.assertEqual(cs_subject['0004'].term, '2194')
             self.assertEqual(cs_subject['0004'].subject, 'CS')
             self.assertEqual(cs_subject['0004'][0].term, '2194')
@@ -131,17 +134,17 @@ class CourseTest(unittest.TestCase):
             mock.return_value = MockSession(self.cs_course_data)
             cs_course = course.get_course_sections('2194', 'CS', '0007')
             self.assertEqual(cs_course.number, '0007')
-            self.assertEqual(cs_course[0], cs_course.sections[0])
             self.assertEqual(cs_course.term, '2194')
             self.assertEqual(cs_course.subject, 'CS')
 
+            self.assertEqual(cs_course[0], cs_course.sections[0])
+            self.assertEqual(len(cs_course[0:2]), 2)
             self.assertEqual(cs_course[0].course_number, cs_course.number)
-
             self.assertEqual(str(cs_course), 'PittCourse(2194, CS, 0007)')
-            x = repr(cs_course)
+            self.assertEqual(repr(cs_course), json.dumps(cs_course.to_dict()))
 
     @responses.activate
-    def test_get_section_details(self):
+    def test_get_section_details_improper_section_type(self):
         responses.add(responses.GET, 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/2194/27469',
                       body=self.cs_extra_data_1, status=200)
         with patch('requests.Session') as mock:
@@ -150,9 +153,21 @@ class CourseTest(unittest.TestCase):
             self.assertEqual(cs_section.instructor, 'William Laboon')
             self.assertEqual(str(cs_section), 'PittSection(CS, 1632, LEC, 27469, William Laboon)')
 
+    @responses.activate
+    def test_get_section_details_no_class_attribute(self):
+        responses.add(responses.GET, 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/2194/27469',
+                      body=self.cs_extra_data_1, status=200)
+        with patch('requests.Session') as mock:
+            mock.return_value = MockSession(self.cs_section_data)
+            cs_section = course.get_section_details('2194', '27469')
+            self.assertEqual(cs_section.instructor, 'William Laboon')
+            self.assertEqual(str(cs_section), 'PittSection(CS, 1632, LEC, 27469, William Laboon)')
+
             self.assertIsInstance(cs_section.extra_details, dict)
             self.assertIsInstance(cs_section.extra_details, dict)
 
+    @responses.activate
+    def test_get_section_details(self):
         responses.add(responses.GET, 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/2194/27469',
                       body=self.cs_extra_data_2, status=200)
         with patch('requests.Session') as mock:
@@ -164,7 +179,7 @@ class CourseTest(unittest.TestCase):
             self.assertEqual(cs_section.term, '2194')
             self.assertEqual(cs_section.subject, 'CS')
             self.assertEqual(cs_section.course_number, '1632')
-            x = repr(cs_section)
+            self.assertEqual(repr(cs_section), json.dumps(cs_section.to_dict()))
 
             self.assertIsInstance(cs_section.extra_details, dict)
             self.assertIsInstance(cs_section.extra_details, dict)
