@@ -10,8 +10,7 @@
   - `subject`: Subject Code | Example: `'CS'`
 
 #### **Returns**:
-Returns a `PittSubject` object containing the information of all courses offered that semester and information about the sections for each course.
-
+Returns a `PittSubject` object containing the information of all courses and sections offered during the term.
 #### **Example**:
 
 ###### **Sample Usage**:
@@ -48,6 +47,8 @@ Returns a `PittSubject` object containing the information of all courses offered
 'CS'
 >>> cs_subject.term
 '2194'
+>>> str(cs_subject['449'])
+'PittCourse(2194, CS, 0449)'
 >>> str(cs_subject['1501'])
 'PittCourse(2194, CS, 1501)'
 >>> cs_subject['1501'].sections
@@ -66,6 +67,8 @@ Returns a `PittSubject` object containing the information of all courses offered
 ]
 >>> str(cs_subject['1501'].sections[0])
 'PittSection(CS, 1501, LEC, 27740, Nicholas Farnan)'
+>>> str(cs_subject['1501'][0])
+'PittSection(CS, 1501, LEC, 27740, Nicholas Farnan)'
 ```
 
 ---
@@ -79,9 +82,7 @@ Returns a `PittSubject` object containing the information of all courses offered
 
 
 #### **Returns**:
-Returns a `PittCourse` object containing information about the course and information on all sections being offered.
-
-
+Returns a `PittCourse` object containing information about the course and all sections offered.
 #### **Example**:
 
 ###### **Sample Usage**:
@@ -136,7 +137,7 @@ Returns a `PittCourse` object containing information about the course and inform
   - `section_number`: Section Number | Example: `27740`
 
 #### **Returns**:
-Return a `PittSection` object containing information for a particular section
+Return a `PittSection` object containing information for a particular section.
 
 #### **Example**:
 
