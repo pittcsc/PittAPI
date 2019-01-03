@@ -168,3 +168,6 @@ class CourseTest(unittest.TestCase):
 
             self.assertIsInstance(cs_section.extra_details, dict)
             self.assertIsInstance(cs_section.extra_details, dict)
+
+            self.assertIsInstance(cs_section.to_dict(), dict)
+            self.assertIsInstance(cs_section.to_dict(extra_details=True), dict)

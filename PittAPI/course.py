@@ -284,7 +284,6 @@ class PittSection:
 
         if extra_details:
             data['extra'] = self.extra_details
-
         return data
 
     def __str__(self) -> str:
