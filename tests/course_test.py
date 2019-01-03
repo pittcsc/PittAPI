@@ -108,16 +108,17 @@ class CourseTest(unittest.TestCase):
             mock.return_value = MockSession(self.cs_subject_data)
             cs_subject = course.get_term_courses('2194', 'CS')
             self.assertTrue('0004' in cs_subject.courses)
+            self.assertTrue(cs_subject['0004'].number in cs_subject.courses)
 
-            self.assertEqual(cs_subject['0004'].number, cs_subject.courses[0])
             self.assertRaises(ValueError, cs_subject.__getitem__, '1111')
             self.assertRaises(ValueError, cs_subject.__getitem__, 4)
+
             subject_dict = cs_subject.to_dict()
             self.assertIsInstance(subject_dict, dict)
-            x = repr(cs_subject)
+            subject_repr = repr(cs_subject)
 
-            for x, y in zip(cs_subject.courses, ['0004', '0007']):
-                self.assertEqual(x, y)
+            for case, absolute in zip(cs_subject.courses, ['0004', '0007']):
+                self.assertEqual(case, absolute)
             self.assertEqual(str(cs_subject), 'PittSubject(2194, CS)')
 
             self.assertEqual(cs_subject['0004'].term, '2194')
@@ -143,21 +144,21 @@ class CourseTest(unittest.TestCase):
     def test_get_section_details(self):
         responses.add(responses.GET, 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/2194/27469',
                       body=self.cs_extra_data_1, status=200)
-        responses.add(responses.GET, 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/2194/27469',
-                      body=self.cs_extra_data_2, status=200)
-
         with patch('requests.Session') as mock:
             mock.return_value = MockSession(self.cs_section_data)
             cs_section = course.get_section_details('2194', 27469)
-            self.assertTrue(cs_section.instructor == 'William Laboon')
+            self.assertEqual(cs_section.instructor, 'William Laboon')
+            self.assertEqual(str(cs_section), 'PittSection(CS, 1632, LEC, 27469, William Laboon)')
 
             self.assertIsInstance(cs_section.extra_details, dict)
             self.assertIsInstance(cs_section.extra_details, dict)
 
+        responses.add(responses.GET, 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/2194/27469',
+                      body=self.cs_extra_data_2, status=200)
         with patch('requests.Session') as mock:
             mock.return_value = MockSession(self.cs_section_data)
             cs_section = course.get_section_details('2194', '27469')
-            self.assertTrue(cs_section.instructor == 'William Laboon')
+            self.assertEqual(cs_section.instructor, 'William Laboon')
             self.assertEqual(str(cs_section), 'PittSection(CS, 1632, LEC, 27469, William Laboon)')
 
             self.assertEqual(cs_section.term, '2194')
@@ -167,4 +168,3 @@ class CourseTest(unittest.TestCase):
 
             self.assertIsInstance(cs_section.extra_details, dict)
             self.assertIsInstance(cs_section.extra_details, dict)
-
