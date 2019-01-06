@@ -61,6 +61,7 @@ class PittSubject:
             if item in self._courses:
                 return self._courses[item]
             raise ValueError('Course {} not present in subject'.format(item))
+        raise ValueError("Not a valid key")
 
     @property
     def courses(self):
@@ -71,23 +72,25 @@ class PittSubject:
         soup = BeautifulSoup(resp.text, 'lxml')
         classes = soup.find('div', {'class': 'primary-head'}).parent.contents
         course = None
+        classes = [
+            child for child in classes
+            if child not in ['\n', ' ']
+            if isinstance(child, Tag)
+        ]
         for child in classes:
-            if any(child != i for i in ['\n', ' ']):
-                if isinstance(child, Tag):
-                    if 'class' not in child.attrs:
-                        class_sections_url = child.attrs['href']
-                        course.sections.append(PittSection(self,
-                                                           class_section_url=class_sections_url,
-                                                           course=course,
-                                                           class_data=child.text.strip().split('\n')
-                                                           ))
-                    elif child.text != '':
-                        class_description = child.text
-                        number, *_ = class_description.split(' - ')
-                        number = number.split(' ')[1]
-                        if number not in self._courses:
-                            self._courses[number] = PittCourse(parent=self, course_number=number)
-                        course = self._courses[number]
+            if 'class' not in child.attrs:
+                class_sections_url = child.attrs['href']
+                course.sections.append(PittSection(self,
+                                                   class_section_url=class_sections_url,
+                                                   course=course,
+                                                   class_data=child.text.strip().split('\n')
+                                                   ))
+            elif child.text != '':
+                class_description = child.text
+                number, *_ = class_description.split(' - ')
+                number = number.split(' ')[1]
+                self._courses[number] = PittCourse(parent=self, course_number=number)
+                course = self._courses[number]
 
     def to_dict(self, extra_details: bool = False) -> Dict[str, List[Dict[str, Any]]]:
         return {k: v.to_dict(extra_details=extra_details) for k, v in self._courses.items()}
@@ -132,16 +135,19 @@ class PittCourse:
     def parse_webpage(self, resp: requests.Response) -> None:
         soup = BeautifulSoup(resp.text, 'lxml')
         classes = soup.find('div', {'class': 'primary-head'}).parent.contents
+        classes = [
+            child for child in classes
+            if child not in ['\n', ' ']
+            if isinstance(child, Tag)
+        ]
         for child in classes:
-            if any(child != i for i in ['\n', ' ']):
-                if isinstance(child, Tag):
-                    if 'class' not in child.attrs:
-                        class_sections_url = child.attrs['href']
-                        self.sections.append(PittSection(parent=self.parent_subject,
-                                                         class_section_url=class_sections_url,
-                                                         course=self,
-                                                         class_data=child.text.strip().split('\n')
-                                                         ))
+            if 'class' not in child.attrs:
+                class_sections_url = child.attrs['href']
+                self.sections.append(PittSection(parent=self.parent_subject,
+                                                 class_section_url=class_sections_url,
+                                                 course=self,
+                                                 class_data=child.text.strip().split('\n')
+                                                 ))
 
     def to_dict(self, extra_details: bool = False) -> List[Dict[str, Any]]:
         return [section.to_dict(extra_details=extra_details) for section in self.sections]
@@ -244,20 +250,22 @@ class PittSection:
     def parse_webpage(self, resp: requests.Response) -> None:
         soup = BeautifulSoup(resp.text, 'lxml')
         classes = soup.find('div', {'class': 'primary-head'}).parent.contents
+        classes = [
+            child for child in classes
+            if child not in ['\n', ' ']
+            if isinstance(child, Tag)
+        ]
         for child in classes:
-            if any(child != i for i in ['\n', ' ']):
-                if isinstance(child, Tag):
-                    if 'class' not in child.attrs:
-                        self.url = child.attrs['href']
-                        class_data = child.text.strip().split('\n')
-                        self.__set_properties(class_data)
-
-                    elif child.text != '':
-                        class_description = child.text
-                        data, *_ = class_description.split(' - ')
-                        subject, number = data.split(' ')
-                        self._subject = subject
-                        self._course_number = number
+            if 'class' not in child.attrs:
+                self.url = child.attrs['href']
+                class_data = child.text.strip().split('\n')
+                self.__set_properties(class_data)
+            elif child.text != '':
+                class_description = child.text
+                data, *_ = class_description.split(' - ')
+                subject, number = data.split(' ')
+                self._subject = subject
+                self._course_number = number
 
     def to_dict(self, extra_details: bool = False) -> Dict[str, Any]:
         data = {
@@ -276,7 +284,6 @@ class PittSection:
 
         if extra_details:
             data['extra'] = self.extra_details
-
         return data
 
     def __str__(self) -> str:
