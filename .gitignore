@@ -6,3 +6,9 @@ sample.py
 .coverage
 .ropeproject/
 venv/
+
+.idea/
+.vscode
+*.egg-info
+build/
+dist/
