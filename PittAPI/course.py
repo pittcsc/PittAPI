@@ -86,11 +86,12 @@ class PittSubject:
                                                    class_data=child.text.strip().split('\n')
                                                    ))
             elif child.text != '':
-                class_description = child.text
-                number, *_ = class_description.split(' - ')
-                number = number.split(' ')[1]
-                self._courses[number] = PittCourse(parent=self, course_number=number)
-                course = self._courses[number]
+                course_description = child.text
+                course_number, course_title = course_description.split(' - ')
+                course_number = course_number.split(' ')[1]
+                self._courses[course_number] = PittCourse(parent=self, course_number=course_number,
+                                                          course_title=course_title)
+                course = self._courses[course_number]
 
     def to_dict(self, extra_details: bool = False) -> Dict[str, List[Dict[str, Any]]]:
         return {k: v.to_dict(extra_details=extra_details) for k, v in self._courses.items()}
@@ -106,14 +107,15 @@ class PittSubject:
 
 
 class PittCourse:
-    def __init__(self, parent: Union['PittSubject', None], course_number: str, *, term: str = None,
-                 subject: str = None):
+    def __init__(self, parent: Union['PittSubject', None], course_number: str, course_title: str = None, *,
+                 term: str = None, subject: str = None):
         self.parent_subject = parent
 
         # Variables to be used if there isn't a parent subject
         self._term = term
         self._subject = subject
 
+        self.title = course_title
         self.number = course_number
         self.sections = []
 
@@ -148,6 +150,10 @@ class PittCourse:
                                                  course=self,
                                                  class_data=child.text.strip().split('\n')
                                                  ))
+            elif child.text != '':
+                course_description = child.text
+                *_, course_title = course_description.split(' - ')
+                self.title = course_title
 
     def to_dict(self, extra_details: bool = False) -> List[Dict[str, Any]]:
         return [section.to_dict(extra_details=extra_details) for section in self.sections]
@@ -172,6 +178,7 @@ class PittSection:
         self._term = term
         self._subject = None
         self._course_number = None
+        self._course_title = None
 
         if class_data is not None:
             self.__set_properties(class_data)
@@ -222,6 +229,12 @@ class PittSection:
             return self.parent_course.number
         return self._course_number
 
+    @property
+    def course_title(self) -> str:
+        if self.parent_course is not None:
+            return self.parent_course.title
+        return self._course_title
+
     @staticmethod
     def __extract_data_from_div_section(tag: Tag) -> str:
         return tag.find('div', {'class': 'pull-right'}).next_element.next_element.next_element
@@ -262,10 +275,11 @@ class PittSection:
                 self.__set_properties(class_data)
             elif child.text != '':
                 class_description = child.text
-                data, *_ = class_description.split(' - ')
+                data, course_title = class_description.split(' - ')
                 subject, number = data.split(' ')
                 self._subject = subject
                 self._course_number = number
+                self._course_title = course_title
 
     def to_dict(self, extra_details: bool = False) -> Dict[str, Any]:
         data = {

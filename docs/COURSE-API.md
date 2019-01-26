@@ -227,6 +227,8 @@ Return a `PittSection` object containing information for a particular section.
     - List of PittSections for all sections of the course being offered
 - __subject__
     - The subject code
+- __title__
+    - The title or name of the course
 - __term__
     - The term number
 - __to_dict(extra_details=False)__
@@ -236,6 +238,8 @@ Return a `PittSection` object containing information for a particular section.
 ## PittAPI.course.PittSubject
 - __course_number__
     - The course number
+- __course_title__
+    - The course title
 - __days__
     - Returns a list of what days of the week the class occurs on
     - Ex. `['Mo', 'We']`

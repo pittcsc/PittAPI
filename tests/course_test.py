@@ -140,6 +140,7 @@ class CourseTest(unittest.TestCase):
             self.assertEqual(cs_course[0], cs_course.sections[0])
             self.assertEqual(len(cs_course[0:2]), 2)
             self.assertEqual(cs_course[0].course_number, cs_course.number)
+            self.assertEqual(cs_course[0].course_title, cs_course.title)
             self.assertEqual(str(cs_course), 'PittCourse(2194, CS, 0007)')
             self.assertEqual(repr(cs_course), json.dumps(cs_course.to_dict()))
 
@@ -179,6 +180,7 @@ class CourseTest(unittest.TestCase):
             self.assertEqual(cs_section.term, '2194')
             self.assertEqual(cs_section.subject, 'CS')
             self.assertEqual(cs_section.course_number, '1632')
+            self.assertEqual(cs_section.course_title, 'SOFTWARE QUALITY ASSURANCE')
             self.assertEqual(repr(cs_section), json.dumps(cs_section.to_dict()))
 
             self.assertIsInstance(cs_section.extra_details, dict)
