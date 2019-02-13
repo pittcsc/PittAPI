@@ -60,6 +60,10 @@ class CourseTest(unittest.TestCase):
             self.cs_extra_data_1 = ''.join(f.readlines())
         with (SAMPLE_PATH / 'course_extra_2.html').open() as f:
             self.cs_extra_data_2 = ''.join(f.readlines())
+        with (SAMPLE_PATH / 'course_extra_3.html').open() as f:
+            self.cs_extra_data_3 = ''.join(f.readlines())
+        with (SAMPLE_PATH / 'course_extra_4.html').open() as f:
+            self.cs_extra_data_4 = ''.join(f.readlines())
 
     def test_validate_subject(self):
         for subject in course.SUBJECTS:
@@ -188,3 +192,23 @@ class CourseTest(unittest.TestCase):
 
             self.assertIsInstance(cs_section.to_dict(), dict)
             self.assertIsInstance(cs_section.to_dict(extra_details=True), dict)
+
+    @responses.activate
+    def test_get_section_details_extra_details(self):
+        responses.add(responses.GET, 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/2194/27469',
+                      body=self.cs_extra_data_3, status=200)
+        with patch('requests.Session') as mock:
+            mock.return_value = MockSession(self.cs_section_data)
+            cs_section = course.get_section_details('2194', '27469')
+            self.assertIsInstance(cs_section.extra_details, dict)
+            self.assertIsInstance(cs_section.extra_details, dict)
+
+    @responses.activate
+    def test_get_section_details_basic_extra_details(self):
+        responses.add(responses.GET, 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/2194/27469',
+                      body=self.cs_extra_data_4, status=200)
+        with patch('requests.Session') as mock:
+            mock.return_value = MockSession(self.cs_section_data)
+            cs_section = course.get_section_details('2194', '27469')
+            self.assertIsInstance(cs_section.extra_details, dict)
+            self.assertIsInstance(cs_section.extra_details, dict)

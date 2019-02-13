@@ -78,7 +78,7 @@ class PittSubject:
             if isinstance(child, Tag)
         ]
         for child in classes:
-            if 'class' not in child.attrs:
+            if 'href' in child.attrs:
                 class_sections_url = child.attrs['href']
                 course.sections.append(PittSection(self,
                                                    class_section_url=class_sections_url,
@@ -143,7 +143,7 @@ class PittCourse:
             if isinstance(child, Tag)
         ]
         for child in classes:
-            if 'class' not in child.attrs:
+            if 'href' in child.attrs:
                 class_sections_url = child.attrs['href']
                 self.sections.append(PittSection(parent=self.parent_subject,
                                                  class_section_url=class_sections_url,
@@ -253,11 +253,14 @@ class PittSection:
         data = [point for point in data.next_siblings if point != '\n']
         self._extra = {
             'units': self.__extract_data_from_div_section(data[2]),
-            'description': self.__extract_data_from_div_section(data[4]),
-            'preq': self.__extract_data_past_colon(self.__extract_data_from_div_section(data[5]))
+            'description': self.__extract_data_from_div_section(data[4])
         }
-        if 'Class Attributes' in data[6].text:
-            self._extra['class_attributes'] = self.__extract_data_from_div_section(data[6])
+        if 'Enrollment Requirements' in data[5].text:
+            self._extra['preq'] = self.__extract_data_past_colon(self.__extract_data_from_div_section(data[5]))
+            if 'Class Attributes' in data[6].text:
+                self._extra['class_attributes'] = self.__extract_data_from_div_section(data[6]).split('\n')
+        elif 'Class Attributes' in data[5].text:
+            self._extra['class_attributes'] = self.__extract_data_from_div_section(data[5]).split('\n')
         return self._extra
 
     def parse_webpage(self, resp: requests.Response) -> None:
@@ -269,7 +272,7 @@ class PittSection:
             if isinstance(child, Tag)
         ]
         for child in classes:
-            if 'class' not in child.attrs:
+            if 'href' in child.attrs:
                 self.url = child.attrs['href']
                 class_data = child.text.strip().split('\n')
                 self.__set_properties(class_data)
