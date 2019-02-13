@@ -78,7 +78,8 @@ class PittSubject:
             if isinstance(child, Tag)
         ]
         for child in classes:
-            if 'class' not in child.attrs:
+            print(child.attrs, child)
+            if 'href' in child.attrs:
                 class_sections_url = child.attrs['href']
                 course.sections.append(PittSection(self,
                                                    class_section_url=class_sections_url,
@@ -143,7 +144,7 @@ class PittCourse:
             if isinstance(child, Tag)
         ]
         for child in classes:
-            if 'class' not in child.attrs:
+            if 'href' in child.attrs:
                 class_sections_url = child.attrs['href']
                 self.sections.append(PittSection(parent=self.parent_subject,
                                                  class_section_url=class_sections_url,
@@ -269,7 +270,7 @@ class PittSection:
             if isinstance(child, Tag)
         ]
         for child in classes:
-            if 'class' not in child.attrs:
+            if 'href' in child.attrs:
                 self.url = child.attrs['href']
                 class_data = child.text.strip().split('\n')
                 self.__set_properties(class_data)
