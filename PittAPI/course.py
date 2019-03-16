@@ -65,6 +65,11 @@ class PittSubject:
 
     @property
     def courses(self):
+        """Returns a generator for iterating through each course"""
+        return (v for k, v in self._courses.items())
+
+    @property
+    def courses_names(self):
         """Return list of course numbers offered that semester"""
         return list(self._courses.keys())
 
@@ -117,6 +122,7 @@ class PittCourse:
 
         self.title = course_title
         self.number = course_number
+        self.section_numbers = []
         self.sections = []
 
     def __getitem__(self, item) -> 'PittSection':
@@ -155,8 +161,11 @@ class PittCourse:
                 *_, course_title = course_description.split(' - ')
                 self.title = course_title
 
-    def to_dict(self, extra_details: bool = False) -> List[Dict[str, Any]]:
-        return [section.to_dict(extra_details=extra_details) for section in self.sections]
+    def to_dict(self, extra_details: bool = False) -> Dict[str, Any]:
+        return {
+        'title': self.title,
+        'section_numbers': self.section_numbers,
+        'sections':[section.to_dict(extra_details=extra_details) for section in self.sections]}
 
     def __str__(self) -> str:
         return 'PittCourse({term}, {subject}, {number})'.format(
@@ -195,17 +204,30 @@ class PittSection:
         self.days = None
         self.times = None
         if days_times != 'TBA':
-            days_times = days_times.split(' - ')
-            self.days, times = days_times[0].split(' ')
-            self.days = [self.days[i * 2:(i * 2) + 2] for i in range(len(self.days) // 2)]
-            self.times = [times] + [days_times[1]]
+            if ',' in days_times:
+                days_times = days_times.split(', ')
+                self.days = []
+                self.times = []
+                for day_time in days_times:
+                    if 'TBA' in days_times:
+                        self.days.append('TBA')
+                        self.times.append('TBA')
+                        continue
+                    data_datetime = day_time.split(' - ')
+                    self.days.append(data_datetime[0].split(' ')[0])
+                    self.times.append([data_datetime[0].split(' ')[1], data_datetime[-1]])
+            else:
+                days_times = days_times.split(' - ')
+                self.days, times = days_times[0].split(' ')
+                self.days = [self.days[i * 2:(i * 2) + 2] for i in range(len(self.days) // 2)]
+                self.times = [times] + [days_times[1]]
 
         self.room = self.__extract_data_past_colon(data[3])
         self.instructor = self.__extract_data_past_colon(data[4])
 
         date = self.__extract_data_past_colon(data[5]).split(' - ')
         self.start_date = datetime.strptime(date[0], '%m/%d/%Y')
-        self.end_date = datetime.strptime(date[1], '%m/%d/%Y')
+        self.end_date = datetime.strptime(date[-1], '%m/%d/%Y')
 
     @property
     def term(self) -> str:
@@ -377,6 +399,8 @@ def get_term_courses(term: Union[str, int], subject: str) -> PittSubject:
     subject = _validate_subject(subject)
     session, payload = _get_payload(term, subject=subject)
     response = session.post(CLASS_SEARCH_API_URL, data=payload)
+    if 'No classes found' in response.text:
+        raise ValueError("No classes found")
     container = PittSubject(subject=subject, term=term)
     container.parse_webpage(response)
     return container
