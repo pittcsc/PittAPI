@@ -65,8 +65,8 @@ class PittSubject:
 
     @property
     def courses(self):
-        """Returns a generator for iterating through each course"""
-        return (v for k, v in self._courses.items())
+        """Returns a list for iterating through each course"""
+        return [v for k, v in self._courses.items()]
 
     @property
     def courses_names(self):
@@ -223,8 +223,12 @@ class PittSection:
                 self.times = [times] + [days_times[1]]
 
         self.room = self.__extract_data_past_colon(data[3])
-        self.instructor = self.__extract_data_past_colon(data[4])
+        if ',' in self.room:
+            self.room = self.room.split(', ')
 
+        self.instructor = self.__extract_data_past_colon(data[4])
+        if ',' in self.instructor:
+            self.instructor = self.instructor.split(', ')
         date = self.__extract_data_past_colon(data[5]).split(' - ')
         self.start_date = datetime.strptime(date[0], '%m/%d/%Y')
         self.end_date = datetime.strptime(date[-1], '%m/%d/%Y')
@@ -413,6 +417,8 @@ def get_course_sections(term: Union[str, int], subject: str, course: Union[str, 
     course = _validate_course(course)
     session, payload = _get_payload(term, subject=subject, course=course)
     response = session.post(CLASS_SEARCH_API_URL, data=payload)
+    if 'No classes found' in response.text:
+        raise ValueError("No classes found")
     container = PittCourse(parent=None, course_number=course, term=term, subject=subject)
     container.parse_webpage(response)
     return container
@@ -425,6 +431,8 @@ def get_section_details(term: Union[str, int], section_number: Union[str, int]) 
         section_number = str(section_number)
     session, payload = _get_payload(term, section=section_number)
     response = session.post(CLASS_SEARCH_API_URL, data=payload)
+    if 'No classes found' in response.text:
+        raise ValueError("No classes found")
     container = PittSection(parent=None, course=None, class_section_url='', class_data=None, term=term)
     container.parse_webpage(response)
     return container
