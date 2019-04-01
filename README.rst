@@ -1,7 +1,7 @@
 Pitt API
 ========
 
-|Build Status| |License GPLv2| |Python 3.4, 3.5|
+|Build Status| |License GPLv2| |Python 3.4, 3.5, 3.6|
 
 Made by Ritwik Gupta at the University of Pittsburgh in an effort to get
 more open data from Pitt.
@@ -15,12 +15,11 @@ Usage examples
 
     ### Courses
     # Will return a list of dictionaries containing courses in subject
-    big_dict = course.get_classes(term="2191", code="CS")
-    # Will return a list of dictionaries containing courses that fulfill requirement
-    big_dict = course.get_classes(term="2191", code="Q")
-    # Will return a dictionary with a details about the class
-    description = course.get_class(term="2191", class_number="10901")
-    
+    cs_subject = course.get_term_courses(term='2194', subject='CS')
+    cs_course = cs_subject['1501']
+    cs_section_list = cs_course.sections
+    big_dict = cs_section_list[0].to_dict()
+
     ### Textbook
     # Will return a list of dictionaries containing textbooks for a class
     # term number comes from pitt.verbacompare.com
@@ -80,5 +79,5 @@ license <LICENSE>`__.
    :target: https://travis-ci.org/Pitt-CSC/PittAPI
 .. |License GPLv2| image:: https://img.shields.io/badge/license-GPLv2-blue.svg
    :target: LICENSE
-.. |Python 3.4, 3.5| image:: https://img.shields.io/badge/python-3.4%2C%203.5-green.svg
+.. |Python 3.4, 3.5, 3.6| image:: https://img.shields.io/badge/python-3.4%2C%203.5%2C%203.6-green.svg
 

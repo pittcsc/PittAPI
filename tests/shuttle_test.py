@@ -48,7 +48,7 @@ class ShuttleTest(unittest.TestCase):
     def test_vehicle_route_stop_estimates(self):
         responses.add(
             method=responses.GET,
-            url='http://www.pittshuttle.com/Services/JSONPRelay.svc/GetVehicleRouteStopEstimates?vehicleIdStrings=25&quantity=2',
+            url='http://www.pittshuttle.com/Services/JSONPRelay.svc/GetVehicleRouteStopEstimates?vehicleIdStrings=25&quantity=4',
             json=[{"Estimates": [{}, {}, {}, {}]}],
             status=200
         )

@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+"beautifulsoup4" = "*"
+coverage = "==4.4"
+requests = "*"
+responses = "*"
+grequests = "*"
+lxml = "*"
+nose = "*"
+nose-cov = "*"
+nose-timer = "*"
+typing = "*"
+virtualenv = "*"
+
+[dev-packages]
+
+[requires]
+python_version = ">= 3.4"
