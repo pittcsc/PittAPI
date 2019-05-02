@@ -65,11 +65,6 @@ class PittSubject:
 
     @property
     def courses(self):
-        """Returns a list for iterating through each course"""
-        return [v for k, v in self._courses.items()]
-
-    @property
-    def courses_names(self):
         """Return list of course numbers offered that semester"""
         return list(self._courses.keys())
 
@@ -83,7 +78,11 @@ class PittSubject:
             if isinstance(child, Tag)
         ]
         for child in classes:
+<<<<<<< HEAD
+            if 'class' in child.attrs and child.attrs['class'][0] == 'list-item__link':
+=======
             if 'href' in child.attrs:
+>>>>>>> cda4591683022b853870c4d6c7cc4830068c938a
                 class_sections_url = child.attrs['href']
                 course.sections.append(PittSection(self,
                                                    class_section_url=class_sections_url,
@@ -122,7 +121,6 @@ class PittCourse:
 
         self.title = course_title
         self.number = course_number
-        self.section_numbers = []
         self.sections = []
 
     def __getitem__(self, item) -> 'PittSection':
@@ -161,11 +159,8 @@ class PittCourse:
                 *_, course_title = course_description.split(' - ')
                 self.title = course_title
 
-    def to_dict(self, extra_details: bool = False) -> Dict[str, Any]:
-        return {
-        'title': self.title,
-        'section_numbers': self.section_numbers,
-        'sections':[section.to_dict(extra_details=extra_details) for section in self.sections]}
+    def to_dict(self, extra_details: bool = False) -> List[Dict[str, Any]]:
+        return [section.to_dict(extra_details=extra_details) for section in self.sections]
 
     def __str__(self) -> str:
         return 'PittCourse({term}, {subject}, {number})'.format(
@@ -204,34 +199,26 @@ class PittSection:
         self.days = None
         self.times = None
         if days_times != 'TBA':
-            if ',' in days_times:
-                days_times = days_times.split(', ')
-                self.days = []
-                self.times = []
-                for day_time in days_times:
-                    if 'TBA' in days_times:
-                        self.days.append('TBA')
-                        self.times.append('TBA')
-                        continue
-                    data_datetime = day_time.split(' - ')
-                    self.days.append(data_datetime[0].split(' ')[0])
-                    self.times.append([data_datetime[0].split(' ')[1], data_datetime[-1]])
-            else:
-                days_times = days_times.split(' - ')
-                self.days, times = days_times[0].split(' ')
-                self.days = [self.days[i * 2:(i * 2) + 2] for i in range(len(self.days) // 2)]
-                self.times = [times] + [days_times[1]]
+            days_times = days_times.split(' - ')
+            self.days, times = days_times[0].split(' ')
+            self.days = [self.days[i * 2:(i * 2) + 2] for i in range(len(self.days) // 2)]
+            self.times = [times] + [days_times[1]]
 
         self.room = self.__extract_data_past_colon(data[3])
-        if ',' in self.room:
-            self.room = self.room.split(', ')
-
         self.instructor = self.__extract_data_past_colon(data[4])
-        if ',' in self.instructor:
-            self.instructor = self.instructor.split(', ')
-        date = self.__extract_data_past_colon(data[5]).split(' - ')
-        self.start_date = datetime.strptime(date[0], '%m/%d/%Y')
-        self.end_date = datetime.strptime(date[-1], '%m/%d/%Y')
+
+        date = self.__extract_data_past_colon(data[5])
+
+        if ', ' in date:
+            date = [part.split(' - ') for part in date.split(', ')]
+        else:
+            date = [date.split(' - ')]
+
+        self.start_date = []
+        self.end_date = []
+        for start, end in date:
+            self.start_date.append(datetime.strptime(start, '%m/%d/%Y'))
+            self.end_date.append(datetime.strptime(end, '%m/%d/%Y'))
 
     @property
     def term(self) -> str:
@@ -403,8 +390,6 @@ def get_term_courses(term: Union[str, int], subject: str) -> PittSubject:
     subject = _validate_subject(subject)
     session, payload = _get_payload(term, subject=subject)
     response = session.post(CLASS_SEARCH_API_URL, data=payload)
-    if 'No classes found' in response.text:
-        raise ValueError("No classes found")
     container = PittSubject(subject=subject, term=term)
     container.parse_webpage(response)
     return container
@@ -417,8 +402,6 @@ def get_course_sections(term: Union[str, int], subject: str, course: Union[str, 
     course = _validate_course(course)
     session, payload = _get_payload(term, subject=subject, course=course)
     response = session.post(CLASS_SEARCH_API_URL, data=payload)
-    if 'No classes found' in response.text:
-        raise ValueError("No classes found")
     container = PittCourse(parent=None, course_number=course, term=term, subject=subject)
     container.parse_webpage(response)
     return container
@@ -431,8 +414,6 @@ def get_section_details(term: Union[str, int], section_number: Union[str, int]) 
         section_number = str(section_number)
     session, payload = _get_payload(term, section=section_number)
     response = session.post(CLASS_SEARCH_API_URL, data=payload)
-    if 'No classes found' in response.text:
-        raise ValueError("No classes found")
     container = PittSection(parent=None, course=None, class_section_url='', class_data=None, term=term)
     container.parse_webpage(response)
     return container
