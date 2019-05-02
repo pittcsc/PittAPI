@@ -206,15 +206,13 @@ class PittSection:
         date = self.__extract_data_past_colon(data[5])
 
         if ', ' in date:
-            date = [part.split(' - ') for part in date.split(', ')]
+            date = date.split(', ')[0].split(' - ')
         else:
-            date = [date.split(' - ')]
+            date = date.split(' - ')
 
-        self.start_date = []
-        self.end_date = []
-        for start, end in date:
-            self.start_date.append(datetime.strptime(start, '%m/%d/%Y'))
-            self.end_date.append(datetime.strptime(end, '%m/%d/%Y'))
+        self.start_date = datetime.strptime(date[0], '%m/%d/%Y')
+        self.end_date = datetime.strptime(date[1], '%m/%d/%Y')
+
 
     @property
     def term(self) -> str:
