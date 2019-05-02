@@ -195,7 +195,10 @@ class PittSection:
         self.days = None
         self.times = None
         if days_times != 'TBA':
-            days_times = days_times.split(' - ')
+            if ', ' in days_times:
+                days_times = days_times.split(', ')[0].split(' - ')
+            else:
+                days_times = days_times.split(' - ')
             self.days, times = days_times[0].split(' ')
             self.days = [self.days[i * 2:(i * 2) + 2] for i in range(len(self.days) // 2)]
             self.times = [times] + [days_times[1]]
