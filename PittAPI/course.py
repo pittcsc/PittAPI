@@ -78,11 +78,7 @@ class PittSubject:
             if isinstance(child, Tag)
         ]
         for child in classes:
-<<<<<<< HEAD
-            if 'class' in child.attrs and child.attrs['class'][0] == 'list-item__link':
-=======
             if 'href' in child.attrs:
->>>>>>> cda4591683022b853870c4d6c7cc4830068c938a
                 class_sections_url = child.attrs['href']
                 course.sections.append(PittSection(self,
                                                    class_section_url=class_sections_url,
