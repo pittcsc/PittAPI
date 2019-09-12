@@ -8,3 +8,5 @@
 - [Shuttle API](SHUTTLE-API.md)
 - [News API](NEWS-API.md)
 - [Textbook API](TEXTBOOK-API.md)
+- [Sports API](SPORTS.md)
+
