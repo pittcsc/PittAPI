@@ -14,7 +14,7 @@ Returns a `string` containing the current record of the Men's basketball team.
 ###### **Sample Usage**:
 ```python
 >>> record = get_basketball_record()
->>> str(record) # Standard usage
+>>> print(record) # Standard usage
 '5-1'
 >>> offseason_record = get_basketball_record # If offseason, return this
 'There's no record now'
@@ -35,17 +35,19 @@ Returns the full name of the event, the short name of the event, the type of gam
 ###### **Sample Usage**:
 ```python
 >>> event_full_name = get_next_basketball_game("full_name")
->>> str(event_full_name)
+>>> print(event_full_name)
 'Pittsburgh Panthers at Syracuse Orange'
 >>> event_short_name = get_next_basketball_game("short_name")
->>> str(event_short_name)
+>>> print(event_short_name)
 'PITT @ SYR'
 >>> event_season_name = get_next_basketball_game("season_name")
->>> str(event_season_name)
+>>> print(event_season_name)
 'Regular Season'
 >>> event_week = get_next_basketball_game("week")
+>>> print(event_week)
 'Week 19'
 >>> event_court = get_next_basketball_game("court")
+>>> print(event_court)
 'Spectrum Center'
 ```
 
@@ -61,7 +63,7 @@ Return a `string` containing information for the current team standings of the M
 ###### **Sample Usage**:
 ```python
 >>> standings = get_basketball_standings()
->>> str(standings)
+>>> print(standings)
 '14th in ACC'
 ```
 
@@ -77,7 +79,7 @@ Returns a `string` containing the current record of the football team.
 ###### **Sample Usage**:
 ```python
 >>> record = get_football_record()
->>> str(record) # Standard usage
+>>> print(record) # Standard usage
 '1-1'
 >>> offseason_record = get_football_record # If offseason, return this
 'There's no record now'
@@ -100,17 +102,19 @@ Returns the full name of the event, the short name of the event, the type of gam
 ###### **Sample Usage**:
 ```python
 >>> event_full_name = get_next_football_game("full_name")
->>> str(event_full_name)
+>>> print(event_full_name)
 'Pittsburgh Panthers at Penn State Nittany Lions'
 >>> event_short_name = get_next_football_game("short_name")
->>> str(event_short_name)
+>>> print(event_short_name)
 'PITT @ PSU'
 >>> event_season_name = get_next_football_game("season_name")
->>> str(event_season_name)
+>>> print(event_season_name)
 'Regular Season'
 >>> event_week = get_next_football_game("week")
+>>> print(event_week)
 'Week 3'
 >>> event_field = get_next_football_game("field")
+>>> print(event_field)
 'Beaver Stadium'
 ```
 
@@ -126,7 +130,7 @@ Return a `string` containing information for the current team standings of the f
 ###### **Sample Usage**:
 ```python
 >>> standings = get_football_standings()
->>> str(standings)
+>>> print(standings)
 '4th in ACC - Coastal'
 ```
 
