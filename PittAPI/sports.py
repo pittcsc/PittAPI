@@ -1,5 +1,5 @@
 '''
-The Pitt API, to access workable data of the University of Pittsburgh
+The Pitt API, to access workable football_data of the University of Pittsburgh
 Copyright (C) 2015 Ritwik Gupta
 
 This program is free software; you can redistribute it and/or modify
@@ -20,17 +20,28 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import json
 import requests
 
-# temporary URL - need to do more reverse engineering for ESPN's more robust details, or at least figure out
-# how the JS navigates different pages.
 FOOTBALL_URL = 'http://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/pitt'
+BASKETBALL_URL ='http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/pittsburgh'
 
-response = requests.get(FOOTBALL_URL)
+football_response = requests.get(FOOTBALL_URL)
+basketball_response = requests.get(BASKETBALL_URL)
 
-data = json.loads(response.text)  # JSON for football data in an object
+football_data = json.loads(football_response.text)  # JSON for football football_data in an object
+basketball_data = json.loads(basketball_response.text)
+
+# basketball methods
+def get_basketball_record() -> str:
+    try:
+        record_summary = basketball_data['team']['record']['items'][0]['summary']
+
+    except KeyError:
+        record_summary = "There's no record right now."
+    return record_summary
 
 
+# football methods
 def get_football_record() -> str:
-    record_summary = data['team']['record']['items'][0]['summary']
+    record_summary = football_data['team']['record']['items'][0]['summary']
     return record_summary
 
 
@@ -39,26 +50,30 @@ def get_next_football_game(input : str) -> str:
     return_value = "Error: Input parameter"
 
     if input == "full_name":
-        return_value = data['team']['nextEvent'][0]['name']
+        return_value = football_data['team']['nextEvent'][0]['name']
     if input == "short_name":
-        return_value = data['team']['nextEvent'][0]['shortName']
+        return_value = football_data['team']['nextEvent'][0]['shortName']
 
     if input == "season_name":
-        return_value = data['team']['nextEvent'][0]['seasonType']['name']
+        return_value = football_data['team']['nextEvent'][0]['seasonType']['name']
 
     if input == "week":
-        return_value = data['team']['nextEvent'][0]['week']['text']
+        return_value = football_data['team']['nextEvent'][0]['week']['text']
 
     if input == "field":
-        return_value = data['team']['nextEvent'][0]['competitions'][0]['venue']['fullName']
+        return_value = football_data['team']['nextEvent'][0]['competitions'][0]['venue']['fullName']
 
     return return_value
 
 
 def get_football_standings() -> str:
-    return_value = data['team']['standingSummary']
+    return_value = football_data['team']['standingSummary']
     return return_value
 
+
+print("_______________\nBASKETBALL")
+print(get_basketball_record())
+print("_______________\nFOOTBALL")
 
 print("Record:")
 print(get_football_record())
