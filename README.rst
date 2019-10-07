@@ -1,7 +1,7 @@
 Pitt API
 ========
 
-|Build Status| |License GPLv2| |Python >= 3.5|
+|Build Status| |License GPLv2| |Python 3.5, 3.6, 3.7|
 
 Made by Ritwik Gupta at the University of Pittsburgh in an effort to get
 more open data from Pitt.
@@ -79,5 +79,5 @@ license <LICENSE>`__.
    :target: https://travis-ci.org/Pitt-CSC/PittAPI
 .. |License GPLv2| image:: https://img.shields.io/badge/license-GPLv2-blue.svg
    :target: LICENSE
-.. |Python 3.5, 3.6| image:: https://img.shields.io/badge/python-3.4%2C%203.5%2C%203.6-green.svg
+.. |Python 3.5, 3.6, 3.7| image:: https://img.shields.io/badge/python-3.5%2C%203.6%2C%203.7-green.svg
 
