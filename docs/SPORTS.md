@@ -3,9 +3,9 @@
 
 # Sports API
 
-## Basketball Methods
+## Men's Basketball Methods
 
-### **get_basketball_record()**
+### **get_mens_basketball_record()**
 
 #### **Returns**:
 Returns a `string` containing the current record of the Men's basketball team.
@@ -13,47 +13,32 @@ Returns a `string` containing the current record of the Men's basketball team.
 
 ###### **Sample Usage**:
 ```python
->>> record = get_basketball_record()
+>>> record = get_mens_basketball_record()
 >>> print(record) # Standard usage
 '5-1'
->>> offseason_record = get_basketball_record # If offseason, return this
+>>> offseason_record = get_mens_basketball_record # If offseason, return this
+>>> print(offseason_record)
 'There's no record now'
 ```
 
 ---
 
-### **get_next_basketball_game(input_parameter: str)**
-
-#### **Parameters**:
-  - `input_parameter`: Keywords of `full_name`, `short_name,` `season_name`, `week`, `court`
-
+### **get_next_mens_basketball_game()**
 
 #### **Returns**:
-Returns the full name of the event, the short name of the event, the type of game (regular season, playoffs, preseason, etc.), the week in which it occurs, and the location, respectively.
+Returns a dictionary containing the full name of the event, the short name of the event, the type of game (regular season, playoffs, preseason, etc.), the week in which it occurs, and the location.
 #### **Example**:
 
 ###### **Sample Usage**:
 ```python
->>> event_full_name = get_next_basketball_game("full_name")
->>> print(event_full_name)
-'Pittsburgh Panthers at Syracuse Orange'
->>> event_short_name = get_next_basketball_game("short_name")
->>> print(event_short_name)
-'PITT @ SYR'
->>> event_season_name = get_next_basketball_game("season_name")
->>> print(event_season_name)
-'Regular Season'
->>> event_week = get_next_basketball_game("week")
->>> print(event_week)
-'Week 19'
->>> event_court = get_next_basketball_game("court")
->>> print(event_court)
-'Spectrum Center'
+>>> next_game_details = get_next_mens_basketball_game()
+>>> print(next_game_details)
+{'full_name': 'Pittsburgh Panthers at Syracuse Orange', 'short_name': 'PITT @SYR', 'season_name': 'Regular Season', 'week': 'Week 19', 'court': 'Spectrum Center'}
 ```
 
 ---
 
-### **get_basketball_standings()**
+### **get_mens_basketball_standings()**
 
 #### **Returns**:
 Return a `string` containing information for the current team standings of the Men's basketball team.
@@ -62,7 +47,7 @@ Return a `string` containing information for the current team standings of the M
 
 ###### **Sample Usage**:
 ```python
->>> standings = get_basketball_standings()
+>>> standings = get_mens_basketball_standings()
 >>> print(standings)
 '14th in ACC'
 ```
@@ -82,6 +67,7 @@ Returns a `string` containing the current record of the football team.
 >>> print(record) # Standard usage
 '1-1'
 >>> offseason_record = get_football_record # If offseason, return this
+>>> print(offseason_record)
 'There's no record now'
 ```
 
@@ -89,33 +75,18 @@ Returns a `string` containing the current record of the football team.
 ---
 
 
-### **get_next_football_game(input_parameter: str)**
-
-#### **Parameters**:
-  - `input_parameter`: Keywords of `full_name`, `short_name,` `season_name`, `week`, `field`
-
+### **get_next_football_game()**
 
 #### **Returns**:
-Returns the full name of the event, the short name of the event, the type of game (regular season, playoffs, preseason, etc.), the week in which it occurs, and the location, respectively.
+Returns a dictionary containing the full name of the event, the short name of the event, the type of game (regular season, playoffs, preseason, etc.), the week in which it occurs, and the location.
 #### **Example**:
 
 ###### **Sample Usage**:
 ```python
->>> event_full_name = get_next_football_game("full_name")
->>> print(event_full_name)
-'Pittsburgh Panthers at Penn State Nittany Lions'
->>> event_short_name = get_next_football_game("short_name")
->>> print(event_short_name)
-'PITT @ PSU'
->>> event_season_name = get_next_football_game("season_name")
->>> print(event_season_name)
-'Regular Season'
->>> event_week = get_next_football_game("week")
->>> print(event_week)
-'Week 3'
->>> event_field = get_next_football_game("field")
->>> print(event_field)
-'Beaver Stadium'
+>>> next_game_details = get_next_football_game()
+>>> print(next_game_details)
+{'full_name': 'Pittsburgh Panthers at Penn State Nittany Lions', 'short_name': 'PITT @ PSU', 'season_name': 'Regular Season', 'week': 'Week 3', 'field': 'Beaver Stadium'}
+
 ```
 
 ---
