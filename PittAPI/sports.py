@@ -1,5 +1,5 @@
 '''
-The Pitt API, to access workable football_data of the University of Pittsburgh
+The Pitt API, to access workable data of the University of Pittsburgh
 Copyright (C) 2015 Ritwik Gupta
 
 This program is free software; you can redistribute it and/or modify
