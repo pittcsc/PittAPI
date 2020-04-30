@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-"beautifulsoup4" = "*"
+beautifulsoup4 = "*"
 coverage = "==4.4"
 requests = "*"
 responses = "*"
@@ -15,8 +15,9 @@ nose-cov = "*"
 nose-timer = "*"
 typing = "*"
 virtualenv = "*"
+feedparser = "*"
 
 [dev-packages]
 
 [requires]
-python_version = ">= 3.4"
+python_version = "3.7"
