@@ -26,7 +26,7 @@ from typing import List
 from collections import namedtuple
 
 content = re.compile(":&(.)*?<")
-Event = namedtuple('Event', ['timestamp', 'timestamp_struct', 'content'])
+Event = namedtuple("Event", ["timestamp", "timestamp_struct", "content"])
 
 ACADEMIC_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-academic-calendar.xml"
 GRADES_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-grades-calendar.xml"
@@ -41,7 +41,11 @@ def _fetch_calendar_events(url: str) -> List[Event]:
     events = []
     for entry in d.entries:
         event_content = content.search(entry.summary).group()[7:-2]
-        event = Event(timestamp=entry.published, timestamp_struct=entry.published_parsed, content=event_content)
+        event = Event(
+            timestamp=entry.published,
+            timestamp_struct=entry.published_parsed,
+            content=event_content,
+        )
         events.append(event)
     return events
 

@@ -30,44 +30,44 @@ def get_status() -> Dict[str, List[Any]]:
             "status": component["status"],
             "name": component["name"],
             "updated_at": component["updated_at"],
-            "description": component["description"]
+            "description": component["description"],
         }
         for component in data["components"]
     ]
     incidents = [
         {
-            'components': [
+            "components": [
                 {
                     "status": component["status"],
                     "name": component["name"],
                     "updated_at": component["updated_at"],
-                    "description": component["description"]
+                    "description": component["description"],
                 }
                 for component in incident["components"]
             ],
-            'incident_updates': [
+            "incident_updates": [
                 {
-                    'affected_components': [
+                    "affected_components": [
                         {
-                            'name': component['name'],
-                            'new_status': component['new_status'],
-                            'old_status': component['old_status']
+                            "name": component["name"],
+                            "new_status": component["new_status"],
+                            "old_status": component["old_status"],
                         }
-                        for component in update['affected_components']
+                        for component in update["affected_components"]
                     ],
-                    'body': update['body'],
-                    'status': update['status'],
-                    'updated_at': update['updated_at']
+                    "body": update["body"],
+                    "status": update["status"],
+                    "updated_at": update["updated_at"],
                 }
-                for update in incident['incident_updates']
+                for update in incident["incident_updates"]
             ],
-            'impact': incident['impact'],
-            'name': incident['name'],
-            'status': incident['status'],
-            'resolved_at': incident['resolved_at'],
-            'updated_at': incident['updated_at']
+            "impact": incident["impact"],
+            "name": incident["name"],
+            "status": incident["status"],
+            "resolved_at": incident["resolved_at"],
+            "updated_at": incident["updated_at"],
         }
-        for incident in data['incidents']
+        for incident in data["incidents"]
     ]
     ret = {"components": components, "incidents": incidents}
 

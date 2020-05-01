@@ -23,16 +23,16 @@ from typing import Any, Dict, List, Union
 
 from bs4 import BeautifulSoup
 
-BASE_URL = 'http://m.laundryview.com/submitFunctions.php?monitor=true&lr={}'
+BASE_URL = "http://m.laundryview.com/submitFunctions.php?monitor=true&lr={}"
 LOCATION_LOOKUP = {
-    'TOWERS': '2430136',
-    'BRACKENRIDGE': '2430119',
-    'HOLLAND': '2430137',
-    'LOTHROP': '2430151',
-    'MCCORMICK': '2430120',
-    'SUTH_EAST': '2430135',
-    'SUTH_WEST': '2430134',
-    'FORBES_CRAIG': '2430142'
+    "TOWERS": "2430136",
+    "BRACKENRIDGE": "2430119",
+    "HOLLAND": "2430137",
+    "LOTHROP": "2430151",
+    "MCCORMICK": "2430120",
+    "SUTH_EAST": "2430135",
+    "SUTH_WEST": "2430134",
+    "FORBES_CRAIG": "2430142",
 }
 
 
@@ -41,7 +41,7 @@ def _get_laundry_soup(building_name: str) -> Any:
     building_name = building_name.upper()
     url = BASE_URL.format(LOCATION_LOOKUP[building_name])
     response = requests.get(url)
-    laundry_soup = BeautifulSoup(response.text, 'lxml')
+    laundry_soup = BeautifulSoup(response.text, "lxml")
     return laundry_soup
 
 
@@ -60,18 +60,18 @@ def get_status_simple(building_name: str) -> Dict[str, str]:
         -> SUTH_WEST
     """
     laundry_soup = _get_laundry_soup(building_name)
-    re_format = re.compile(r'^([0-9]+) of ([0-9]+) available$')
-    washer_text = laundry_soup.find('span', {'id': 'washer_available'}).text
-    dryer_text = laundry_soup.find('span', {'id': 'dryer_available'}).text
+    re_format = re.compile(r"^([0-9]+) of ([0-9]+) available$")
+    washer_text = laundry_soup.find("span", {"id": "washer_available"}).text
+    dryer_text = laundry_soup.find("span", {"id": "dryer_available"}).text
     washer_match = re_format.match(washer_text)
     dryer_match = re_format.match(dryer_text)
 
     return {
-        'building': building_name,
-        'free_washers': int(washer_match.group(1)),
-        'total_washers': int(washer_match.group(2)),
-        'free_dryers': int(dryer_match.group(1)),
-        'total_dryers': int(dryer_match.group(2))
+        "building": building_name,
+        "free_washers": int(washer_match.group(1)),
+        "total_washers": int(washer_match.group(2)),
+        "free_dryers": int(dryer_match.group(1)),
+        "total_dryers": int(dryer_match.group(2)),
     }
 
 
@@ -92,22 +92,30 @@ def get_status_detailed(building_name: str) -> List[Dict[str, Union[str, int]]]:
     machine_type = "Unknown"
     laundry_soup = _get_laundry_soup(building_name)
 
-    for li in laundry_soup.findAll('li'):
-        if 'id' in li.attrs:
-            machine_type = li.attrs['id']
+    for li in laundry_soup.findAll("li"):
+        if "id" in li.attrs:
+            machine_type = li.attrs["id"]
             continue
 
-        machine_id = int(li.find('a').attrs['id'])
-        machine_status = li.find('p').text
-        machine_name = li.text.split(machine_status)[0].encode('ascii', 'ignore').decode("utf-8")
-        time_left = int(machine_status[:machine_status.find(' ')]) if 'mins left' in machine_status else -1
+        machine_id = int(li.find("a").attrs["id"])
+        machine_status = li.find("p").text
+        machine_name = (
+            li.text.split(machine_status)[0].encode("ascii", "ignore").decode("utf-8")
+        )
+        time_left = (
+            int(machine_status[: machine_status.find(" ")])
+            if "mins left" in machine_status
+            else -1
+        )
 
-        machines.append({
-            'machine_id': machine_id,
-            'machine_status': machine_status,
-            'machine_name': machine_name,
-            'machine_type': machine_type,
-            'time_left': time_left
-        })
+        machines.append(
+            {
+                "machine_id": machine_id,
+                "machine_status": machine_status,
+                "machine_name": machine_name,
+                "machine_type": machine_type,
+                "time_left": time_left,
+            }
+        )
 
     return machines
