@@ -20,31 +20,31 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-import feedparser
-import re
 from typing import List
 from collections import namedtuple
 
-content = re.compile(":&(.)*?<")
-Event = namedtuple("Event", ["timestamp", "timestamp_struct", "content"])
+import requests
 
-ACADEMIC_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-academic-calendar.xml"
-GRADES_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-grades-calendar.xml"
-ENROLLMENT_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-enrollment-calendar.xml"
-COURSE_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-courseclass-calendar.xml"
-GRADUATION_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-graduation-calendar.xml"
+Event = namedtuple("Event", ["date", "title", "content", "meta"])
+
+ACADEMIC_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-academic-calendar.json"
+GRADES_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-grades-calendar.json"
+ENROLLMENT_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-enrollment-calendar.json"
+COURSE_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-courseclass-calendar.json"
+GRADUATION_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-graduation-calendar.json"
 
 
 def _fetch_calendar_events(url: str) -> List[Event]:
     """"""
-    d = feedparser.parse(url)
+    data = requests.get(url).json()
     events = []
-    for entry in d.entries:
-        event_content = content.search(entry.summary).group()[7:-2]
+    for calendar_event in data:
+        assert calendar_event["customFields"][0]["label"] == "Event Title"
         event = Event(
-            timestamp=entry.published,
-            timestamp_struct=entry.published_parsed,
-            content=event_content,
+            title=calendar_event["title"],
+            date=calendar_event["startDateTime"][:10],
+            content=calendar_event["customFields"][0]["value"],
+            meta=calendar_event["categoryCalendar"].split("|"),
         )
         events.append(event)
     return events

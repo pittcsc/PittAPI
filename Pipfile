@@ -15,7 +15,6 @@ nose-cov = "*"
 nose-timer = "*"
 typing = "*"
 virtualenv = "*"
-feedparser = "*"
 black = "==19.10b0"
 
 [dev-packages]
