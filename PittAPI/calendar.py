@@ -1,7 +1,4 @@
 """
-This module is named cal instead of calendar due to naming conflict occurring
-inside of feedparser
-
 The Pitt API, to access workable data of the University of Pittsburgh
 Copyright (C) 2015 Ritwik Gupta
 
