@@ -1,4 +1,4 @@
-'''
+"""
 The Pitt API, to access workable data of the University of Pittsburgh
 Copyright (C) 2015 Ritwik Gupta
 
@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-'''
+"""
 
 import re
 import math
@@ -28,23 +28,25 @@ sess = requests.session()
 
 def _load_n_items(feed: str, max_news_items: int):
     payload = {
-        'feed': feed,
-        'id': '',
-        '_object': 'kgoui_Rcontent_I0_Rcontent_I0',
-        'start': 0
+        "feed": feed,
+        "id": "",
+        "_object": "kgoui_Rcontent_I0_Rcontent_I0",
+        "start": 0,
     }
 
     request_objs = []
     for i in range(int(math.ceil(max_news_items / 10))):
-        payload['start'] = i * 10
-        request_objs.append(grequests.get('https://m.pitt.edu/news/index.json', params=payload))
+        payload["start"] = i * 10
+        request_objs.append(
+            grequests.get("https://m.pitt.edu/news/index.json", params=payload)
+        )
 
     responses = grequests.imap(request_objs)
 
     return responses
 
 
-def get_news(feed: str='main_news', max_news_items: int=10) -> List[Dict[str,Any]]:
+def get_news(feed: str = "main_news", max_news_items: int = 10) -> List[Dict[str, Any]]:
     # feed indicates the desired news feed
     # 'main_news'      - main news
     # 'cssd'           - student announcements, on my pitt
@@ -66,9 +68,8 @@ def get_news(feed: str='main_news', max_news_items: int=10) -> List[Dict[str,Any
             try:
                 title = fields["title"]
                 url = "https://m.pitt.edu" + fields["url"]["formatted"]
-                news.append({'title': title, 'url': url})
+                news.append({"title": title, "url": url})
             except TypeError:
                 continue
 
     return news[:max_news_items]
-

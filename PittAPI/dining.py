@@ -28,9 +28,11 @@ def _get_all_locations():
         payload = {
             "_kgoui_object": "kgoui_Rcontent_I2",
             "feed": "dining_locations",
-            "start": i * 10
+            "start": i * 10,
         }
-        request_objs.append(grequests.get("https://m.pitt.edu/dining/index.json", params=payload))
+        request_objs.append(
+            grequests.get("https://m.pitt.edu/dining/index.json", params=payload)
+        )
     resps = grequests.imap(request_objs)
     return resps
 
@@ -48,8 +50,7 @@ def get_locations_by_status(status: str) -> List[Dict[str, Any]]:
 
     dining_locations = []
     resps = [
-        r.json()["response"]['regions'][0]["contents"]
-        for r in _get_all_locations()
+        r.json()["response"]["regions"][0]["contents"] for r in _get_all_locations()
     ]
 
     for location in resps:
@@ -58,8 +59,8 @@ def get_locations_by_status(status: str) -> List[Dict[str, Any]]:
             fields = content["fields"]
             if fields["type"] == "loadMore":
                 continue
-            if status in ['open', 'closed']:
-                if status != fields['status']:
+            if status in ["open", "closed"]:
+                if status != fields["status"]:
                     continue
 
             if isinstance(fields["title"], dict):

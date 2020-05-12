@@ -1,4 +1,4 @@
-'''
+"""
 The Pitt API, to access workable data of the University of Pittsburgh
 Copyright (C) 2015 Ritwik Gupta
 
@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-'''
+"""
 
 import grequests
 from typing import List, Dict, Iterator, Any
@@ -23,16 +23,17 @@ from typing import List, Dict, Iterator, Any
 PEOPLE_URL = "https://m.pitt.edu/people/search.json"
 DETAIL_URL = "https://m.pitt.edu/people/detail.json"
 FIELD_MAP = {
-    "ldap:cn" : "name",
+    "ldap:cn": "name",
     "ldap:buildingname": "address",
-    "kgoperson:phone" : "phone",
-    "ldap:ou" : "department",
-    "kgoperson:email" : "email",
-    "ldap:url" : "webpage",
-    "ldap:nickname" : "nickname",
+    "kgoperson:phone": "phone",
+    "ldap:ou": "department",
+    "kgoperson:email": "email",
+    "ldap:url": "webpage",
+    "ldap:nickname": "nickname",
 }
 
-def get_person(query: str, max_people: int=10) -> List[Dict[str,Any]]:
+
+def get_person(query: str, max_people: int = 10) -> List[Dict[str, Any]]:
     """ Returns a list of people """
     id_list = [item for l_list in _get_person_id(query, max_people) for item in l_list]
     results = [_get_person_details(id) for id in id_list]
@@ -41,14 +42,19 @@ def get_person(query: str, max_people: int=10) -> List[Dict[str,Any]]:
 
     return persons[:max_people]
 
-def _extract_person(item: Dict[str,Any]) -> Dict[str,Any]:
+
+def _extract_person(item: Dict[str, Any]) -> Dict[str, Any]:
     """ Returns person attributes """
-    kgoui_person = item['response']['regions'][0]['contents'][0]['fields'] \
-                       ['item']['value']['kgoDeflatedData']['attributes']
+    kgoui_person = item["response"]["regions"][0]["contents"][0]["fields"]["item"][
+        "value"
+    ]["kgoDeflatedData"]["attributes"]
 
-    person = {FIELD_MAP[key]:kgoui_person[key].strip() for key in kgoui_person if key in FIELD_MAP}
+    person = {
+        FIELD_MAP[key]: kgoui_person[key].strip()
+        for key in kgoui_person
+        if key in FIELD_MAP
+    }
     return person
-
 
 
 def _get_person_details(id_number: str):
@@ -76,7 +82,7 @@ def _get_person_id(query: str, max_people: int) -> List[Iterator[str]]:
             "_kgoui_page_state": "439a1a9b6fb81b480ade61813e20e049",
             "_region_index_offset": i * 10,
             "feed": "directory",
-            "start": i * 10
+            "start": i * 10,
         }
         request_objs.append(grequests.get(PEOPLE_URL, params=payload))
 
@@ -84,10 +90,11 @@ def _get_person_id(query: str, max_people: int) -> List[Iterator[str]]:
 
     url_list = []
     for response_obj in responses:
-        response = response_obj.json()['response']['contents']
-        local_url_list = (x['fields']['url']['formatted'] for x in response)
-        local_url_list = (dict(param.split("=") for param in x.split("&"))
-                          for x in local_url_list)
-        local_url_list = (x['id'] for x in local_url_list if 'id' in x)
+        response = response_obj.json()["response"]["contents"]
+        local_url_list = (x["fields"]["url"]["formatted"] for x in response)
+        local_url_list = (
+            dict(param.split("=") for param in x.split("&")) for x in local_url_list
+        )
+        local_url_list = (x["id"] for x in local_url_list if "id" in x)
         url_list.append(local_url_list)
     return url_list

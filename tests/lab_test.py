@@ -22,9 +22,9 @@ import responses
 
 from PittAPI import lab
 
-TEST_DATA = ('<span>Alumni Lab is currently closed.  Benedum Lab is currently closed.  Cathedral G27 Lab is currently  '
-             'closed.  Cathedral G62 Lab is currently closed.  David Lawrence Lab is open: 35 Windows, 1 Mac, 2 Linux  '
-             'Hillman Lab is open: 52 Windows, 0 Macs, 2 Linux  Sutherland Lab is currently closed.</span')
+TEST_DATA = ('<span>Alumni Lab is currently closed.  Benedum Lab is currently closed.  Cathedral G27 Lab is currently '
+             'closed.  Cathedral G62 Lab open: 35 Windows, 15 Mac, 2 Linux  David Lawrence Lab is open: 35 Windows, 1 Mac, 2 Linux  '
+             'Hillman Lab is open: 52 Windows, 0 Macs, 2 Linux  Sutherland Lab is currently closed.</span>')
 
 
 class LabTest(unittest.TestCase):
@@ -115,12 +115,3 @@ class LabTest(unittest.TestCase):
         info = lab._extract_machines(data)
         self.assertIsInstance(info, list)
         self.assertEqual(info, [123, 456, 789, 3])
-
-    def test_validate_lab(self):
-        for loc in lab.LOCATIONS:
-            self.assertEquals(lab._validate_lab(loc), loc)
-        for loc in lab.LOCATIONS:
-            self.assertEquals(lab._validate_lab(loc.lower()), loc)
-
-    def test_validate_lab_invalid(self):
-        self.assertRaises(ValueError, lab._validate_lab, 'Hello')
