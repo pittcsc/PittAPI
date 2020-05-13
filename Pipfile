@@ -16,6 +16,7 @@ nose-timer = "*"
 typing = "*"
 virtualenv = "*"
 black = "==19.10b0"
+sphinx = "*"
 
 [dev-packages]
 
