@@ -15,7 +15,7 @@ Returns a `PittSubject` object containing the information of all courses and sec
 
 ###### **Sample Usage**:
 ```python
->>> cs_subject = course.get_term_courses(term='2194', subject='CS')
+>>> cs_subject = course.get_courses(term='2194', subject='CS')
 >>> str(cs_subject)
 'PittSubject(2194, CS)'
 >>> cs_subject  # This string representation comes from performing cs_subject.to_dict()
