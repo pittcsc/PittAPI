@@ -23,7 +23,8 @@ from typing import Any, Dict, List, Union
 
 from bs4 import BeautifulSoup
 
-BASE_URL = "http://m.laundryview.com/submitFunctions.php?monitor=true&lr={}"
+BASE_URL = 'https://www.laundryview.com/api/currentRoomData?school_desc_key=197&location={}'
+
 LOCATION_LOOKUP = {
     "TOWERS": "2430136",
     "BRACKENRIDGE": "2430119",
@@ -36,13 +37,13 @@ LOCATION_LOOKUP = {
 }
 
 
-def _get_laundry_soup(building_name: str) -> Any:
+def _get_laundry_info(building_name: str) -> Any:
     """Returns BeautifulSoup object of laundry view webpage"""
     building_name = building_name.upper()
     url = BASE_URL.format(LOCATION_LOOKUP[building_name])
     response = requests.get(url)
-    laundry_soup = BeautifulSoup(response.text, "lxml")
-    return laundry_soup
+    info = response.json()
+    return info
 
 
 def get_status_simple(building_name: str) -> Dict[str, str]:
@@ -59,10 +60,10 @@ def get_status_simple(building_name: str) -> Dict[str, str]:
         -> SUTH_EAST
         -> SUTH_WEST
     """
-    laundry_soup = _get_laundry_soup(building_name)
-    re_format = re.compile(r"^([0-9]+) of ([0-9]+) available$")
-    washer_text = laundry_soup.find("span", {"id": "washer_available"}).text
-    dryer_text = laundry_soup.find("span", {"id": "dryer_available"}).text
+    laundry_soup = _get_laundry_info(building_name)
+    re_format = re.compile(r'^([0-9]+) of ([0-9]+) available$')
+    washer_text = laundry_soup.find('span', {'id': 'washer_available'}).text
+    dryer_text = laundry_soup.find('span', {'id': 'dryer_available'}).text
     washer_match = re_format.match(washer_text)
     dryer_match = re_format.match(dryer_text)
 
@@ -90,7 +91,7 @@ def get_status_detailed(building_name: str) -> List[Dict[str, Union[str, int]]]:
     """
     machines = []
     machine_type = "Unknown"
-    laundry_soup = _get_laundry_soup(building_name)
+    laundry_soup = _get_laundry_info(building_name)
 
     for li in laundry_soup.findAll("li"):
         if "id" in li.attrs:
