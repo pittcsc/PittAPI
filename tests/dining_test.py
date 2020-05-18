@@ -23,7 +23,7 @@ import responses
 
 from pathlib import Path
 
-from PittAPI import dining
+from pittapi import dining
 
 SAMPLE_PATH = Path() / 'tests' / 'samples'
 

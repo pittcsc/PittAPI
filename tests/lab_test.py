@@ -20,7 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import unittest
 import responses
 
-from PittAPI import lab
+from pittapi import lab
 
 TEST_DATA = ('<span>Alumni Lab is currently closed.  Benedum Lab is currently closed.  Cathedral G27 Lab is currently '
              'closed.  Cathedral G62 Lab open: 35 Windows, 15 Mac, 2 Linux  David Lawrence Lab is open: 35 Windows, 1 Mac, 2 Linux  '

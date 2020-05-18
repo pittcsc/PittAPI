@@ -20,7 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import unittest
 import responses
 
-from PittAPI import shuttle
+from pittapi import shuttle
 
 
 class ShuttleTest(unittest.TestCase):

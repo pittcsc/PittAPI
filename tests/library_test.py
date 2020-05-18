@@ -19,7 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import unittest
 
-from PittAPI import library
+from pittapi import library
 
 @unittest.skip
 class LibraryTest(unittest.TestCase):

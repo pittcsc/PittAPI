@@ -22,7 +22,7 @@ import responses
 
 from pathlib import Path
 
-from PittAPI import laundry
+from pittapi import laundry
 
 SAMPLE_PATH = Path() / 'tests' / 'samples'
 TEST_BUILDING = list(laundry.LOCATION_LOOKUP.keys())[0]

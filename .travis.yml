@@ -11,7 +11,7 @@ install:
   - "coverage --version"
 # command to run tests
 script:
-  - pipenv run python -m "nose" --with-coverage --cover-inclusive --cover-package=PittAPI --with-timer tests/*
+  - pipenv run python -m "nose" --with-coverage --cover-inclusive --cover-package=pittapi --with-timer tests/*
 notifications:
     email: false
 os:

@@ -23,7 +23,7 @@ import responses
 
 from pathlib import Path
 
-from PittAPI import status
+from pittapi import status
 
 SAMPLE_PATH = Path() / 'tests' / 'samples'
 

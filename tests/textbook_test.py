@@ -23,7 +23,7 @@ import unittest
 
 from pathlib import Path
 
-from PittAPI import textbook
+from pittapi import textbook
 
 TERM = '1000'
 SAMPLE_PATH = Path() / 'tests' / 'samples'

@@ -19,7 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import unittest
 
-from PittAPI import people
+from pittapi import people
 
 @unittest.skip
 class PeopleTest(unittest.TestCase):
