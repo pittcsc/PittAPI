@@ -17,6 +17,8 @@ typing = "*"
 virtualenv = "*"
 black = "==19.10b0"
 sphinx = "*"
+requests-html = "*"
+parse = "*"
 
 [dev-packages]
 

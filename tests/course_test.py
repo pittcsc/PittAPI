@@ -111,7 +111,7 @@ class CourseTest(unittest.TestCase):
     def test_get_term_courses(self):
         with patch('requests.Session') as mock:
             mock.return_value = MockSession(self.cs_subject_data)
-            cs_subject = course.get_term_courses('2194', 'CS')
+            cs_subject = course.get_courses('2194', 'CS')
             self.assertTrue('0004' in cs_subject.courses)
             self.assertTrue(cs_subject['0004'].number in cs_subject.courses)
 
@@ -127,7 +127,7 @@ class CourseTest(unittest.TestCase):
     def test_get_term_courses_parent(self):
         with patch('requests.Session') as mock:
             mock.return_value = MockSession(self.cs_subject_data)
-            cs_subject = course.get_term_courses('2194', 'CS')
+            cs_subject = course.get_courses('2194', 'CS')
             self.assertEqual(cs_subject['0004'].term, '2194')
             self.assertEqual(cs_subject['0004'].subject, 'CS')
             self.assertEqual(cs_subject['0004'][0].term, '2194')
