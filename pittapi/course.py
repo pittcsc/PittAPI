@@ -57,8 +57,9 @@ COMBINED_SECTION_PATTERN = compile(
 )
 CREDIT_UNITS_PATTERN = compile("{:d} units")
 SECTION_INFORMATION_PATTERN = compile(
-    'Section: {section_number}-{section_type} ({class_number})\nSession: {session}\nDays/Times: {}\nRoom: {room}\nInstructor: {instructor}\nMeeting Dates: {start_date:ta} - {end_date:ta}\nStatus: {status}')
-COURSE_INFORMATION_PATTERN = compile('{subject_code} {course_number} - {course_title}')
+    "Section: {section_number}-{section_type} ({class_number})\nSession: {session}\nDays/Times: {dt}\nRoom: {room}\nInstructor: {instructor}\nMeeting Dates: {meeting_dates}\nStatus: {status:w}{}"
+)
+COURSE_INFORMATION_PATTERN = compile("{subject_code} {course_number} - {course_title}")
 
 SECTION_DETAIL_INT_FIELD = {
     "seats_taken",
@@ -119,11 +120,10 @@ class Section(NamedTuple):
     section_number: str
     class_number: str
     section_type: str
-    start_date: datetime
-    end_date: datetime
     instructor: str
     room: str
     status: str
+    meetings_dates: Optional[List[Tuple[datetime, datetime]]] = None
     days: Optional[List[str]] = None
     times: Optional[List[str]] = None
 
@@ -137,15 +137,15 @@ class Course(NamedTuple):
 
 class Subject(NamedTuple):
     subject_code: str
-    term: str
     courses: Dict[str, Course]
+    term: Optional[str] = None
 
 
 def _get_subject_json() -> Generator[Dict, None, None]:
     text = requests.get(CLASS_SEARCH_URL).text
     s = re.search(r"(?=subjects\s*:\s).*,", text)
     text = s.group()[:-1]
-    text = text[text.find(":") + 1:]
+    text = text[text.find(":") + 1 :]
     data = json.loads(text)
 
     for code in data:
@@ -178,27 +178,35 @@ def get_detailed_subject_codes() -> List[SubjectCode]:
 def _parse_class_search_page(resp: HTMLResponse, term: str) -> Dict:
     if resp.html.search("No classes found matching your criteria"):
         raise ValueError("Criteria didn't find any classes")
+    if resp.html.search(
+        "The search took too long to respond, please try selecting additional search criteria."
+    ):
+        raise ValueError("Search response took too long.")
     if resp.status_code != 200:
         raise ValueError()
 
     courses = {}
-    elements = resp.html.find('div')
+    elements = resp.html.find("div")
 
     course: Optional[Course] = None
     for element in elements:
-        if 'secondary-head' in element.attrs['class']:
+        print(element.text)
+        if "secondary-head" in element.attrs["class"]:
             content = COURSE_INFORMATION_PATTERN.parse(element.text).named
             course = Course(**content, sections=list())
-            courses[content['course_number']] = course
-        elif 'section-content' in element.attrs['class']:
+            courses[content["course_number"]] = course
+        elif "section-content" in element.attrs["class"]:
             content = SECTION_INFORMATION_PATTERN.parse(element.text).named
+            del content["dt"]
+            del content["meeting_dates"]
             section = Section(**content, term=term)
+            print(section)
             course.sections.append(section)
     return courses
 
 
 def get_extra_section_details(
-        *, section: Section = None, term=None, class_number=None
+    *, section: Section = None, term=None, class_number=None
 ) -> SectionDetails:
     if section is None and (term is None or class_number is None):
         raise ValueError()
@@ -275,7 +283,9 @@ def _validate_course(course: str) -> str:
     return course
 
 
-def _get_payload(term, *, subject="", course="", section="") -> Tuple[HTMLSession, Dict[str, str]]:
+def _get_payload(
+    term, *, subject="", course="", section=""
+) -> Tuple[HTMLSession, Dict[str, str]]:
     """Make payload for request and generates CSRFToken for the request"""
 
     # Generate new CSRFToken
@@ -323,3 +333,8 @@ def get_section_details(term: str, section_number: str) -> Course:
     response = session.post(CLASS_SEARCH_API_URL, data=payload)
     course, *_ = _parse_class_search_page(response, term).values()
     return course
+
+
+from pprint import pprint
+
+pprint(get_courses("2191", "CS"))
