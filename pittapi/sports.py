@@ -40,20 +40,6 @@ class NextFootballGame(NamedTuple):
     court: str
 
 
-# men's basketball methods
-
-# get_next_mens_basketball_game() is a method that gets a dictionary on info on the next game.
-#   - in the off-season, this will return info on the latest game played.
-#   input_parameter specifies which type of information to get depending on what is entered.
-#   - full_name is something like "Pittsburgh Panthers vs.  Penn State Nittany Lions"
-#   - short_name is something like "PITT vs. PSU"
-#   - season_name is something like "Regular Season", "Playoffs", "Pre-season", etc.
-#   - week is something like "Week 19"
-#   - court is the location of the game being played.
-
-# get_basketball_standings simply returns a string resembling something like "14th in ACC"
-
-
 def get_mens_basketball_record() -> str:
     """returns the current record of the men's basketball team"""
     basketball_response = requests.get(BASKETBALL_URL)
@@ -85,6 +71,7 @@ def get_next_mens_basketball_game() -> NextBasketballGame:
 
 
 def get_mens_basketball_standings():
+    """returns a string describing the placement of the men's basketball team. eg: '14th in ACC' """
     basketball_response = requests.get(BASKETBALL_URL)
     basketball_data = basketball_response.json()
 
@@ -92,26 +79,8 @@ def get_mens_basketball_standings():
     return return_value
 
 
-# end basketball methods
-
-
-# football methods
-# get_football_record() is a method designed to get the current record of the Men's basketball team.
-#   - During the off-season this data should return "There's no record right now" TODO: ADD THIS EXCEPTION CATCH
-
-# get_next_football_game() is a method that gets a dictionary on info on the next game.
-#   - in the off-season, this will return info on the latest game played.
-# input_parameter specifies which type of information to get depending on what is entered.
-#   - full_name is something like "Pittsburgh Panthers vs.  Penn State Nittany Lions"
-#   - short_name is something like "PITT vs. PSU"
-#   - season_name is something like "Regular Season", "Playoffs", "Pre-season", etc.
-#   - week is something like "Week 19"
-#   - field is the location of the game being played.
-
-# get_basketball_standings simply returns a string resembling something like "14th in ACC"
-
-
 def get_football_record() -> str:
+    """returns the current record of the men's football team"""
     football_response = requests.get(FOOTBALL_URL)
     football_data = football_response.json()
 
@@ -125,8 +94,7 @@ def get_football_record() -> str:
 
 
 def get_next_football_game() -> NextFootballGame:
-    # return dictionary of data for the next football game
-
+    """returns a dict containing details of the next scheduled football game."""
     football_response = requests.get(FOOTBALL_URL)
     football_data = football_response.json()
 
@@ -142,6 +110,7 @@ def get_next_football_game() -> NextFootballGame:
 
 
 def get_football_standings() -> str:
+    """returns a string describing the placement of the football team. eg: '14th in ACC' """
     football_response = requests.get(FOOTBALL_URL)
     football_data = football_response.json()
 
