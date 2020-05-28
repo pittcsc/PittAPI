@@ -18,13 +18,29 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 """
 
 import json
+from typing import Dict, NamedTuple
 import requests
+
+FOOTBALL_URL = 'http://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/pitt'
+BASKETBALL_URL = 'http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/pittsburgh'
+
+class NextBasketballGame(NamedTuple):
+    name: str
+    short_name: str
+    season_name: str
+    week: int
+    court: str
+
+
+class NextFootballGame(NamedTuple):
+    name: str
+    short_name: str
+    season_name: str
+    week: int
+    court: str
 
 
 # men's basketball methods
-
-# get_mens_basketball_record() is a method designed to get the current record of the Men's basketball team via string.
-#   - During the off-season this data should return "There's no record right now".
 
 # get_next_mens_basketball_game() is a method that gets a dictionary on info on the next game.
 #   - in the off-season, this will return info on the latest game played.
@@ -38,10 +54,10 @@ import requests
 # get_basketball_standings simply returns a string resembling something like "14th in ACC"
 
 
-def get_mens_basketball_record():
-    basketball_url = "http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/pittsburgh"
-    basketball_response = requests.get(basketball_url)
-    basketball_data = json.loads(basketball_response.text)
+def get_mens_basketball_record() -> str:
+    """returns the current record of the men's basketball team"""
+    basketball_response = requests.get(BASKETBALL_URL)
+    basketball_data = basketball_response.json()
 
     try:
         record_summary = basketball_data["team"]["record"]["items"][0]["summary"]
@@ -52,28 +68,25 @@ def get_mens_basketball_record():
     return record_summary
 
 
-def get_next_mens_basketball_game():
-    basketball_url = "http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/pittsburgh"
-    basketball_response = requests.get(basketball_url)
-    basketball_data = json.loads(basketball_response.text)
+def get_next_mens_basketball_game() -> NextBasketballGame:
+    """returns a dict containing details of the next scheduled men's basketball game."""
+    basketball_response = requests.get(BASKETBALL_URL)
+    basketball_data = basketball_response.json()
 
-    return_value = {
-        "full_name": basketball_data["team"]["nextEvent"][0]["name"],
-        "short_name": basketball_data["team"]["nextEvent"][0]["shortName"],
-        "season_name": basketball_data["team"]["nextEvent"][0]["seasonType"]["name"],
-        "week": basketball_data["team"]["nextEvent"][0]["week"]["text"],
-        "court": basketball_data["team"]["nextEvent"][0]["competitions"][0]["venue"][
-            "fullName"
-        ],
-    }
+    next_game = NextBasketballGame(
+        name=basketball_data["team"]["nextEvent"][0]["name"],
+        short_name=basketball_data["team"]["nextEvent"][0]["shortName"],
+        season_name=basketball_data["team"]["nextEvent"][0]["seasonType"]["name"],
+        week=basketball_data["team"]["nextEvent"][0]["week"]["text"],
+        court=basketball_data["team"]["nextEvent"][0]["competitions"][0]["venue"]["fullName"],
+    )
 
-    return return_value
+    return next_game
 
 
 def get_mens_basketball_standings():
-    basketball_url = "http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/pittsburgh"
-    basketball_response = requests.get(basketball_url)
-    basketball_data = json.loads(basketball_response.text)
+    basketball_response = requests.get(BASKETBALL_URL)
+    basketball_data = basketball_response.json()
 
     return_value = basketball_data["team"]["standingSummary"]
     return return_value
@@ -99,38 +112,38 @@ def get_mens_basketball_standings():
 
 
 def get_football_record() -> str:
-    football_url = "http://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/pitt"
-    football_response = requests.get(football_url)
-    football_data = json.loads(football_response.text)
+    football_response = requests.get(FOOTBALL_URL)
+    football_data = football_response.json()
 
-    record_summary = football_data["team"]["record"]["items"][0]["summary"]
+    try: 
+        record_summary = football_data["team"]["record"]["items"][0]["summary"]
+
+    except KeyError:
+        record_summary = "There's no record right now."
+
     return record_summary
 
 
-def get_next_football_game():
+def get_next_football_game() -> NextFootballGame:
     # return dictionary of data for the next football game
 
-    football_url = "http://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/pitt"
-    football_response = requests.get(football_url)
-    football_data = json.loads(football_response.text)
+    football_response = requests.get(FOOTBALL_URL)
+    football_data = football_response.json()
 
-    return_value = {
-        "full_name": football_data["team"]["nextEvent"][0]["name"],
-        "short_name": football_data["team"]["nextEvent"][0]["shortName"],
-        "season_name": football_data["team"]["nextEvent"][0]["seasonType"]["name"],
-        "week": football_data["team"]["nextEvent"][0]["week"]["text"],
-        "field": football_data["team"]["nextEvent"][0]["competitions"][0]["venue"][
-            "fullName"
-        ],
-    }
+    next_game = NextFootballGame(
+        name=football_data["team"]["nextEvent"][0]["name"],
+        short_name=football_data["team"]["nextEvent"][0]["shortName"],
+        season_name=football_data["team"]["nextEvent"][0]["seasonType"]["name"],
+        week=football_data["team"]["nextEvent"][0]["week"]["text"],
+        field=football_data["team"]["nextEvent"][0]["competitions"][0]["venue"]["fullName"],
+    )
 
-    return return_value
+    return next_game
 
 
 def get_football_standings() -> str:
-    football_url = "http://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/pitt"
-    football_response = requests.get(football_url)
-    football_data = json.loads(football_response.text)
+    football_response = requests.get(FOOTBALL_URL)
+    football_data = football_response.json()
 
     return_value = football_data["team"]["standingSummary"]
     return return_value
