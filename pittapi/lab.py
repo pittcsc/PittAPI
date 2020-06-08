@@ -52,9 +52,9 @@ def get_status() -> List[Lab]:
     for lab_data in _fetch_labs():
         if "open" in lab_data:
             content = LAB_OPEN_PATTERN.parse(lab_data)
-            computing_lab = Lab(**content)
+            computing_lab = Lab(**content.named)
         else:
             content = LAB_CLOSED_PATTERN.parse(lab_data)
-            computing_lab = Lab(**content, windows=0, mac=0, linux=0)
+            computing_lab = Lab(**content.named, windows=0, mac=0, linux=0)
         labs.append(computing_lab)
     return labs
