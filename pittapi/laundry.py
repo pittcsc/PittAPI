@@ -23,7 +23,9 @@ from typing import Any, Dict, List, Union
 
 from bs4 import BeautifulSoup
 
-BASE_URL = 'https://www.laundryview.com/api/currentRoomData?school_desc_key=197&location={}'
+BASE_URL = (
+    "https://www.laundryview.com/api/currentRoomData?school_desc_key=197&location={}"
+)
 
 LOCATION_LOOKUP = {
     "TOWERS": "2430136",
@@ -61,9 +63,9 @@ def get_status_simple(building_name: str) -> Dict[str, str]:
         -> SUTH_WEST
     """
     laundry_soup = _get_laundry_info(building_name)
-    re_format = re.compile(r'^([0-9]+) of ([0-9]+) available$')
-    washer_text = laundry_soup.find('span', {'id': 'washer_available'}).text
-    dryer_text = laundry_soup.find('span', {'id': 'dryer_available'}).text
+    re_format = re.compile(r"^([0-9]+) of ([0-9]+) available$")
+    washer_text = laundry_soup.find("span", {"id": "washer_available"}).text
+    dryer_text = laundry_soup.find("span", {"id": "dryer_available"}).text
     washer_match = re_format.match(washer_text)
     dryer_match = re_format.match(dryer_text)
 

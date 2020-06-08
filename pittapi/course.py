@@ -333,8 +333,3 @@ def get_section_details(term: str, section_number: str) -> Course:
     response = session.post(CLASS_SEARCH_API_URL, data=payload)
     course, *_ = _parse_class_search_page(response, term).values()
     return course
-
-
-from pprint import pprint
-
-pprint(get_courses("2191", "CS"))

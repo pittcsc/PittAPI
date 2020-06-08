@@ -17,12 +17,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from typing import List
-from collections import namedtuple
+from typing import List, NamedTuple
 
 import requests
 
-Event = namedtuple("Event", ["date", "title", "content", "meta"])
+
+class Event(NamedTuple):
+    date: str
+    title: str
+    content: str
+    meta: str
+
 
 ACADEMIC_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-academic-calendar.json"
 GRADES_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-grades-calendar.json"

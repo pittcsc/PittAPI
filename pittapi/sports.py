@@ -21,8 +21,11 @@ import json
 from typing import Dict, NamedTuple
 import requests
 
-FOOTBALL_URL = 'http://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/pitt'
-BASKETBALL_URL = 'http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/pittsburgh'
+FOOTBALL_URL = (
+    "http://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/pitt"
+)
+BASKETBALL_URL = "http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/pittsburgh"
+
 
 class NextBasketballGame(NamedTuple):
     name: str
@@ -64,7 +67,9 @@ def get_next_mens_basketball_game() -> NextBasketballGame:
         short_name=basketball_data["team"]["nextEvent"][0]["shortName"],
         season_name=basketball_data["team"]["nextEvent"][0]["seasonType"]["name"],
         week=basketball_data["team"]["nextEvent"][0]["week"]["text"],
-        court=basketball_data["team"]["nextEvent"][0]["competitions"][0]["venue"]["fullName"],
+        court=basketball_data["team"]["nextEvent"][0]["competitions"][0]["venue"][
+            "fullName"
+        ],
     )
 
     return next_game
@@ -84,7 +89,7 @@ def get_football_record() -> str:
     football_response = requests.get(FOOTBALL_URL)
     football_data = football_response.json()
 
-    try: 
+    try:
         record_summary = football_data["team"]["record"]["items"][0]["summary"]
 
     except KeyError:
@@ -103,7 +108,9 @@ def get_next_football_game() -> NextFootballGame:
         short_name=football_data["team"]["nextEvent"][0]["shortName"],
         season_name=football_data["team"]["nextEvent"][0]["seasonType"]["name"],
         week=football_data["team"]["nextEvent"][0]["week"]["text"],
-        field=football_data["team"]["nextEvent"][0]["competitions"][0]["venue"]["fullName"],
+        field=football_data["team"]["nextEvent"][0]["competitions"][0]["venue"][
+            "fullName"
+        ],
     )
 
     return next_game
