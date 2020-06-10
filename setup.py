@@ -78,9 +78,10 @@ setup(
     install_requires=[
         'BeautifulSoup4',
         'Requests',
+        'requests_html',
         'grequests',
         'lxml',
-        'virtualenv'
+        'parse',
     ],
 
     # List additional groups of dependencies here (e.g. development
