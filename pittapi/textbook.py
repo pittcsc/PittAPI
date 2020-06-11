@@ -1,7 +1,6 @@
 import grequests
 import requests
 
-from bs4 import BeautifulSoup
 from typing import List, Dict, Any, Callable, Generator, Tuple
 
 BASE_URL = "http://pitt.verbacompare.com/"

@@ -17,8 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-import json
-from typing import Dict, NamedTuple
+from typing import NamedTuple
 import requests
 
 FOOTBALL_URL = (
