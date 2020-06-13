@@ -20,37 +20,54 @@ from requests_html import HTMLSession
 from typing import List, Dict
 from parse import compile
 
-EMAIL_PATTERN = compile("Email{}")
-
 PEOPLE_SEARCH_URL = "https://find.pitt.edu/Search"
+
+LABEL_CONVERSION = {
+    "Email": "email",
+    "Nickname": "nickname",
+    "Student Campus": "campus",
+    "Student Plan(s)": "academic_plan",
+    "Web Page": "website",
+    "Employee Information": "employment_info",
+    "Office Phone": "office_phone",
+    "Office Mailing Address": "office_mailing_address",
+    "Office Location Address": "office_location_address",
+    "UPMC Department": "upmc_department",
+    "UPMC Position": "upmc_position",
+    "UPMC Email": "upmc_email",
+}
+
+
+def _parse_segments(person: dict, segments: List[str]) -> None:
+    label = None
+    for segment in segments:
+        if "class" in segment.attrs and "row-label" in segment.attrs["class"]:
+            if segment.text in LABEL_CONVERSION:
+                label = LABEL_CONVERSION[segment.text]
+            elif segment.text == "":
+                continue
+            else:
+                label = None
+        elif label:
+            if label in person:
+                if not isinstance(person[label], list):
+                    person[label] = [person[label]]
+                person[label].append(segment.text)
+            else:
+                person[label] = segment.text
 
 
 def get_person(query: str) -> List[Dict[str, str]]:
-    payload = {
-        "search": query
-    }
+    payload = {"search": query}
     session = HTMLSession()
     resp = session.post(PEOPLE_SEARCH_URL, data=payload)
     if resp.text.startswith("Too many people matched your criteria."):
         pass  # Return an exception
-    elements = resp.html.xpath('/html/div/section')
+    elements = resp.html.xpath("/html/div/section")
     result = []
     for entry in elements:
-        segments = entry.text.split('\n')
-        person = {}
-        if len(segments) <= 2:  # Only contains name
-            name, _ = segments
-            person['name'] = name
-            person['type'] = "unknown"
-        elif segments[2] == "Show More":  # Student
-            name, email, _, *other = segments
-            email = EMAIL_PATTERN.parse(email).fixed[0]
-            person["name"] = name
-            person["email"] = email
-            person["type"] = "student"
-        else:  # Employee
-            name, *_ = segments
-            person['name'] = name
-            person['type'] = "employee"
+        name, *segments = entry.find("span")
+        person = {"name": name.text}
+        _parse_segments(person, segments)
         result.append(person)
     return result
