@@ -58,7 +58,7 @@ DEFAULT_RESPONSE_FIELDS = [
   "teacher_first_name",
   "teacher_last_name",
   "total_ratings",
-  "average_rating_score",
+  "average_rating",
   "average_difficulty_rating"
 ]
 PITT_SCHOOL_ID = 1247
