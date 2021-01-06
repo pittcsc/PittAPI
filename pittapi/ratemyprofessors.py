@@ -28,7 +28,7 @@ FIELD_TO_NAME_MAPPING = {
   "averagehotscore_rf": "average_hot_score",
   "schoolstate_s": "school_state",
   "rated_date_dt": "rated_date",
-  "teacherfullname_s": "teacher_full_name",
+  "teacherfullname_s": "professor_full_name",
   "total_number_of_ratings_i": "total_ratings",
   "averagedifficultyrating_rf": "average_difficulty_rating",
   "averageclarityscore_rf": "average_clarity_score",
@@ -42,12 +42,12 @@ FIELD_TO_NAME_MAPPING = {
   "timestamp": "timestamp",
   "averageschoolrating_rf": "average_school_rating",
   "schoolname_s": "school_name",
-  "teachermiddlename_t": "teacher_middle_name",
-  "teacherdepartment_s": "teacher_department",
+  "teachermiddlename_t": "professor_middle_name",
+  "teacherdepartment_s": "professor_department",
   "averageeasyscore_rf": "average_easy_score",
   "schoolid_s": "school_id",
-  "teacherfirstname_t": "teacher_first_name",
-  "teacherlastname_t": "teacher_last_name",
+  "teacherfirstname_t": "professor_first_name",
+  "teacherlastname_t": "professor_last_name",
 }
 
 NAME_TO_FIELD_MAPPING = dict([reversed(x) for x in FIELD_TO_NAME_MAPPING.items()])
@@ -55,8 +55,8 @@ NAME_TO_FIELD_MAPPING = dict([reversed(x) for x in FIELD_TO_NAME_MAPPING.items()
 DEFUALT_NUM_RESULTS = 20
 DEFAULT_RESPONSE_FIELDS = [
   "professor_id",
-  "teacher_first_name",
-  "teacher_last_name",
+  "professor_first_name",
+  "professor_last_name",
   "total_ratings",
   "average_rating",
   "average_difficulty_rating"
@@ -71,7 +71,23 @@ def rename_result_fields(result: Dict[str, Any]) -> Dict[str, Any]:
   for result_field in result:
     if result_field in FIELD_TO_NAME_MAPPING:
       renamed_result[FIELD_TO_NAME_MAPPING[result_field]] = result[result_field]
+    else:
+      raise ValueError(("Attempted to rename internal name '{}' but no mapping exists. This likely"
+        + " means that the structure of RMP data has changed.").format(result_field))
 
+  return renamed_result
+
+def rename_response_fields(response_fields: List[str]) -> List[str]:
+  """Rename the requested fields to the internal RMP naming."""
+  renamed_result = []
+  for response_field in response_fields:
+    if response_field in NAME_TO_FIELD_MAPPING:
+      renamed_result.append(NAME_TO_FIELD_MAPPING[response_field])
+    else:
+      raise ValueError(("Attempted to rename response field '{}' to internal RMP naming but no"
+        + " mapping exists. This likely means that you have"
+        + " inputted an invalid response field name.").format(response_field))
+  
   return renamed_result
 
 def get_rmp_by_query(
@@ -108,7 +124,7 @@ def get_rmp_by_name(
       "qf": "teacherfirstname_t^2000 teacherlastname_t^2000 teacherfullname_t^2000 autosuggest", # https://lucene.apache.org/solr/guide/6_6/the-dismax-query-parser.html#TheDisMaxQueryParser-Theqf_QueryFields_Parameter
       "bf": "pow(total_number_of_ratings_i,2.1)", # https://lucene.apache.org/solr/guide/6_6/the-dismax-query-parser.html#TheDisMaxQueryParser-Thebf_BoostFunctions_Parameter
       "sort": "total_number_of_ratings_i desc", # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-ThesortParameter
-      "fl": " ".join([NAME_TO_FIELD_MAPPING[x] for x in response_fields]), # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-Thefl_FieldList_Parameter
+      "fl": " ".join(rename_response_fields(response_fields)), # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-Thefl_FieldList_Parameter
       "rows": num_results,
     }
   )
@@ -136,7 +152,7 @@ def get_rmp_by_name_fuzzy(
       "qf": "teacherfirstname_t^2000 teacherlastname_t^2000 teacherfullname_t^2000 autosuggest", # https://lucene.apache.org/solr/guide/6_6/the-dismax-query-parser.html#TheDisMaxQueryParser-Theqf_QueryFields_Parameter
       "bf": "pow(total_number_of_ratings_i,2.1)", # https://lucene.apache.org/solr/guide/6_6/the-dismax-query-parser.html#TheDisMaxQueryParser-Thebf_BoostFunctions_Parameter
       "sort": "total_number_of_ratings_i desc", # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-ThesortParameter
-      "fl": " ".join([NAME_TO_FIELD_MAPPING[x] for x in response_fields]), # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-Thefl_FieldList_Parameter
+      "fl": " ".join(rename_response_fields(response_fields)), # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-Thefl_FieldList_Parameter
       "rows": num_results,
     }
   )
@@ -150,7 +166,7 @@ def get_rmp_by_id(
   query_results = get_rmp_by_query(
     query="pk_id:{prof_id}".format(prof_id=prof_id),
     additional_request_params={
-      "fl": " ".join([NAME_TO_FIELD_MAPPING[x] for x in response_fields]), # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-Thefl_FieldList_Parameter,
+      "fl": " ".join(rename_response_fields(response_fields)), # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-Thefl_FieldList_Parameter,
     }
   )
 
