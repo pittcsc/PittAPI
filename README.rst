@@ -68,7 +68,7 @@ Usage examples
     medium_dict = ratemyprofessors.get_rmp_by_name(prof_name="Joe Smith")
     # Will return a single dictionary (or None if no match) containing the
     # requested fields of the professor with a matching ID
-    small_dict = ratemyprofessors.get_rmp_by_id(prof_id='9338')
+    small_dict = ratemyprofessors.get_rmp_by_id(prof_id="9338")
 
 Tests
 -----
