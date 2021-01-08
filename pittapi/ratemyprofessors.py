@@ -64,7 +64,7 @@ PITT_SCHOOL_ID = 1247
 
 RMP_SEARCH_URL = "https://solr-aws-elb-production.ratemyprofessors.com//solr/rmp/select/"
 
-def rename_result_fields(result: Dict[str, Any]) -> Dict[str, Any]:
+def _rename_result_fields(result: Dict[str, Any]) -> Dict[str, Any]:
   """Rename the fields of a result from the internal RMP naming to more readable naming."""
   renamed_result = {}
   for result_field in result:
@@ -76,7 +76,7 @@ def rename_result_fields(result: Dict[str, Any]) -> Dict[str, Any]:
 
   return renamed_result
 
-def rename_response_fields(response_fields: List[str]) -> List[str]:
+def _rename_response_fields(response_fields: List[str]) -> List[str]:
   """Rename the requested fields to the internal RMP naming."""
   renamed_result = []
   for response_field in response_fields:
@@ -100,7 +100,7 @@ def get_rmp_by_query(
 
   results = requests.get(RMP_SEARCH_URL, params=request_params).json()['response']['docs']
   for x in range(len(results)):
-    results[x] = rename_result_fields(results[x])
+    results[x] = _rename_result_fields(results[x])
   
   return results
 
@@ -123,7 +123,7 @@ def get_rmp_by_name(
       "qf": "teacherfirstname_t^2000 teacherlastname_t^2000 teacherfullname_t^2000 autosuggest", # https://lucene.apache.org/solr/guide/6_6/the-dismax-query-parser.html#TheDisMaxQueryParser-Theqf_QueryFields_Parameter
       "bf": "pow(total_number_of_ratings_i,2.1)", # https://lucene.apache.org/solr/guide/6_6/the-dismax-query-parser.html#TheDisMaxQueryParser-Thebf_BoostFunctions_Parameter
       "sort": "total_number_of_ratings_i desc", # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-ThesortParameter
-      "fl": " ".join(rename_response_fields(response_fields)), # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-Thefl_FieldList_Parameter
+      "fl": " ".join(_rename_response_fields(response_fields)), # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-Thefl_FieldList_Parameter
       "rows": num_results,
     }
   )
@@ -151,7 +151,7 @@ def get_rmp_by_name_fuzzy(
       "qf": "teacherfirstname_t^2000 teacherlastname_t^2000 teacherfullname_t^2000 autosuggest", # https://lucene.apache.org/solr/guide/6_6/the-dismax-query-parser.html#TheDisMaxQueryParser-Theqf_QueryFields_Parameter
       "bf": "pow(total_number_of_ratings_i,2.1)", # https://lucene.apache.org/solr/guide/6_6/the-dismax-query-parser.html#TheDisMaxQueryParser-Thebf_BoostFunctions_Parameter
       "sort": "total_number_of_ratings_i desc", # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-ThesortParameter
-      "fl": " ".join(rename_response_fields(response_fields)), # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-Thefl_FieldList_Parameter
+      "fl": " ".join(_rename_response_fields(response_fields)), # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-Thefl_FieldList_Parameter
       "rows": num_results,
     }
   )
@@ -165,7 +165,7 @@ def get_rmp_by_id(
   query_results = get_rmp_by_query(
     query="pk_id:{prof_id}".format(prof_id=prof_id),
     additional_request_params={
-      "fl": " ".join(rename_response_fields(response_fields)), # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-Thefl_FieldList_Parameter,
+      "fl": " ".join(_rename_response_fields(response_fields)), # https://lucene.apache.org/solr/guide/6_6/common-query-parameters.html#CommonQueryParameters-Thefl_FieldList_Parameter,
     }
   )
 
