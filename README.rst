@@ -11,7 +11,7 @@ Usage examples
 
 .. code:: python
 
-    from PittAPI import course, dining, lab, laundry, library, news, people, shuttle, textbook
+    from PittAPI import course, dining, lab, laundry, library, news, people, shuttle, textbook, ratemyprofessors
 
     ### Courses
     # Will return a list of dictionaries containing courses in subject
@@ -61,6 +61,14 @@ Usage examples
     # with its name, its open/closed status, and open times (if it exists)
     one = dining.get_location_by_name("taco_bell-schenley_cafe")
     two = dining.get_location_by_name("cup_&_chaucer-hillman")
+    
+    ### Rate My Professors
+    # Will return a list of dictionaries containing the requested fields for
+    # the professors that matched the query
+    medium_dict = ratemyprofessors.get_rmp_by_name(prof_name="Joe Smith")
+    # Will return a single dictionary (or None if no match) containing the
+    # requested fields of the professor with a matching ID
+    small_dict = ratemyprofessors.get_rmp_by_id(prof_id="9338")
 
 Tests
 -----
