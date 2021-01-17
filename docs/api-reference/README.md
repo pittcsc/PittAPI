@@ -9,4 +9,4 @@
 - [News API](NEWS-API.md)
 - [Textbook API](TEXTBOOK-API.md)
 - [Sports API](SPORTS.md)
-- [Rate My Professors API](RATEMYPROFESSORS-API.md)
+
