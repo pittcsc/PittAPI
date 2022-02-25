@@ -194,7 +194,7 @@ def _parse_class_search_page(resp: HTMLResponse, term: str) -> Dict:
 
     course: Optional[Course] = None
     for element in elements:
-        #logging.debug(element.text)
+        logging.debug(element.text)
         if "secondary-head" in element.attrs["class"]:
             content = COURSE_INFORMATION_PATTERN.parse(element.text).named
             course = Course(**content, sections=list())
@@ -204,7 +204,7 @@ def _parse_class_search_page(resp: HTMLResponse, term: str) -> Dict:
             del content["dt"]
             del content["meeting_dates"]
             section = Section(**content, term=term)
-            # logging.debug(section)
+            logging.debug(section)
             course.sections.append(section)
     return courses
 
@@ -226,7 +226,7 @@ def get_extra_section_details(
     elements = resp.html.xpath("/html/body/section/section/div")
     heading = ""
     for element in elements:
-        # logging.debug(element.text, end="\n\n")
+        logging.debug(element.text, end="\n\n")
         if "role" in element.attrs:
             heading = element.text
             continue
