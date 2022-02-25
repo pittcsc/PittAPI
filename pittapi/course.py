@@ -26,6 +26,10 @@ import requests
 from requests_html import HTMLSession, HTMLResponse
 from parse import compile
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
 CLASS_SEARCH_URL = "https://psmobile.pitt.edu/app/catalog/classSearch"
 CLASS_SEARCH_API_URL = "https://psmobile.pitt.edu/app/catalog/getClassSearch"
 SECTION_DETAIL_URL = (
@@ -190,7 +194,7 @@ def _parse_class_search_page(resp: HTMLResponse, term: str) -> Dict:
 
     course: Optional[Course] = None
     for element in elements:
-        print(element.text)
+        logging.debug(element.text)
         if "secondary-head" in element.attrs["class"]:
             content = COURSE_INFORMATION_PATTERN.parse(element.text).named
             course = Course(**content, sections=list())
@@ -200,7 +204,7 @@ def _parse_class_search_page(resp: HTMLResponse, term: str) -> Dict:
             del content["dt"]
             del content["meeting_dates"]
             section = Section(**content, term=term)
-            print(section)
+            logging.debug(section)
             course.sections.append(section)
     return courses
 
@@ -222,7 +226,7 @@ def get_extra_section_details(
     elements = resp.html.xpath("/html/body/section/section/div")
     heading = ""
     for element in elements:
-        print(element.text, end="\n\n")
+        logging.debug(element.text, end="\n\n")
         if "role" in element.attrs:
             heading = element.text
             continue
