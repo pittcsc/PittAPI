@@ -204,7 +204,7 @@ def _parse_class_search_page(resp: HTMLResponse, term: str) -> Dict:
             del content["dt"]
             del content["meeting_dates"]
             section = Section(**content, term=term)
-            l# ogging.debug(section)
+            # logging.debug(section)
             course.sections.append(section)
     return courses
 
