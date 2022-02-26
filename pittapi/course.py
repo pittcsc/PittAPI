@@ -262,6 +262,8 @@ def get_extra_section_details(
                 content = int(content)
 
             data[label] = content
+    data["career"] = None
+    data["grading"] = None
     return SectionDetails(**data)
 
 
