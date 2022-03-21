@@ -60,67 +60,81 @@ def get_status_simple(building_name: str) -> Dict[str, str]:
         -> SUTH_WEST
     """
     laundry_soup = _get_laundry_soup(building_name)
-
-    total_machines = len(laundry_soup)     #total number of machines in the laundry room
     total_washers = 0
     total_dryers = 0
     free_washers = 0
     free_dryers = 0
-    machine_dict = {}
-    out_of_service_washers = []
-    out_of_service_dryers = []
-    for machine in laundry_soup:
-        for machine1 in machine:
-            for machine2 in machine1:
-                for machine3 in machine2:
-                    key_point = machine3.find('appliance_desc":')
-                    end_point = machine3.rfind('appliance_desc":')
-                    while(key_point<end_point):
-                        key_end = key_point+17
-                        machine4 = machine3[key_end:]
-                        #print(machine4)
-                        quotes = machine4.find('"')
-                        machineid = machine4[:quotes]
-                        #machineid = [char for char in machineid]
-                        #machine_num = int(machineid[len(machineid)-1])
-                        average_time_point = machine3.find('average_run_time":')
-                        average_run_time = int(machine3[average_time_point+18:average_time_point+20])
-                        time_remaining_point = machine3.find('time_remaining":')
-                        find_comma = machine3[time_remaining_point+16:]
-                        time_remaining = int(find_comma[:find_comma.find(',')])
-                        in_use = average_run_time - time_remaining
-                        machine_dict[machineid] = in_use
-                        # find number 2
-                        machine_id2 = machine3.find('appliance_desc2":')
-                        machine_id2 = machine3[machine_id2+18:]
-                        quotes2 = machine_id2.find('"')
-                        machine_id2 = machine_id2[:quotes]
-                        average_time_point2 = machine3.find('average_run_time2":')
-                        average_run_time2 = int(machine3[average_time_point2 + 19:average_time_point2 + 21])
-                        time_remaining_point2 = machine3.find('time_remaining2":')
-                        find_comma2 = machine3[time_remaining_point2 + 17:]
-                        time_remaining2 = int(find_comma2[:find_comma2.find(',')])
-                        in_use2 = average_run_time2 - time_remaining2
-                        machine_dict[machine_id2] = in_use2
-                        machine3 = machine4
-                        key_point = machine3.find('appliance_desc":')
-                        end_point = machine3.rfind('appliance_desc":') + key_point
-                    #print(machine_dict)
-    for machine in machine_dict.keys():
-        num_id = [char for char in machine]
-        num = int(num_id[len(num_id) - 1]) % 2
-        if (num == 0):  # it is an even code, so it is a washer
-            total_washers += 1
-            if (machine_dict[machine] == 22):
-                free_washers += 1
-            if(machine_dict[machine] == 60):
-                out_of_service_washers.append(machine)
-        else:  # it is an odd code, so it is a dryer
-            total_dryers += 1
-            if (machine_dict[machine] == 0):
-                free_dryers += 1
-            if(machine_dict[machine] == 60):
-                out_of_service_dyers.append(machine)
+
+    machine_dict = parse_soup(laundry_soup)
+    # each building has a different system for washer vs dryer
+    if(building_name == 'SUTH_EAST'):
+        for machine in machine_dict.keys():
+            num = int(machine)
+            if num >= 5 and num <= 14:
+                total_washers += 1
+                if (machine_dict[machine] == 0 or machine_dict[machine] == 34):
+                    free_washers += 1
+            else:
+                total_dryers += 1
+                if (machine_dict[machine] == 0):
+                    free_dryers += 1
+    elif building_name == 'SUTH_WEST':
+        for machine in machine_dict.keys():
+            num = int(machine)
+            if num <= 10:
+                total_washers += 1
+                if (machine_dict[machine] == 34 or machine_dict[machine] == 0 or machine_dict[machine] == 33):
+                    free_washers += 1
+            else:
+                total_dryers += 1
+                if (machine_dict[machine] == 0):
+                    free_dryers += 1
+    elif building_name == 'MCCORMICK':
+        for machine in machine_dict.keys():
+            num = int(machine)
+            if num <= 5:
+                total_washers += 1
+                if (machine_dict[machine] == 34 or machine_dict[machine] == 0 or machine_dict[machine] == 33):
+                    free_washers += 1
+            else:
+                total_dryers += 1
+                if (machine_dict[machine] == 0):
+                    free_dryers += 1
+    elif building_name == 'BRACKENRIDGE':
+        for machine in machine_dict.keys():
+            num = int(machine)
+            if num <= 8:
+                total_washers += 1
+                if (machine_dict[machine] == 34 or machine_dict[machine] == 60 or machine_dict[machine] == 33):
+                    free_washers += 1
+            else:
+                total_dryers += 1
+                if (machine_dict[machine] == 0):
+                    free_dryers += 1
+    elif building_name == 'HOLLAND':
+        print(machine_dict)
+        for machine in machine_dict.keys():
+            num = int(machine[1:])
+            if num <= 6 or num == 14 or num == 15:
+                total_dryers += 1
+                if (machine_dict[machine] == 0):
+                    free_dryers += 1
+            else:
+                total_washers += 1
+                if (machine_dict[machine] == 34 or machine_dict[machine] == 60 or machine_dict[machine] == 33):
+                    free_washers += 1
+    else:       # lothrop or towers
+        for machine in machine_dict.keys():
+            num_id = [char for char in machine]
+            num = int(num_id[len(num_id) - 1]) % 2
+            if (num == 0):  # it is an even code, so it is a washer
+                total_washers += 1
+                if (machine_dict[machine] == 22):
+                    free_washers += 1
+            else:  # it is an odd code, so it is a dryer
+                total_dryers += 1
+                if (machine_dict[machine] == 0):
+                    free_dryers += 1
 
     return {
         'building': building_name,
@@ -137,6 +151,7 @@ def get_status_detailed(building_name: str) -> List[Dict[str, Union[str, int]]]:
               building location with their statuses
 
     :param building_name: (String) one of these:
+        -> TOWERS
         -> BRACKENRIDGE
         -> HOLLAND
         -> LOTHROP
@@ -144,167 +159,150 @@ def get_status_detailed(building_name: str) -> List[Dict[str, Union[str, int]]]:
         -> SUTH_EAST
         -> SUTH_WEST
     """
-    machines = []
     laundry_soup = _get_laundry_soup(building_name)
 
-    total_machines = len(laundry_soup)  # total number of machines in the laundry room
     total_washers = 0
     total_dryers = 0
     free_washers = 0
     free_dryers = 0
-    machine_dict = {}
-    out_of_service_washers = []
-    out_of_service_dryers = []
-    for machine in laundry_soup:
-        for machine1 in machine:
-            for machine2 in machine1:
-                for machine3 in machine2:
-                    key_point = machine3.find('appliance_desc":')
-                    end_point = machine3.rfind('appliance_desc":')
-                    while (key_point < end_point):
-                        key_end = key_point + 17
-                        machine4 = machine3[key_end:]
-                        # print(machine4)
-                        quotes = machine4.find('"')
-                        machineid = machine4[:quotes]
-                        # machineid = [char for char in machineid]
-                        # machine_num = int(machineid[len(machineid)-1])
-                        average_time_point = machine3.find('average_run_time":')
-                        average_run_time = int(machine3[average_time_point + 18:average_time_point + 20])
-                        time_remaining_point = machine3.find('time_remaining":')
-                        find_comma = machine3[time_remaining_point + 16:]
-                        time_remaining = int(find_comma[:find_comma.find(',')])
-                        in_use = average_run_time - time_remaining
-                        machine_dict[machineid] = in_use
-                        # find number 2
-                        machine_id2 = machine3.find('appliance_desc2":')
-                        machine_id2 = machine3[machine_id2 + 18:]
-                        quotes2 = machine_id2.find('"')
-                        machine_id2 = machine_id2[:quotes]
-                        average_time_point2 = machine3.find('average_run_time2":')
-                        average_run_time2 = int(machine3[average_time_point2 + 19:average_time_point2 + 21])
-                        time_remaining_point2 = machine3.find('time_remaining2":')
-                        find_comma2 = machine3[time_remaining_point2 + 17:]
-                        time_remaining2 = int(find_comma2[:find_comma2.find(',')])
-                        in_use2 = average_run_time2 - time_remaining2
-                        machine_dict[machine_id2] = in_use2
-                        machine3 = machine4
-                        key_point = machine3.find('appliance_desc":')
-                        end_point = machine3.rfind('appliance_desc":') + key_point
-                    # print(machine_dict)
-    for machine in machine_dict.keys():
-        machine_id = machine
-        num_id = [char for char in machine]
-        num = int(num_id[len(num_id) - 1]) % 2
-        if (num == 0):  # it is an even code, so it is a washer
-            machine_type = "Washer"
-            if (machine_dict[machine] == 22):
-                machine_status = "Available"
-                time_left = 60
-            elif (machine_dict[machine] == 60):
-                machine_status = "Out of Service"
-                time_left = 0
-            else:
-                machine_status = "In use"
-                time_left = 60 - machine_dict[machine]
-        else:  # it is an odd code, so it is a dryer
-            machine_type = "Dryer"
-            if (machine_dict[machine] == 0):
-                machine_status = "Available"
-                time_left = 60
-            elif (machine_dict[machine] == 60):
-                machine_status = "Out of Service"
-                time_left = 0
-            else:
-                machine_status = "In use"
-                time_left = 60 - machine_dict[machine]
+    in_use_tag = "In Use"
+    available_tag = "Available"
+    out_of_service_tag = "Out of Service"
+    washer_tag = "Washer"
+    dryer_tag = "Dryer"
+    machines = []
 
+    machine_dict = parse_soup(laundry_soup)
+
+    def findWasher():
+        machine_type = washer_tag
+        if (machine_dict[machine] == 34 or machine_dict[machine] == 60 or machine_dict[machine] == 33):
+            machine_status = available_tag
+            time_left = 60
+        elif (machine_dict[machine] == 60):
+            machine_status = out_of_service_tag
+            time_left = 0
+        else:
+            machine_status = in_use_tag
+            time_left = 60 - machine_dict[machine]
         machines.append({
-            'machine_id': machine_id,
+            'machine_id': machine,
             'machine_status': machine_status,   #of out service, in use, or available
             'machine_type': machine_type,       # washer or dryer
             'time_left': time_left              # if free, time_left = 60, else some other number
         })
+    def findDryer():
+        machine_type = dryer_tag
+        if (machine_dict[machine] == 0):
+            machine_status = available_tag
+            time_left = 60
+        elif (machine_dict[machine] == 60):
+            machine_status = out_of_service_tag
+            time_left = 0
+        else:
+            machine_status = in_use_tag
+            time_left = 60 - machine_dict[machine]
+        machines.append({
+            'machine_id': machine,
+            'machine_status': machine_status,   #of out service, in use, or available
+            'machine_type': machine_type,       # washer or dryer
+            'time_left': time_left              # if free, time_left = 60, else some other number
+        })
+    # every building has a different system for washer/dryer id, so this accounts for them all
+    if(building_name == 'SUTH_EAST'):
+        for machine in machine_dict.keys():
+            num = int(machine)
+            if num >= 5 and num <= 14:
+                findWasher()
+            else:
+                findDryer()
+    elif building_name == 'SUTH_WEST':
+        for machine in machine_dict.keys():
+            num = int(machine)
+            if num <= 10:
+                findWasher()
+            else:
+                findDryer()
+    elif building_name == 'MCCORMICK':
+        for machine in machine_dict.keys():
+            num = int(machine)
+            if num <= 5:
+                findWasher()
+            else:
+                findDryer()
+    elif building_name == 'BRACKENRIDGE':
+        for machine in machine_dict.keys():
+            num = int(machine)
+            if num <= 8:
+                findWasher()
+            else:
+                findDryer()
+    elif building_name == 'HOLLAND':
+        for machine in machine_dict.keys():
+            num = int(machine[1:])
+            if num <= 6 or num == 14 or num == 15:
+                findDryer()
+            else:
+                findWasher()
+    else:       # it is lothrop or towers
+        for machine in machine_dict.keys():
+            machine_id = machine
+            num_id = [char for char in machine]
+            num = int(num_id[len(num_id) - 1]) % 2
+            if (num == 0):  # it is an even code, so it is a washer
+               findWasher()
+            else:  # it is an odd code, so it is a dryer
+               findDryer()
 
     return machines
 
-def get_out_of_service(building_name: str) -> Dict[str, list]:
-    """
-       :returns: a dictionary with free washers and dryers as well as total washers
-                 and dryers for given building
 
-       :param: loc: Building name, case doesn't matter
-           -> TOWERS
-           -> BRACKENRIDGE
-           -> HOLLAND
-           -> LOTHROP
-           -> MCCORMICK
-           -> SUTH_EAST
-           -> SUTH_WEST
-       """
-    laundry_soup = _get_laundry_soup(building_name)
-
-    total_machines = len(laundry_soup)  # total number of machines in the laundry room
-    total_washers = 0
-    total_dryers = 0
-    free_washers = 0
-    free_dryers = 0
-    machine_dict = {}
-    out_of_service_washers = []
-    out_of_service_dryers = []
-    for machine in laundry_soup:
-        for machine1 in machine:
-            for machine2 in machine1:
-                for machine3 in machine2:
-                    key_point = machine3.find('appliance_desc":')
-                    end_point = machine3.rfind('appliance_desc":')
-                    while (key_point < end_point):
-                        key_end = key_point + 17
-                        machine4 = machine3[key_end:]
-                        # print(machine4)
-                        quotes = machine4.find('"')
-                        machineid = machine4[:quotes]
-                        # machineid = [char for char in machineid]
-                        # machine_num = int(machineid[len(machineid)-1])
-                        average_time_point = machine3.find('average_run_time":')
-                        average_run_time = int(machine3[average_time_point + 18:average_time_point + 20])
-                        time_remaining_point = machine3.find('time_remaining":')
-                        find_comma = machine3[time_remaining_point + 16:]
-                        time_remaining = int(find_comma[:find_comma.find(',')])
-                        in_use = average_run_time - time_remaining
-                        machine_dict[machineid] = in_use
-                        # find number 2
-                        machine_id2 = machine3.find('appliance_desc2":')
-                        machine_id2 = machine3[machine_id2 + 18:]
-                        quotes2 = machine_id2.find('"')
-                        machine_id2 = machine_id2[:quotes]
-                        average_time_point2 = machine3.find('average_run_time2":')
-                        average_run_time2 = int(machine3[average_time_point2 + 19:average_time_point2 + 21])
-                        time_remaining_point2 = machine3.find('time_remaining2":')
-                        find_comma2 = machine3[time_remaining_point2 + 17:]
-                        time_remaining2 = int(find_comma2[:find_comma2.find(',')])
-                        in_use2 = average_run_time2 - time_remaining2
-                        machine_dict[machine_id2] = in_use2
-                        machine3 = machine4
-                        key_point = machine3.find('appliance_desc":')
-                        end_point = machine3.rfind('appliance_desc":') + key_point
-                    # print(machine_dict)
-    for machine in machine_dict.keys():
-        num_id = [char for char in machine]
-        num = int(num_id[len(num_id) - 1]) % 2
-        if (num == 0):  # it is an even code, so it is a washer
-            total_washers += 1
-            if (machine_dict[machine] == 22):
-                free_washers += 1
-            if (machine_dict[machine] == 60):
-                out_of_service_washers.append(machine)
-        else:  # it is an odd code, so it is a dryer
-            total_dryers += 1
-            if (machine_dict[machine] == 0):
-                free_dryers += 1
-            if (machine_dict[machine] == 60):
-                out_of_service_dryers.append(machine)
-    return{
-        'Out of Service washers': out_of_service_washers,
-        'Out of Service dryers': out_of_service_dryers
-    }
+# used to go through the data on website and get important info
+def parse_soup(laundry_soup: str) -> List[Dict[str, Union[str, int]]]:
+    laundry_soup = laundry_soup.p.getText() # Get all the text inside <p> brackets
+    machine = laundry_soup
+    print(machine)
+    machine_dict = {}                       # this will hold all the info to return
+    toFind = 'appliance_desc":'             # this the id of the machine -- first thing to find
+    length = len(toFind) + 1
+    key_point = machine.find(toFind)        # find first occurance of string
+    end_point = machine.rfind(toFind)       # find the last example of this string
+    while (key_point < end_point):
+        key_end = key_point + length        ## start of string plus string length
+        machineInfo = machine[key_end:]
+        quotes = machineInfo.find('"')
+        machineid = machineInfo[:quotes]    # find the id up until the quotes
+        time_key = 'average_run_time":'     # find avg run time keys next
+        time_key_length = len(time_key)
+        average_time_point = machineInfo.find(time_key) + time_key_length
+        average_run_time = int(machineInfo[average_time_point:average_time_point + 2])  # the +2 is the two digits of the runtime
+        remaining_key = 'time_remaining":'                                              # find time remaining on the machine
+        remaining_length = len(remaining_key)
+        time_remaining_point = machineInfo.find(remaining_key)
+        find_comma = machineInfo[time_remaining_point + remaining_length:]
+        time_remaining = int(find_comma[:find_comma.find(',')])                         # time remaining can vary in number of digits, so we take it up until a comma
+        in_use = average_run_time - time_remaining                                      # how much time is left will tell us if it is in use or not
+        machine_dict[machineid] = in_use                                                # add the id and its time left to the dictionary
+        # find number 2 (some machines are duel, so there will be double of all info)
+        machine_id2_key = 'appliance_desc2":'
+        machine_id2_length = len(machine_id2_key) + 1
+        machine_id2 = machineInfo.find(machine_id2_key)
+        if(machine_id2 != -1):                                                          # if a second machine DOES exist then do this code
+            machine_id2 = machineInfo[machine_id2 + machine_id2_length:]
+            quotes2 = machine_id2.find('"')
+            machine_id2 = machine_id2[:quotes]
+            time2_key = 'average_run_time2":'
+            time2_key_length = len(time2_key)
+            average_time_point2 = machineInfo.find(time2_key) + time2_key_length
+            average_run_time2 = int(machineInfo[(average_time_point2):(average_time_point2 + 2)])
+            remaining2_key = 'time_remaining2":'
+            remaining2_length = len(remaining2_key)
+            time_remaining_point2 = machineInfo.find(remaining2_key)
+            find_comma2 = machineInfo[time_remaining_point2 + remaining2_length:]
+            time_remaining2 = int(find_comma2[:find_comma2.find(',')])
+            in_use2 = average_run_time2 - time_remaining2
+            machine_dict[machine_id2] = in_use2
+        machine = machineInfo                        # update the string so now it searches from end of first example to the end of the string
+        key_point = machine.find('appliance_desc":')    # find next id
+        end_point = machine.rfind('appliance_desc":') + key_point
+    return machine_dict
