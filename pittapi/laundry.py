@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import requests
 import re
 from typing import Any, Dict, List, Union
+from enum import Enum
 
 from bs4 import BeautifulSoup
 
@@ -35,6 +36,16 @@ LOCATION_LOOKUP = {
     'FORBES_CRAIG': '2430142'
 }
 
+class base_status(Enum):
+    TOTALW = 0
+    TOTALD = 0
+    FREEW = 0
+    FREED = 0
+    INUSE = "In Use"
+    AVAIL = "Available"
+    OUT = "Out of Service"
+    WASHER = "Washer"
+    DRYER = "Dryer"
 
 def _get_laundry_soup(building_name: str) -> Any:
     """Returns BeautifulSoup object of laundry view webpage"""
@@ -60,10 +71,10 @@ def get_status_simple(building_name: str) -> Dict[str, str]:
         -> SUTH_WEST
     """
     laundry_soup = _get_laundry_soup(building_name)
-    total_washers = 0
-    total_dryers = 0
-    free_washers = 0
-    free_dryers = 0
+    total_washers = base_status.TOTALW.value
+    total_dryers = base_status.TOTALD.value
+    free_washers = base_status.FREEW.value
+    free_dryers = base_status.FREED.value
 
     machine_dict = parse_soup(laundry_soup)
     # each building has a different system for washer vs dryer
@@ -112,7 +123,6 @@ def get_status_simple(building_name: str) -> Dict[str, str]:
                 if (machine_dict[machine] == 0):
                     free_dryers += 1
     elif building_name == 'HOLLAND':
-        print(machine_dict)
         for machine in machine_dict.keys():
             num = int(machine[1:])
             if num <= 6 or num == 14 or num == 15:
@@ -161,15 +171,15 @@ def get_status_detailed(building_name: str) -> List[Dict[str, Union[str, int]]]:
     """
     laundry_soup = _get_laundry_soup(building_name)
 
-    total_washers = 0
-    total_dryers = 0
-    free_washers = 0
-    free_dryers = 0
-    in_use_tag = "In Use"
-    available_tag = "Available"
-    out_of_service_tag = "Out of Service"
-    washer_tag = "Washer"
-    dryer_tag = "Dryer"
+    total_washers = base_status.TOTALW.value
+    total_dryers = base_status.TOTALD.value
+    free_washers = base_status.FREEW.value
+    free_dryers = base_status.FREED.value
+    in_use_tag = base_status.INUSE.value
+    available_tag = base_status.AVAIL.value
+    out_of_service_tag = base_status.OUT.value
+    washer_tag = base_status.WASHER.value
+    dryer_tag = base_status.DRYER.value
     machines = []
 
     machine_dict = parse_soup(laundry_soup)
@@ -261,14 +271,13 @@ def get_status_detailed(building_name: str) -> List[Dict[str, Union[str, int]]]:
 def parse_soup(laundry_soup: str) -> List[Dict[str, Union[str, int]]]:
     laundry_soup = laundry_soup.p.getText() # Get all the text inside <p> brackets
     machine = laundry_soup
-    print(machine)
     machine_dict = {}                       # this will hold all the info to return
     toFind = 'appliance_desc":'             # this the id of the machine -- first thing to find
     length = len(toFind) + 1
-    key_point = machine.find(toFind)        # find first occurance of string
-    end_point = machine.rfind(toFind)       # find the last example of this string
+    key_point = machine.find(toFind)  # find first occurance of string
+    end_point = machine.rfind(toFind)  # find the last example of this string
     while (key_point < end_point):
-        key_end = key_point + length        ## start of string plus string length
+        key_end = key_point + length  ## start of string plus string length
         machineInfo = machine[key_end:]
         quotes = machineInfo.find('"')
         machineid = machineInfo[:quotes]    # find the id up until the quotes
@@ -276,18 +285,18 @@ def parse_soup(laundry_soup: str) -> List[Dict[str, Union[str, int]]]:
         time_key_length = len(time_key)
         average_time_point = machineInfo.find(time_key) + time_key_length
         average_run_time = int(machineInfo[average_time_point:average_time_point + 2])  # the +2 is the two digits of the runtime
-        remaining_key = 'time_remaining":'                                              # find time remaining on the machine
+        remaining_key = 'time_remaining":'  # find time remaining on the machine
         remaining_length = len(remaining_key)
         time_remaining_point = machineInfo.find(remaining_key)
         find_comma = machineInfo[time_remaining_point + remaining_length:]
-        time_remaining = int(find_comma[:find_comma.find(',')])                         # time remaining can vary in number of digits, so we take it up until a comma
-        in_use = average_run_time - time_remaining                                      # how much time is left will tell us if it is in use or not
-        machine_dict[machineid] = in_use                                                # add the id and its time left to the dictionary
+        time_remaining = int(find_comma[:find_comma.find(',')])     # time remaining can vary in number of digits, so we take it up until a comma
+        in_use = average_run_time - time_remaining      # how much time is left will tell us if it is in use or not
+        machine_dict[machineid] = in_use    # add the id and its time left to the dictionary
         # find number 2 (some machines are duel, so there will be double of all info)
         machine_id2_key = 'appliance_desc2":'
         machine_id2_length = len(machine_id2_key) + 1
         machine_id2 = machineInfo.find(machine_id2_key)
-        if(machine_id2 != -1):                                                          # if a second machine DOES exist then do this code
+        if(machine_id2 != -1):      # if a second machine DOES exist then do this code
             machine_id2 = machineInfo[machine_id2 + machine_id2_length:]
             quotes2 = machine_id2.find('"')
             machine_id2 = machine_id2[:quotes]
@@ -302,7 +311,7 @@ def parse_soup(laundry_soup: str) -> List[Dict[str, Union[str, int]]]:
             time_remaining2 = int(find_comma2[:find_comma2.find(',')])
             in_use2 = average_run_time2 - time_remaining2
             machine_dict[machine_id2] = in_use2
-        machine = machineInfo                        # update the string so now it searches from end of first example to the end of the string
+        machine = machineInfo        # update the string so now it searches from end of first example to the end of the string
         key_point = machine.find('appliance_desc":')    # find next id
         end_point = machine.rfind('appliance_desc":') + key_point
     return machine_dict
