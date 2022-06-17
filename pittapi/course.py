@@ -129,10 +129,25 @@ class Section(NamedTuple):
 
 
 class Course(NamedTuple):
+    term: str
     subject_code: str
     course_number: str
     course_title: str
     sections: Optional[List[Section]] = None
+
+    def __str__(self):
+        return "Course(" + self.term + ", " + self.subject_code + ", " + self.course_number + ")"
+
+    def __repr__(self):
+        return json.dumps(
+            {
+                "term" : self.term,
+                "subject_code" : self.subject_code,
+                "course_number" : self.course_number,
+                "course_title" : self.course_title,
+                "sections" : self.sections
+            }
+        )
 
 
 class Subject(NamedTuple):
@@ -190,17 +205,17 @@ def _parse_class_search_page(resp: HTMLResponse, term: str) -> Dict:
 
     course: Optional[Course] = None
     for element in elements:
-        print(element.text)
+        # print(element.text)
         if "secondary-head" in element.attrs["class"]:
             content = COURSE_INFORMATION_PATTERN.parse(element.text).named
-            course = Course(**content, sections=list())
+            course = Course(term, **content, sections=list())
             courses[content["course_number"]] = course
         elif "section-content" in element.attrs["class"]:
             content = SECTION_INFORMATION_PATTERN.parse(element.text).named
             del content["dt"]
             del content["meeting_dates"]
             section = Section(**content, term=term)
-            print(section)
+            # print(section)
             course.sections.append(section)
     return courses
 
@@ -222,7 +237,7 @@ def get_extra_section_details(
     elements = resp.html.xpath("/html/body/section/section/div")
     heading = ""
     for element in elements:
-        print(element.text, end="\n\n")
+        # print(element.text, end="\n\n")
         if "role" in element.attrs:
             heading = element.text
             continue
@@ -314,13 +329,14 @@ def get_courses(term: str, subject: str) -> Subject:
     return subject
 
 
-def get_course_sections(term: str, subject: str, course: str) -> Section:
+def get_course_sections(term: str, subject: str, course: str) -> Course:
     """Return details on all sections taught in a certain course"""
     term = _validate_term(term)
     course = _validate_course(course)
     session, payload = _get_payload(term, subject=subject, course=course)
     response = session.post(CLASS_SEARCH_API_URL, data=payload)
     course, *_ = _parse_class_search_page(response, term).values()
+    print(course)
     return course
 
 
