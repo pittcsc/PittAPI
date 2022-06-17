@@ -82,22 +82,22 @@ class CourseTest(unittest.TestCase):
         self.assertRaises(ValueError, course._validate_term, '1111')
         self.assertRaises(ValueError, course._validate_term, '12345')
 
-    # def test_validate_course(self):
-    #     self.assertEqual(course._validate_course(7), '0007')
-    #     self.assertEqual(course._validate_course(449), '0449')
-    #     self.assertEqual(course._validate_course(1501), '1501')
+    def test_validate_course(self):
+        self.assertEqual(course._validate_course(7), '0007')
+        self.assertEqual(course._validate_course(449), '0449')
+        self.assertEqual(course._validate_course(1501), '1501')
 
-    #     self.assertEqual(course._validate_course('7'), '0007')
-    #     self.assertEqual(course._validate_course('0007'), '0007')
-    #     self.assertEqual(course._validate_course('449'), '0449')
-    #     self.assertEqual(course._validate_course('1501'), '1501')
+        self.assertEqual(course._validate_course('7'), '0007')
+        self.assertEqual(course._validate_course('0007'), '0007')
+        self.assertEqual(course._validate_course('449'), '0449')
+        self.assertEqual(course._validate_course('1501'), '1501')
 
-    #     self.assertRaises(ValueError, course._validate_course, -1)
-    #     self.assertRaises(ValueError, course._validate_course, 0)
-    #     self.assertRaises(ValueError, course._validate_course, '')
-    #     self.assertRaises(ValueError, course._validate_course, 'A00')
-    #     self.assertRaises(ValueError, course._validate_course, 'Hello')
-    #     self.assertRaises(ValueError, course._validate_course, '10000')
+        self.assertRaises(ValueError, course._validate_course, -1)
+        self.assertRaises(ValueError, course._validate_course, 0)
+        self.assertRaises(ValueError, course._validate_course, '')
+        self.assertRaises(ValueError, course._validate_course, 'A00')
+        self.assertRaises(ValueError, course._validate_course, 'Hello')
+        self.assertRaises(ValueError, course._validate_course, '10000')
 
     # def test_get_payload(self):
     #     TRUE_PAYLOAD = {'CSRFToken': 'abc', 'term': '2194', 'campus': 'PIT', 'subject': 'CS', 'acad_career': '',

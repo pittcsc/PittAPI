@@ -286,6 +286,9 @@ def _validate_term(term: str) -> str:
 
 def _validate_course(course: str) -> str:
     """Validates that the course name entered is 4 characters long and in string form."""
+    if isinstance(course, int) and course <= 0:
+        raise ValueError("Invalid course number.")
+    course = str(course)
     if course == "":
         raise ValueError("Invalid course number.")
     if not course.isdigit():
