@@ -65,21 +65,22 @@ class CourseTest(unittest.TestCase):
         with (SAMPLE_PATH / 'course_extra_4.html').open() as f:
             self.cs_extra_data_4 = ''.join(f.readlines())
 
+    # Deprectated test, validate_subject() and course.SUBJECTS do not exist
     # def test_validate_subject(self):
     #     for subject in course.SUBJECTS:
     #         self.assertEqual(course._validate_subject(subject), subject)
     #     self.assertRaises(ValueError, course._validate_subject, 'TEST')
 
-    # def test_validate_term(self):
-    #     # If convert to string
-    #     self.assertTrue(isinstance(course._validate_term(2191), str))
+    def test_validate_term(self):
+        # If convert to string
+        self.assertTrue(isinstance(course._validate_term(2191), str))
 
-    #     self.assertEqual(course._validate_term(2191), '2191')
-    #     self.assertEqual(course._validate_term('2191'), '2191')
+        self.assertEqual(course._validate_term(2191), '2191')
+        self.assertEqual(course._validate_term('2191'), '2191')
 
-    #     self.assertRaises(ValueError, course._validate_term, '214')
-    #     self.assertRaises(ValueError, course._validate_term, '1111')
-    #     self.assertRaises(ValueError, course._validate_term, '12345')
+        self.assertRaises(ValueError, course._validate_term, '214')
+        self.assertRaises(ValueError, course._validate_term, '1111')
+        self.assertRaises(ValueError, course._validate_term, '12345')
 
     # def test_validate_course(self):
     #     self.assertEqual(course._validate_course(7), '0007')

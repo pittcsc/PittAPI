@@ -279,8 +279,8 @@ def get_extra_section_details(
 def _validate_term(term: str) -> str:
     """Validates that the term entered follows the pattern that Pitt does for term codes."""
     valid_terms = re.compile("2\d\d[147]")
-    if valid_terms.match(term):
-        return term
+    if valid_terms.match(str(term)):
+        return str(term)
     raise ValueError("Term entered isn't a valid Pitt term.")
 
 
