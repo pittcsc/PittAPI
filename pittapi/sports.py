@@ -19,16 +19,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import requests
 
-FOOTBALL_URL = (
-    "http://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/pitt"
-)
-BASKETBALL_URL = "http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/pittsburgh"
+FOOTBALL_URL = "http://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/pitt"
+MENS_BASKETBALL_URL = "http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/pittsburgh"
 
 
 def get_mens_basketball_record() -> str:
     """returns the current record of the men's basketball team"""
-    basketball_response = requests.get(BASKETBALL_URL)
-    basketball_data = basketball_response.json()
+    basketball_data = _get_mens_basketball_data()
 
     try:
         record_summary = basketball_data["team"]["record"]["items"][0]["summary"]
@@ -41,8 +38,7 @@ def get_mens_basketball_record() -> str:
 
 def get_next_mens_basketball_game() -> dict:
     """returns a dict containing details of the next scheduled men's basketball game."""
-    basketball_response = requests.get(BASKETBALL_URL)
-    basketball_data = basketball_response.json()
+    basketball_data = _get_mens_basketball_data()
     next_game = None
     try:
         next_game = basketball_data["team"]["nextEvent"][0]
@@ -81,8 +77,7 @@ def get_next_mens_basketball_game() -> dict:
 
 def get_mens_basketball_standings() -> str:
     """returns a string describing the placement of the men's basketball team. eg: '14th in ACC' """
-    basketball_response = requests.get(BASKETBALL_URL)
-    basketball_data = basketball_response.json()
+    basketball_data = _get_mens_basketball_data()
 
     return_value = basketball_data["team"]["standingSummary"]
     return return_value
@@ -90,8 +85,7 @@ def get_mens_basketball_standings() -> str:
 
 def get_football_record() -> str:
     """returns the current record of the men's football team"""
-    football_response = requests.get(FOOTBALL_URL)
-    football_data = football_response.json()
+    football_data = _get_football_data()
 
     try:
         record_summary = football_data["team"]["record"]["items"][0]["summary"]
@@ -103,8 +97,7 @@ def get_football_record() -> str:
 
 
 def get_next_football_game() -> dict:
-    football_response = requests.get(FOOTBALL_URL)
-    football_data = football_response.json()
+    football_data = _get_football_data()
     next_game = None
     try:
         next_game = football_data["team"]["nextEvent"][0]
@@ -143,8 +136,13 @@ def get_next_football_game() -> dict:
 
 def get_football_standings() -> str:
     """returns a string describing the placement of the football team. eg: '14th in ACC' """
-    football_response = requests.get(FOOTBALL_URL)
-    football_data = football_response.json()
+    football_data = _get_football_data()
 
     return_value = football_data["team"]["standingSummary"]
     return return_value
+
+def _get_mens_basketball_data() -> dict:
+    return requests.get(MENS_BASKETBALL_URL).json()
+
+def _get_football_data() -> dict:
+    return requests.get(FOOTBALL_URL).json()

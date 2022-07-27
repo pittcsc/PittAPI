@@ -15,24 +15,222 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 """
 
 import unittest
+from unittest.mock import MagicMock
 
 from pittapi import sports
 
 class LibraryTest(unittest.TestCase):
+    def setUp(self):
+        mocked_basketball_data = {
+            "team" : {
+                "id": "221",
+                "record": {
+                    "items": [
+                        {
+                            "description": "Overall Record",
+                            "type": "total",
+                            "summary": "11-21"
+                        },
+                        {
+                            "description": "Home Record",
+                            "type": "home",
+                            "summary": "9-11",
+                        }
+                    ]
+                },
+                "nextEvent": [
+                    {
+                        "date": "2022-03-08T19:00Z",
+                        "competitions": [
+                            {
+                                "venue": {
+                                    "fullName": "Barclays Center",
+                                    "address": {
+                                        "city": "Brooklyn",
+                                        "state": "NY"
+                                    }
+                                },
+                                "competitors": [
+                                    {
+                                        "id": "221",
+                                        "homeAway" : "home",
+                                        "team" : {
+                                            "id": "221",
+                                            "location": "Pittsburgh",
+                                            "nickname": "Pittsburgh",
+                                            "abbreviation": "PITT",
+                                            "displayName": "Pittsburgh Panthers"
+                                        }
+                                    },
+                                    {
+                                        "id": "103",
+                                        "homeAway": "away",
+                                        "team" : {
+                                            "id": "103",
+                                            "location": "Boston College",
+                                            "nickname": "Boston College",
+                                            "abbreviation": "BC",
+                                            "displayName": "Boston College Eagles"
+                                        }
+                                    }
+                                ],
+                                "status": {
+                                    "type": {
+                                        "name": "STATUS_FINAL"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "standingSummary": "12th in ACC"
+            }
+        }
+        mocked_football_data = {
+            "team" : {
+                "id": "221",
+                "name": "Pittsburgh",
+                "record": {
+                    "items": [
+                        {
+                            "description": "Overall Record",
+                            "type": "total",
+                            "summary": "10-2"
+                        },
+                        {
+                            "description": "Home Record",
+                            "type": "home",
+                            "summary": "5-2",
+                        }
+                    ]
+                },
+                "nextEvent": [
+                    {
+                        "id": "401405793",
+                        "date": "2022-03-08T19:00Z",
+                        "name": "Pittsburgh Panthers at Wake Forest Deamon Deacons",
+                        "competitions": [
+                            {
+                                "venue": {
+                                    "fullName": "Bank of America Stadium",
+                                    "address": {
+                                        "city": "Charlotte",
+                                        "state": "NC"
+                                    }
+                                },
+                                "competitors": [
+                                    {
+                                        "id": "221",
+                                        "homeAway" : "away",
+                                        "team" : {
+                                            "id": "221",
+                                            "location": "Pittsburgh",
+                                            "nickname": "Pittsburgh",
+                                            "abbreviation": "PITT",
+                                            "displayName": "Pittsburgh Panthers"
+                                        }
+                                    },
+                                    {
+                                        "id": "104",
+                                        "homeAway": "away",
+                                        "team" : {
+                                            "id": "103",
+                                            "location": "Wake Forest",
+                                            "nickname": "Wake Forest",
+                                            "abbreviation": "WAKE",
+                                            "displayName": "Wake Forest Deamon Deacons"
+                                        }
+                                    }
+                                ],
+                                "status": {
+                                    "type": {
+                                        "name": "STATUS_IN_PROGRESS"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "standingSummary": "1st in ACC - Coastal"
+            }
+        }
+        sports._get_mens_basketball_data = MagicMock(return_value=mocked_basketball_data)
+        sports._get_football_data = MagicMock(return_value=mocked_football_data)
+    
     def test_get_mens_basketball_record(self):
-        self.assertIsInstance(sports.get_mens_basketball_record(), str)
+        self.assertEqual("11-21", sports.get_mens_basketball_record())
 
-    def test_get_next_mens_basketball_game(self):
-        self.assertIsInstance(sports.get_next_mens_basketball_game(), dict)
+    def test_get_mens_basketball_record_offseason(self):
+        offseason_data = {
+            "team": {
+                "id": "221",
+                "record": {}
+            }
+        }
+        sports._get_mens_basketball_data = MagicMock(return_value=offseason_data)
 
-    def test_get_mens_basketball_standings(self):
-        self.assertIsInstance(sports.get_mens_basketball_standings(), str)
+        self.assertEqual("There's no record right now.", sports.get_mens_basketball_record())
 
     def test_get_football_record(self):
-        self.assertIsInstance(sports.get_football_record(), str)
+        self.assertEqual("10-2", sports.get_football_record())
 
-    def test_get_next_football_game(self):
-        self.assertIsInstance(sports.get_next_football_game(), dict)
+    def test_get_football_record_offseason(self):
+        offseason_data = {
+            "team": {
+                "id": "221",
+                "record": {}
+            }
+        }
+        sports._get_football_data = MagicMock(return_value=offseason_data)
+
+        self.assertEqual("There's no record right now.", sports.get_football_record())
+
+    def test_get_mens_basketball_standings(self):
+        self.assertEqual("12th in ACC", sports.get_mens_basketball_standings())
 
     def test_get_football_standings(self):
-        self.assertIsInstance(sports.get_football_standings(), str)
+        self.assertEqual("1st in ACC - Coastal", sports.get_football_standings())
+
+    def test_get_next_mens_basketball_game(self):
+        next_game_details = sports.get_next_mens_basketball_game()
+        self.assertIn("timestamp", next_game_details)
+        self.assertIn("opponent", next_game_details)
+        self.assertIn("home_away", next_game_details)
+        self.assertIn("location", next_game_details)
+        self.assertIn("status", next_game_details)
+        self.assertNotEqual("OFFSEASON", next_game_details["status"])
+
+    def test_get_next_football_game(self):
+        next_game_details = sports.get_next_football_game()
+        self.assertIn("timestamp", next_game_details)
+        self.assertIn("opponent", next_game_details)
+        self.assertIn("home_away", next_game_details)
+        self.assertIn("location", next_game_details)
+        self.assertIn("status", next_game_details)
+        self.assertNotEqual("OFFSEASON", next_game_details["status"])
+
+    def test_get_next_mens_basketball_game_offseason(self):
+        offseason_data = {
+            "team": {
+                "nextEvent": []
+            }
+        }
+        sports._get_mens_basketball_data = MagicMock(return_value=offseason_data)
+
+        next_game_details = sports.get_next_mens_basketball_game()
+        self.assertEqual(1, len(next_game_details))
+        self.assertIn("status", next_game_details)
+        self.assertEqual("OFFSEASON", next_game_details["status"])
+
+    def test_get_next_football_game_offseason(self):
+        offseason_data = {
+            "team": {
+                "nextEvent": []
+            }
+        }
+        sports._get_football_data = MagicMock(return_value=offseason_data)
+
+        next_game_details = sports.get_next_football_game()
+        self.assertEqual(1, len(next_game_details))
+        self.assertIn("status", next_game_details)
+        self.assertEqual("OFFSEASON", next_game_details["status"])
