@@ -34,26 +34,26 @@ Returns a `dictionary` containing the time and date of the game in UTC, the oppo
 >>> next_game_details = get_next_mens_basketball_game()
 >>> print(next_game_details)
 {
-    'Timestamp': '2022-03-08T19:00Z',
-    'Opponent': {
+    'timestamp': '2022-03-08T19:00Z',
+    'opponent': {
         'id': '103',
         'school': 'Boston College',
         'name': 'Boston College Eagles'
     },
-    'HomeAway': 'away',
-    'Location': {
-        'fullName': 'Barclays Center',
+    'home_away': 'away',
+    'location': {
+        'full_name': 'Barclays Center',
         'address': {
             'city': 'Brooklyn',
             'state': 'NY'
         }
     },
-    'Status': 'GAME_COMPLETE'
+    'status': 'GAME_COMPLETE'
 }
 >>> offseason_next_game_details = get_next_mens_basketball_game() # If offseason, return this
 >>> print(offseason_next_game_details)
 {
-    'Status': 'OFFSEASON'
+    'status': 'OFFSEASON'
 }
 ```
 
@@ -107,26 +107,26 @@ Returns a `dictionary` containing the time and date of the game in UTC, the oppo
 >>> next_game_details = get_next_football_game()
 >>> print(next_game_details)
 {
-    'Timestamp': '2021-12-05T01:00Z',
-    'Opponent': {
+    'timestamp': '2021-12-05T01:00Z',
+    'opponent': {
         'id': '103',
         'school': 'Wake Forest',
         'name': 'Wake Forest Deamon Deacons'
     },
-    'HomeAway': 'away',
-    'Location': {
-        'fullName': 'Bank of America Stadium',
+    'home_away': 'away',
+    'location': {
+        'full_name': 'Bank of America Stadium',
         'address': {
             'city': 'Charlotte',
             'state': 'NC'
         }
     },
-    'Status': 'GAME_COMPLETE'
+    'status': 'GAME_COMPLETE'
 }
 >>> offseason_next_game_details = get_next_football_game() # If offseason, return this
 >>> print(offseason_next_game_details)
 {
-    'Status': 'OFFSEASON'
+    'status': 'OFFSEASON'
 }
 ```
 
