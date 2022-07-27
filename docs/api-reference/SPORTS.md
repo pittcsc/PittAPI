@@ -15,7 +15,7 @@ Returns a `string` containing the current record of the Men's basketball team.
 ```python
 >>> record = get_mens_basketball_record()
 >>> print(record) # Standard usage
-'5-1'
+'11-21'
 >>> offseason_record = get_mens_basketball_record # If offseason, return this
 >>> print(offseason_record)
 'There's no record now'
@@ -26,14 +26,35 @@ Returns a `string` containing the current record of the Men's basketball team.
 ### **get_next_mens_basketball_game()**
 
 #### **Returns**:
-Returns a dictionary containing the full name of the event, the short name of the event, the type of game (regular season, playoffs, preseason, etc.), the week in which it occurs, and the location.
+Returns a `dictionary` containing the time and date of the game in UTC, the opponent's ESPN API ID, school name and full team name, whether Pitt is the home or away team, and information on its location. It also returns a 'Status' attribute, which identifies if the game has completed but data in the API has not updated yet.
 #### **Example**:
 
 ###### **Sample Usage**:
 ```python
 >>> next_game_details = get_next_mens_basketball_game()
 >>> print(next_game_details)
-{'full_name': 'Pittsburgh Panthers at Syracuse Orange', 'short_name': 'PITT @SYR', 'season_name': 'Regular Season', 'week': 'Week 19', 'court': 'Spectrum Center'}
+{
+    'Timestamp': '2022-03-08T19:00Z',
+    'Opponent': {
+        'id': '103',
+        'school': 'Boston College',
+        'name': 'Boston College Eagles'
+    },
+    'HomeAway': 'away',
+    'Location': {
+        'fullName': 'Barclays Center',
+        'address': {
+            'city': 'Brooklyn',
+            'state': 'NY'
+        }
+    },
+    'Status': 'GAME_COMPLETE'
+}
+>>> offseason_next_game_details = get_next_mens_basketball_game() # If offseason, return this
+>>> print(offseason_next_game_details)
+{
+    'Status': 'OFFSEASON'
+}
 ```
 
 ---
@@ -49,7 +70,7 @@ Return a `string` containing information for the current team standings of the M
 ```python
 >>> standings = get_mens_basketball_standings()
 >>> print(standings)
-'14th in ACC'
+'12th in ACC'
 ```
 
 ---
@@ -65,7 +86,7 @@ Returns a `string` containing the current record of the football team.
 ```python
 >>> record = get_football_record()
 >>> print(record) # Standard usage
-'1-1'
+'11-3'
 >>> offseason_record = get_football_record # If offseason, return this
 >>> print(offseason_record)
 'There's no record now'
@@ -78,15 +99,35 @@ Returns a `string` containing the current record of the football team.
 ### **get_next_football_game()**
 
 #### **Returns**:
-Returns a dictionary containing the full name of the event, the short name of the event, the type of game (regular season, playoffs, preseason, etc.), the week in which it occurs, and the location.
+Returns a `dictionary` containing the time and date of the game in UTC, the opponent's ESPN API ID, school name and full team name, whether Pitt is the home or away team, and information on its location. It also returns a 'Status' attribute, which identifies if the game has completed but data in the API has not updated yet.
 #### **Example**:
 
 ###### **Sample Usage**:
 ```python
 >>> next_game_details = get_next_football_game()
 >>> print(next_game_details)
-{'full_name': 'Pittsburgh Panthers at Penn State Nittany Lions', 'short_name': 'PITT @ PSU', 'season_name': 'Regular Season', 'week': 'Week 3', 'field': 'Beaver Stadium'}
-
+{
+    'Timestamp': '2021-12-05T01:00Z',
+    'Opponent': {
+        'id': '103',
+        'school': 'Wake Forest',
+        'name': 'Wake Forest Deamon Deacons'
+    },
+    'HomeAway': 'away',
+    'Location': {
+        'fullName': 'Bank of America Stadium',
+        'address': {
+            'city': 'Charlotte',
+            'state': 'NC'
+        }
+    },
+    'Status': 'GAME_COMPLETE'
+}
+>>> offseason_next_game_details = get_next_football_game() # If offseason, return this
+>>> print(offseason_next_game_details)
+{
+    'Status': 'OFFSEASON'
+}
 ```
 
 ---
@@ -102,7 +143,7 @@ Return a `string` containing information for the current team standings of the f
 ```python
 >>> standings = get_football_standings()
 >>> print(standings)
-'4th in ACC - Coastal'
+'1st in ACC - Coastal'
 ```
 
 ---
