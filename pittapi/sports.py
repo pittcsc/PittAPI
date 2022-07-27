@@ -60,11 +60,13 @@ def get_next_mens_basketball_game() -> dict:
         status = None
         if next_game["competitions"][0]["status"]["type"]["name"] == "STATUS_FINAL":
             status = "GAME_COMPLETE"
+        elif next_game["competitions"][0]["status"]["type"]["name"] == "STATUS_IN_PROGRESS":
+            status = "IN_PROGRESS"
         if next_game["competitions"][0]["competitors"][0]["id"] == 221:
-            opponent = next_game["competitions"][0]["competitors"][1]
+            opponent = next_game["competitions"][0]["competitors"][0]
             homeaway = next_game["competitions"][0]["competitors"][0]["homeAway"]
         else:
-            opponent = next_game["competitions"][0]["competitors"][0]
+            opponent = next_game["competitions"][0]["competitors"][1]
             homeaway = next_game["competitions"][0]["competitors"][1]["homeAway"]
         return {
             "Timestamp" : next_game["date"],
@@ -79,7 +81,7 @@ def get_next_mens_basketball_game() -> dict:
         }
     except IndexError:
         return {
-            "Status" : "Offseason"
+            "Status" : "OFFSEASON"
         }
 
 
@@ -117,6 +119,8 @@ def get_next_football_game() -> dict:
         status = None
         if next_game["competitions"][0]["status"]["type"]["name"] == "STATUS_FINAL":
             status = "GAME_COMPLETE"
+        elif next_game["competitions"][0]["status"]["type"]["name"] == "STATUS_IN_PROGRESS":
+            status = "IN_PROGRESS"
         if next_game["competitions"][0]["competitors"][0]["id"] == 221:
             opponent = next_game["competitions"][0]["competitors"][1]
             homeaway = next_game["competitions"][0]["competitors"][0]["homeAway"]
@@ -136,7 +140,7 @@ def get_next_football_game() -> dict:
         }
     except IndexError:
         return {
-            "Status" : "Offseason"
+            "Status" : "OFFSEASON"
         }
 
 
