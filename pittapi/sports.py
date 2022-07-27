@@ -57,6 +57,9 @@ def get_next_mens_basketball_game() -> dict:
         next_game = basketball_data["team"]["nextEvent"][0]
         opponent = None
         homeaway = None
+        status = None
+        if next_game["competitions"][0]["status"]["type"]["name"] == "STATUS_FINAL":
+            status = "GAME_COMPLETE"
         if next_game["competitions"][0]["competitors"][0]["id"] == 221:
             opponent = next_game["competitions"][0]["competitors"][1]
             homeaway = next_game["competitions"][0]["competitors"][0]["homeAway"]
@@ -72,11 +75,11 @@ def get_next_mens_basketball_game() -> dict:
             },
             "HomeAway" : homeaway,
             "Location" : next_game["competitions"][0]["venue"],
-            "Error" : None
+            "Status" : status
         }
     except IndexError:
         return {
-            "Error" : "Offseason"
+            "Status" : "Offseason"
         }
 
 
@@ -111,6 +114,9 @@ def get_next_football_game() -> dict:
         next_game = football_data["team"]["nextEvent"][0]
         opponent = None
         homeaway = None
+        status = None
+        if next_game["competitions"][0]["status"]["type"]["name"] == "STATUS_FINAL":
+            status = "GAME_COMPLETE"
         if next_game["competitions"][0]["competitors"][0]["id"] == 221:
             opponent = next_game["competitions"][0]["competitors"][1]
             homeaway = next_game["competitions"][0]["competitors"][0]["homeAway"]
@@ -126,11 +132,11 @@ def get_next_football_game() -> dict:
             },
             "HomeAway" : homeaway,
             "Location" : next_game["competitions"][0]["venue"],
-            "Error" : None
+            "Status" : status
         }
     except IndexError:
         return {
-            "Error" : "Offseason"
+            "Status" : "Offseason"
         }
 
 
