@@ -26,14 +26,6 @@ FOOTBALL_URL = (
 BASKETBALL_URL = "http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/pittsburgh"
 
 
-class NextBasketballGame(NamedTuple):
-    name: str
-    short_name: str
-    season_name: str
-    week: int
-    court: str
-
-
 class NextFootballGame(NamedTuple):
     name: str
     short_name: str
@@ -56,25 +48,38 @@ def get_mens_basketball_record() -> str:
     return record_summary
 
 
-def get_next_mens_basketball_game() -> NextBasketballGame:
+def get_next_mens_basketball_game() -> dict:
     """returns a dict containing details of the next scheduled men's basketball game."""
     basketball_response = requests.get(BASKETBALL_URL)
     basketball_data = basketball_response.json()
+    next_game = None
+    try:
+        next_game = basketball_data["team"]["nextEvent"][0]
+        opponent = None
+        homeaway = None
+        if next_game["competitions"][0]["competitors"][0]["id"] == 221:
+            opponent = next_game["competitions"][0]["competitors"][1]
+            homeaway = next_game["competitions"][0]["competitors"][0]["homeAway"]
+        else:
+            opponent = next_game["competitions"][0]["competitors"][0]
+            homeaway = next_game["competitions"][0]["competitors"][1]["homeAway"]
+        return {
+            "Timestamp" : next_game["date"],
+            "Oppponent" : {
+                "id" : opponent["team"]["id"],
+                "school" : opponent["team"]["nickname"],
+                "name" : opponent["team"]["displayName"]
+            },
+            "HomeAway" : homeaway,
+            "Location" : next_game["competitions"][0]["venue"]
+        }
+    except IndexError:
+        return {
+            "Error" : "Offseason"
+        }
 
-    next_game = NextBasketballGame(
-        name=basketball_data["team"]["nextEvent"][0]["name"],
-        short_name=basketball_data["team"]["nextEvent"][0]["shortName"],
-        season_name=basketball_data["team"]["nextEvent"][0]["seasonType"]["name"],
-        week=basketball_data["team"]["nextEvent"][0]["week"]["text"],
-        court=basketball_data["team"]["nextEvent"][0]["competitions"][0]["venue"][
-            "fullName"
-        ],
-    )
 
-    return next_game
-
-
-def get_mens_basketball_standings():
+def get_mens_basketball_standings() -> str:
     """returns a string describing the placement of the men's basketball team. eg: '14th in ACC' """
     basketball_response = requests.get(BASKETBALL_URL)
     basketball_data = basketball_response.json()
