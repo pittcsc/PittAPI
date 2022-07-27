@@ -18,7 +18,6 @@ import unittest
 
 from pittapi import sports
 
-@unittest.skip
 class LibraryTest(unittest.TestCase):
     def test_get_mens_basketball_record(self):
         self.assertIsInstance(sports.get_mens_basketball_record(), str)
@@ -27,7 +26,7 @@ class LibraryTest(unittest.TestCase):
         self.assertIsInstance(sports.get_next_mens_basketball_game(), dict)
 
     def test_get_mens_basketball_standings(self):
-        self.assertRaises(sports.get_mens_basketball_standings(), str)
+        self.assertIsInstance(sports.get_mens_basketball_standings(), str)
 
     def test_get_football_record(self):
         self.assertIsInstance(sports.get_football_record(), str)
@@ -36,4 +35,4 @@ class LibraryTest(unittest.TestCase):
         self.assertIsInstance(sports.get_next_football_game(), dict)
 
     def test_get_football_standings(self):
-        self.assertRaises(sports.get_football_standings(), str)
+        self.assertIsInstance(sports.get_football_standings(), str)
