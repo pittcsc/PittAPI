@@ -71,7 +71,8 @@ def get_next_mens_basketball_game() -> dict:
                 "name" : opponent["team"]["displayName"]
             },
             "HomeAway" : homeaway,
-            "Location" : next_game["competitions"][0]["venue"]
+            "Location" : next_game["competitions"][0]["venue"],
+            "Error" : None
         }
     except IndexError:
         return {
@@ -102,22 +103,35 @@ def get_football_record() -> str:
     return record_summary
 
 
-def get_next_football_game() -> NextFootballGame:
-    """returns a dict containing details of the next scheduled football game."""
+def get_next_football_game() -> dict:
     football_response = requests.get(FOOTBALL_URL)
     football_data = football_response.json()
-
-    next_game = NextFootballGame(
-        name=football_data["team"]["nextEvent"][0]["name"],
-        short_name=football_data["team"]["nextEvent"][0]["shortName"],
-        season_name=football_data["team"]["nextEvent"][0]["seasonType"]["name"],
-        week=football_data["team"]["nextEvent"][0]["week"]["text"],
-        field=football_data["team"]["nextEvent"][0]["competitions"][0]["venue"][
-            "fullName"
-        ],
-    )
-
-    return next_game
+    next_game = None
+    try:
+        next_game = football_data["team"]["nextEvent"][0]
+        opponent = None
+        homeaway = None
+        if next_game["competitions"][0]["competitors"][0]["id"] == 221:
+            opponent = next_game["competitions"][0]["competitors"][1]
+            homeaway = next_game["competitions"][0]["competitors"][0]["homeAway"]
+        else:
+            opponent = next_game["competitions"][0]["competitors"][0]
+            homeaway = next_game["competitions"][0]["competitors"][1]["homeAway"]
+        return {
+            "Timestamp" : next_game["date"],
+            "Oppponent" : {
+                "id" : opponent["team"]["id"],
+                "school" : opponent["team"]["nickname"],
+                "name" : opponent["team"]["displayName"]
+            },
+            "HomeAway" : homeaway,
+            "Location" : next_game["competitions"][0]["venue"],
+            "Error" : None
+        }
+    except IndexError:
+        return {
+            "Error" : "Offseason"
+        }
 
 
 def get_football_standings() -> str:
