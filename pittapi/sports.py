@@ -70,6 +70,7 @@ def get_next_mens_basketball_game() -> dict:
             "status" : status
         }
     except IndexError:
+        # IndexError occurs when a next game on the schedule is not present, implying it's the offseason.
         return {
             "status" : "OFFSEASON"
         }
@@ -129,6 +130,7 @@ def get_next_football_game() -> dict:
             "status" : status
         }
     except IndexError:
+        # IndexError occurs when a next game on the schedule is not present, implying it's the offseason.
         return {
             "status" : "OFFSEASON"
         }
