@@ -198,7 +198,7 @@ class LibraryTest(unittest.TestCase):
         self.assertIn("home_away", next_game_details)
         self.assertIn("location", next_game_details)
         self.assertIn("status", next_game_details)
-        self.assertNotEqual("OFFSEASON", next_game_details["status"])
+        self.assertNotEqual("NO_GAME_SCHEDULED", next_game_details["status"])
 
     def test_get_next_football_game(self):
         next_game_details = sports.get_next_football_game()
@@ -207,7 +207,7 @@ class LibraryTest(unittest.TestCase):
         self.assertIn("home_away", next_game_details)
         self.assertIn("location", next_game_details)
         self.assertIn("status", next_game_details)
-        self.assertNotEqual("OFFSEASON", next_game_details["status"])
+        self.assertNotEqual("NO_GAME_SCHEDULED", next_game_details["status"])
 
     def test_get_next_mens_basketball_game_offseason(self):
         offseason_data = {
@@ -220,7 +220,7 @@ class LibraryTest(unittest.TestCase):
         next_game_details = sports.get_next_mens_basketball_game()
         self.assertEqual(1, len(next_game_details))
         self.assertIn("status", next_game_details)
-        self.assertEqual("OFFSEASON", next_game_details["status"])
+        self.assertEqual("NO_GAME_SCHEDULED", next_game_details["status"])
 
     def test_get_next_football_game_offseason(self):
         offseason_data = {
@@ -233,4 +233,4 @@ class LibraryTest(unittest.TestCase):
         next_game_details = sports.get_next_football_game()
         self.assertEqual(1, len(next_game_details))
         self.assertIn("status", next_game_details)
-        self.assertEqual("OFFSEASON", next_game_details["status"])
+        self.assertEqual("NO_GAME_SCHEDULED", next_game_details["status"])
