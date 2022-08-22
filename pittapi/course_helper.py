@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 import re
 import requests
 
@@ -9,13 +9,14 @@ COURSE_SECTIONS_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB
     # id -> unique course ID, not to be confused with course code (for instance, CS 0007 has code 105611)
     # career -> for example, UGRD (undergraduate)
 
+valid_terms = re.compile("2\d\d[147]")
 
-def _validate_term(term: str) -> str:
+
+def _validate_term(term: Union[str, int]) -> str:
     """Validates that the term entered follows the pattern that Pitt does for term codes."""
-    valid_terms = re.compile("2\d\d[147]")
     if valid_terms.match(str(term)):
         return str(term)
-    raise ValueError("Term entered isn't a valid Pitt term.")
+    raise ValueError("Term entered isn't a valid Pitt term, must match regex 2\d\d[147]")
 
 def _validate_subject(subject: str) -> str:
     """Validates that the subject code entered is present in the API request."""
@@ -23,19 +24,19 @@ def _validate_subject(subject: str) -> str:
         return subject
     raise ValueError("Subject code entered isn't a valid Pitt subject code.")
 
-def _validate_course(course: str) -> str:
+def _validate_course(course: Union[str, int]) -> str:
     """Validates that the course name entered is 4 characters long and in string form."""
     if course == "":
-        raise ValueError("Invalid course number.")
+        raise ValueError("Invalid course number, please enter a non-empty string.")
     if (type(course) is str) and (not course.isdigit()):
-        raise ValueError("Invalid course number.")
+        raise ValueError("Invalid course number, must be a number")
     if (type(course) is int) and (course <= 0):
-        raise ValueError("Invalid course number.")
+        raise ValueError("Invalid course number, must be positive")
     course_length = len(str(course))
     if course_length < 4:
         return ("0" * (4 - course_length)) + str(course)
     elif course_length > 4:
-        raise ValueError("Invalid course number.")
+        raise ValueError("Invalid course number, must be 4 characters long")
     return str(course)
 
 def _get_subject_codes() -> List[str]:
