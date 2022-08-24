@@ -20,7 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import datetime
 import re
 import requests
-from typing import List, NamedTuple, Union
+from typing import Dict, List, NamedTuple, Union
 
 SUBJECTS_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_CatalogSubjects?institution=UPITT"
 SUBJECT_COURSES_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_SubjectCourses?institution=UPITT&subject={subject}"
@@ -95,21 +95,35 @@ class Section(NamedTuple):
 
 
 class Course(NamedTuple):
-    pass
-#     subject_code: str
-#     course_number: str
-#     course_title: str
+    subject_code: str
+    course_number: str
+    course_id: str
+    course_title: str
+    academic_career: str
 #     sections: Optional[List[Section]] = None
 
 
 class Subject(NamedTuple):
-    pass
-#     subject_code: str
-#     courses: Dict[str, Course]
+    subject_code: str
+    courses: Dict[str, Course]
 #     term: Optional[str] = None
 
 def get_subject_courses(subject: str) -> Subject:
-    pass
+    json_response = _get_subject_courses(subject)
+    return Subject(
+        subject_code=subject,
+        courses={
+            course["catalog_nbr"] : 
+            Course(
+                subject_code=subject,
+                course_number=course["catalog_nbr"],
+                course_id=course["crse_id"],
+                course_title=course["descr"],
+                academic_career=course["acad_career"]
+            )
+            for course in json_response["courses"]
+        }
+    )
 
 def get_term_courses(term: Union[str, int], subject: str) -> Subject:
     pass

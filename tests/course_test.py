@@ -20,11 +20,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import json
 import unittest
 import responses
-from unittest.mock import MagicMock, patch
-
-from pathlib import Path
+from unittest.mock import MagicMock
 
 from pittapi import course
+from pittapi.course import Course, Subject
 
 class CourseTest(unittest.TestCase):
     def setUp(self):
@@ -361,3 +360,19 @@ class CourseTest(unittest.TestCase):
         self.assertEqual(course._validate_academic_career('UGRD'), 'UGRD')
         
         self.assertRaises(ValueError, course._validate_academic_career, 'foobar')
+
+    def test_get_subject_courses(self):
+        subject_courses = course.get_subject_courses('CS')
+
+        self.assertTrue(isinstance(subject_courses, Subject))
+        self.assertEqual(subject_courses.subject_code, 'CS')
+        self.assertEqual(len(subject_courses.courses), 1)
+        self.assertTrue('0007' in subject_courses.courses)
+        test_course = subject_courses.courses['0007']
+        
+        self.assertTrue(isinstance(test_course, Course))
+        self.assertEqual(test_course.subject_code, 'CS')
+        self.assertEqual(test_course.course_number, '0007')
+        self.assertEqual(test_course.course_id, '105611')
+        self.assertEqual(test_course.course_title, 'INTRODUCTION TO COMPUTER PROGRAMMING')
+        self.assertEqual(test_course.academic_career, 'UGRD')
