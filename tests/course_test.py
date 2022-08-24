@@ -23,7 +23,7 @@ import responses
 from unittest.mock import MagicMock
 
 from pittapi import course
-from pittapi.course import Course, Subject
+from pittapi.course import Course, Instructor, Meeting, Section, Subject
 
 class CourseTest(unittest.TestCase):
     def setUp(self):
@@ -170,8 +170,8 @@ class CourseTest(unittest.TestCase):
                     "topic": "",
                     "instructors": [
                         {
-                            "name": "To be Announced",
-                            "email": ""
+                            "name": "Robert Fishel",
+                            "email": "rmf105@pitt.edu"
                         }
                     ],
                     "section_type": "REC",
@@ -182,7 +182,7 @@ class CourseTest(unittest.TestCase):
                             "end_time": "10.50.00.000000-05:00",
                             "start_dt": "08/29/2022",
                             "end_dt": "12/09/2022",
-                            "instructor": "To be Announced"
+                            "instructor": "Robert Fishel"
                         }
                     ],
                     "reserve_caps": []
@@ -356,11 +356,6 @@ class CourseTest(unittest.TestCase):
         self.assertRaises(ValueError, course._validate_course, 'Hello')
         self.assertRaises(ValueError, course._validate_course, '10000')
 
-    def test_validate_academic_career(self):
-        self.assertEqual(course._validate_academic_career('UGRD'), 'UGRD')
-        
-        self.assertRaises(ValueError, course._validate_academic_career, 'foobar')
-
     def test_get_subject_courses(self):
         subject_courses = course.get_subject_courses('CS')
 
@@ -375,4 +370,38 @@ class CourseTest(unittest.TestCase):
         self.assertEqual(test_course.course_number, '0007')
         self.assertEqual(test_course.course_id, '105611')
         self.assertEqual(test_course.course_title, 'INTRODUCTION TO COMPUTER PROGRAMMING')
-        self.assertEqual(test_course.academic_career, 'UGRD')
+
+    def test_get_course_sections(self):
+        course_sections = course.get_course_sections('2231', 'CS', '0007')
+
+        self.assertTrue(isinstance(course_sections, Course))
+        self.assertEqual(course_sections.subject_code, 'CS')
+        self.assertEqual(course_sections.course_number, '0007')
+        self.assertEqual(course_sections.course_id, '105611')
+        self.assertEqual(course_sections.course_title, 'INTRO TO COMPUTER PROGRAMMING')
+        self.assertEqual(len(course_sections.sections), 1)
+        test_section = course_sections.sections[0]
+
+        self.assertTrue(isinstance(test_section, Section))
+        self.assertEqual(test_section.term, '2231')
+        self.assertEqual(test_section.session, 'Academic Term')
+        self.assertEqual(test_section.section_number, '1000')
+        self.assertEqual(test_section.class_number, '27815')
+        self.assertEqual(test_section.section_type, 'REC')
+        self.assertEqual(test_section.status, 'Open')
+        self.assertEqual(len(test_section.instructors), 1)
+        self.assertEqual(len(test_section.meetings), 1)
+        test_instructor = test_section.instructors[0]
+        test_meeting = test_section.meetings[0]
+
+        self.assertTrue(isinstance(test_instructor, Instructor))
+        self.assertEqual(test_instructor.name, "Robert Fishel")
+        self.assertEqual(test_instructor.email, "rmf105@pitt.edu")
+        
+        self.assertTrue(isinstance(test_meeting, Meeting))
+        self.assertEqual(test_meeting.days, "Fr")
+        self.assertEqual(test_meeting.start_time, "10.00.00.000000-05:00")
+        self.assertEqual(test_meeting.end_time, "10.50.00.000000-05:00")
+        self.assertEqual(test_meeting.start_date, "08/29/2022")
+        self.assertEqual(test_meeting.end_date, "12/09/2022")
+        self.assertEqual(test_meeting.instructor, "Robert Fishel")
