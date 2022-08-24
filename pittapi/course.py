@@ -17,60 +17,21 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-import json
 import re
-from datetime import datetime
-from typing import List, Dict, Generator, NamedTuple, Optional, Tuple
-
 import requests
-from requests_html import HTMLSession, HTMLResponse
-from parse import compile
+from typing import List, Union
 
-CLASS_SEARCH_URL = "https://psmobile.pitt.edu/app/catalog/classSearch"
-CLASS_SEARCH_API_URL = "https://psmobile.pitt.edu/app/catalog/getClassSearch"
-SECTION_DETAIL_URL = (
-    "https://psmobile.pitt.edu/app/catalog/classsection/UPITT/{term}/{class_number}"
-)
+SUBJECTS_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_CatalogSubjects?institution=UPITT"
+SUBJECT_COURSES_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_SubjectCourses?institution=UPITT&subject={subject}"
+COURSE_DETAIL_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_CatalogCourseDetails?institution=UPITT&course_id={id}&effdt=2018-06-30&x_acad_career={career}&crse_offer_nbr=1&use_catalog_print=Y"
+COURSE_SECTIONS_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_BROWSE_CLASSES.FieldFormula.IScript_BrowseSections?institution=UPITT&campus=&location=&course_id={id}&institution=UPITT&x_acad_career={career}&term={term}&crse_offer_nbr=1"
+SECTION_DETAILS_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_CLASS_SEARCH.FieldFormula.IScript_ClassDetails?institution=UPITT&term={term}&class_nbr={id}"
+    # id -> unique course ID, not to be confused with course code (for instance, CS 0007 has code 105611)
+    # career -> for example, UGRD (undergraduate)
 
-LABEL_MAP = {
-    "Session": "session",
-    "Career": "career",
-    "Units": "units",
-    "Grading": "grading",
-    "Description": "description",
-    "Enrollment Requirements": "preqs",
-    "Class Attributes": "attributes",
-    "Components": "components",
-    "Status": "status",
-    "Seats Taken": "seats_taken",
-    "Seats Open": "seats_open",
-    "Combined Section Capacity": "total_capacity",
-    "Class Capacity": "total_capacity",
-    "Unrestricted Seats": "unrestricted_seats",
-    "Restricted Seats": "restricted_seats",
-    "Wait List Total": "wait_list_total",
-    "Wait List Capacity": "wait_list_capacity",
-}
+VALID_TERMS = re.compile("2\d\d[147]")
 
-COMBINED_SECTION_PATTERN = compile(
-    "{course_name}\n{subject_code} {course_number} - {section_number} ({class_number})\nStatus: {status}\nSeats Taken: {seats_taken:d}\nWait List Total: {wait_list_total:d}"
-)
-CREDIT_UNITS_PATTERN = compile("{:d} units")
-SECTION_INFORMATION_PATTERN = compile(
-    "Section: {section_number}-{section_type} ({class_number})\nSession: {session}\nDays/Times: {dt}\nRoom: {room}\nInstructor: {instructor}\nMeeting Dates: {meeting_dates}\nStatus: {status:w}{}"
-)
-COURSE_INFORMATION_PATTERN = compile("{subject_code} {course_number} - {course_title}")
-
-SECTION_DETAIL_INT_FIELD = {
-    "seats_taken",
-    "seats_open",
-    "total_capacity",
-    "unrestricted_seats",
-    "restricted_seats",
-    "wait_list_total",
-    "wait_list_capacity",
-}
-
+ACADEMIC_CAREERS = ['UGRD', 'MEDS', 'LAW', 'GRAD', 'DMED', 'CNED']
 
 class CombinedSection(NamedTuple):
     term: str
@@ -140,196 +101,91 @@ class Subject(NamedTuple):
     courses: Dict[str, Course]
     term: Optional[str] = None
 
+def get_term_courses(term: Union[str, int], subject: str) -> Subject:
+    term = _validate_term(term)
+    subject = _validate_subject(subject)
 
-def _get_subject_json() -> Generator[Dict, None, None]:
-    text = requests.get(CLASS_SEARCH_URL).text
-    s = re.search(r"(?=subjects\s*:\s).*,", text)
-    text = s.group()[:-1]
-    text = text[text.find(":") + 1 :]
-    data = json.loads(text)
+def get_course_sections(term: Union[str, int], subject: str, course: Union[str, int]) -> Course:
+    term = _validate_term(term)
+    subject = _validate_subject(subject)
+    course = _validate_course(course)
 
-    for code in data:
-        # Filter out subject codes for non main campuses
-        if not any(v["campus"] == "PIT" for k, v in code["campuses"].items()):
-            continue
-        yield code
+def get_section_details(term: Union[str, int], section_number: int) -> Section:
+    term = _validate_term(term)
+    
 
-
-def get_subject_codes() -> List[str]:
-    subjects = []
-    for code in _get_subject_json():
-        subjects.append(code["subject"])
-    return subjects
-
-
-def get_detailed_subject_codes() -> List[SubjectCode]:
-    subjects = []
-    for code in _get_subject_json():
-        subjects.append(
-            SubjectCode(
-                subject_code=code["subject"],
-                description=code["descr"],
-                academic_group=code["acad_groups"]["group0"]["acad_group"],
-            )
-        )
-    return subjects
-
-
-def _parse_class_search_page(resp: HTMLResponse, term: str) -> Dict:
-    if resp.html.search("No classes found matching your criteria"):
-        raise ValueError("Criteria didn't find any classes")
-    if resp.html.search(
-        "The search took too long to respond, please try selecting additional search criteria."
-    ):
-        raise ValueError("Search response took too long.")
-    if resp.status_code != 200:
-        raise ValueError()
-
-    courses = {}
-    elements = resp.html.find("div")
-
-    course: Optional[Course] = None
-    for element in elements:
-        print(element.text)
-        if "secondary-head" in element.attrs["class"]:
-            content = COURSE_INFORMATION_PATTERN.parse(element.text).named
-            course = Course(**content, sections=list())
-            courses[content["course_number"]] = course
-        elif "section-content" in element.attrs["class"]:
-            content = SECTION_INFORMATION_PATTERN.parse(element.text).named
-            del content["dt"]
-            del content["meeting_dates"]
-            section = Section(**content, term=term)
-            print(section)
-            course.sections.append(section)
-    return courses
-
-
-def get_extra_section_details(
-    *, section: Section = None, term=None, class_number=None
-) -> SectionDetails:
-    if section is None and (term is None or class_number is None):
-        raise ValueError()
-    if section is not None:
-        term = section.term
-        class_number = section.class_number
-
-    data = {"term": term}
-    session = HTMLSession()
-
-    url = SECTION_DETAIL_URL.format(term=term, class_number=class_number)
-    resp = session.get(url)
-    elements = resp.html.xpath("/html/body/section/section/div")
-    heading = ""
-    for element in elements:
-        print(element.text, end="\n\n")
-        if "role" in element.attrs:
-            heading = element.text
-            continue
-
-        if heading == "Combined Section":
-            if "combined_sections" not in data:
-                data["combined_sections"] = []
-            content = COMBINED_SECTION_PATTERN.parse(element.text)
-            combined_section = CombinedSection(**content.named, term=term)
-            data["combined_sections"].append(combined_section)
-            continue
-
-        if "\n" not in element.text:
-            continue
-
-        label, content, *extra = element.text.split("\n")
-
-        if heading == "Enrollment Restrictions":
-            if "seat_restrictions" not in data:
-                data["seat_restrictions"] = {}
-            data["seat_restrictions"][label] = int(re.search("\d+", content).group())
-            continue
-
-        if label in LABEL_MAP:
-            label = LABEL_MAP[label]
-            if label == "components":
-                content = content.split(", ")
-            elif label == "units":
-                content = CREDIT_UNITS_PATTERN.parse(content)[0]
-            elif label == "attributes":
-                content = [content] + extra
-            elif label in SECTION_DETAIL_INT_FIELD:
-                content = int(content)
-
-            data[label] = content
-    return SectionDetails(**data)
-
-
-def _validate_term(term: str) -> str:
+def _validate_term(term: Union[str, int]) -> str:
     """Validates that the term entered follows the pattern that Pitt does for term codes."""
-    valid_terms = re.compile("2\d\d[147]")
-    if valid_terms.match(term):
-        return term
-    raise ValueError("Term entered isn't a valid Pitt term.")
+    if VALID_TERMS.match(str(term)):
+        return str(term)
+    raise ValueError("Term entered isn't a valid Pitt term, must match regex 2\d\d[147]")
 
+def _validate_subject(subject: str) -> str:
+    """Validates that the subject code entered is present in the API request."""
+    if subject in _get_subject_codes():
+        return subject
+    raise ValueError("Subject code entered isn't a valid Pitt subject code.")
 
-def _validate_course(course: str) -> str:
+def _validate_course(course: Union[str, int]) -> str:
     """Validates that the course name entered is 4 characters long and in string form."""
     if course == "":
-        raise ValueError("Invalid course number.")
-    if not course.isdigit():
-        raise ValueError("Invalid course number.")
-    course_length = len(course)
+        raise ValueError("Invalid course number, please enter a non-empty string.")
+    if (type(course) is str) and (not course.isdigit()):
+        raise ValueError("Invalid course number, must be a number")
+    if (type(course) is int) and (course <= 0):
+        raise ValueError("Invalid course number, must be positive")
+    course_length = len(str(course))
     if course_length < 4:
-        return ("0" * (4 - course_length)) + course
+        return ("0" * (4 - course_length)) + str(course)
     elif course_length > 4:
-        raise ValueError("Invalid course number.")
-    return course
+        raise ValueError("Invalid course number, must be 4 characters long")
+    return str(course)
 
+def _validate_academic_career(academic_career: str) -> str:
+    if academic_career not in ACADEMIC_CAREERS:
+        raise ValueError("Invalid academic career, must be one of UGRD, MEDS, LAW, GRAD, DMED, CNED")
+    return academic_career
 
-def _get_payload(
-    term, *, subject="", course="", section=""
-) -> Tuple[HTMLSession, Dict[str, str]]:
-    """Make payload for request and generates CSRFToken for the request"""
+def _get_subject_codes() -> List[str]:
+    response = _get_subjects()
+    codes = []
+    for subject in response["subjects"]:
+        codes.append(subject["subject"])
+    return codes
 
-    # Generate new CSRFToken
-    session = HTMLSession()
-    session.get(CLASS_SEARCH_URL)
+def _get_internal_id_dict(subject: str) -> dict:
+    response = _get_subject_courses(subject)
+    internal_id_dict = {}
+    for course in response["courses"]:
+        if course["catalog_nbr"] not in internal_id_dict:
+            internal_id_dict[course["catalog_nbr"]] = course["crse_id"]
+    return internal_id_dict
 
-    payload = {
-        "CSRFToken": session.cookies["CSRFCookie"],
-        "term": term,
-        "campus": "PIT",
-        "subject": subject,
-        "acad_career": "",
-        "catalog_nbr": course,
-        "class_nbr": section,
-    }
-    return session, payload
+def _get_subjects() -> dict:
+    return requests.get(SUBJECTS_API).json()
 
+def _get_subject_courses(subject: str) -> dict:
+    subject = _validate_subject(subject)
+    return requests.get(SUBJECT_COURSES_API.format(subject=subject)).json()
 
-def get_courses(term: str, subject: str) -> Subject:
-    """Returns a list of courses available in term for a particular subject."""
+def _get_course_detail(course_id: Union[str, int], academic_career: str) -> dict:
+    academic_career = _validate_academic_career(academic_career)
+    response = requests.get(COURSE_DETAIL_API.format(id=course_id, career=academic_career)).json()
+    if response["course_details"] == {}:
+        raise ValueError("Invalid course ID; course with that ID does not exist")
+    return response
+
+def _get_course_sections(course_id: Union[str, int], academic_career: str, term: Union[str, int]) -> dict:
     term = _validate_term(term)
-    session, payload = _get_payload(term, subject=subject)
-    response = session.post(CLASS_SEARCH_API_URL, data=payload)
-    courses = _parse_class_search_page(response, term)
-    subject = Subject(subject_code=subject, term=term, courses=courses)
-    return subject
+    academic_career = _validate_academic_career(academic_career)
+    response = requests.get(COURSE_SECTIONS_API.format(id=course_id, career=academic_career, term=term)).json()
+    if len(response["sections"]) == 0:
+        raise ValueError("Invalid course ID; course with that ID does not exist")
+    return response
 
-
-def get_course_sections(term: str, subject: str, course: str) -> Section:
-    """Return details on all sections taught in a certain course"""
+def _get_section_details(term: Union[str, int], section_id: Union[str, int]) -> dict:
     term = _validate_term(term)
-    course = _validate_course(course)
-    session, payload = _get_payload(term, subject=subject, course=course)
-    response = session.post(CLASS_SEARCH_API_URL, data=payload)
-    course, *_ = _parse_class_search_page(response, term).values()
-    return course
-
-
-def get_section_details(term: str, section_number: str) -> Course:
-    """Returns information pertaining to a certain section."""
-    term = _validate_term(term)
-    if isinstance(section_number, int):
-        section_number = str(section_number)
-    session, payload = _get_payload(term, section=section_number)
-    response = session.post(CLASS_SEARCH_API_URL, data=payload)
-    course, *_ = _parse_class_search_page(response, term).values()
-    return course
+    response = requests.get(SECTION_DETAILS_API.format(term=term, id=section_id)).json()
+    if error in response:
+        raise ValueError("Invalid section ID; section with that ID does not exist")
+    return response

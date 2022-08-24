@@ -24,7 +24,7 @@ from unittest.mock import patch
 
 from pathlib import Path
 
-from pittapi import course
+from pittapi import course, course_helper
 
 SAMPLE_PATH = Path.cwd() / 'tests' / 'samples'
 
