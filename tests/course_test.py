@@ -371,8 +371,8 @@ class CourseTest(unittest.TestCase):
         self.assertEqual(test_course.course_id, '105611')
         self.assertEqual(test_course.course_title, 'INTRODUCTION TO COMPUTER PROGRAMMING')
 
-    def test_get_course_sections(self):
-        course_sections = course.get_course_sections('2231', 'CS', '0007')
+    def test_get_course_details(self):
+        course_sections = course.get_course_details('2231', 'CS', '0007')
 
         self.assertTrue(isinstance(course_sections, Course))
         self.assertEqual(course_sections.subject_code, 'CS')

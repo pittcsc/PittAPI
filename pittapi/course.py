@@ -20,7 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import datetime
 import re
 import requests
-from typing import Dict, List, NamedTuple, Optional, Union
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
 SUBJECTS_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_CatalogSubjects?institution=UPITT"
 SUBJECT_COURSES_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_SubjectCourses?institution=UPITT&subject={subject}"
@@ -80,6 +80,10 @@ class Meeting(NamedTuple):
     end_date: str
     instructor: str
 
+class Component(NamedTuple):
+    component: str
+    required: bool
+
 class Section(NamedTuple):
     term: str
     session: str
@@ -95,6 +99,10 @@ class Course(NamedTuple):
     course_number: str
     course_id: str
     course_title: str
+    course_description: str
+    credit_range: Tuple[int]
+    requisites: Optional[str] = None
+    components: List[Component] = None
     sections: Optional[List[Section]] = None
 
 class Subject(NamedTuple):
@@ -119,18 +127,28 @@ def get_subject_courses(subject: str) -> Subject:
         }
     )
 
-def get_course_sections(term: Union[str, int], subject: str, course: Union[str, int]) -> Course:
+def get_course_details(term: Union[str, int], subject: str, course: Union[str, int]) -> Course:
     term = _validate_term(term)
     subject = _validate_subject(subject)
     course = _validate_course(course)
 
     internal_course_id = _get_course_id(subject, course)
-    json_response = _get_course_sections(internal_course_id, term)
+    json_respose = _get_course_info(internal_course_id)["course_details"]
+    json_response_details = _get_course_sections(internal_course_id, term)
     return Course(
         subject_code=subject,
         course_number=course,
         course_id=internal_course_id,
-        course_title=json_response["sections"][0]["descr"],
+        course_title=json_response_details["sections"][0]["descr"],
+        course_description=json_response["descrlong"],
+        credit_range=(json_response["units_minimum", "units_maximum"]),
+        requisites=json_response["offerings"][0]["req_group"] if offerings in json_response and len(json_response["offerings"]) != 0 and req_group in json_response["offerings"][0] else None,
+        components=[
+            Component(
+                component=component["descr"],
+                required=True if component["optional"] == 'N' else False
+            ) for component in json_response["components"]
+        ] if "components" in json_response and len(json_response["components"]) != 0 else None,
         sections=[
             Section(
                 term=term,
@@ -155,12 +173,18 @@ def get_course_sections(term: Union[str, int], subject: str, course: Union[str, 
                         instructor=meeting["instructor"]
                     ) for meeting in section["meetings"]
                 ] if len(section["meetings"]) != 0 else None
-            ) for section in json_response["sections"]
+            ) for section in json_response_details["sections"]
         ]
     )
 
 def get_section_details(term: Union[str, int], section_number: int) -> Section:
-    pass
+    term = _validate_term
+
+    json_response = _get_section_details(term, section_number)
+    return Section(
+        term=term
+        session=json_response
+    )
     
 
 def _validate_term(term: Union[str, int]) -> str:
@@ -217,7 +241,7 @@ def _get_subjects() -> dict:
 def _get_subject_courses(subject: str) -> dict:
     return requests.get(SUBJECT_COURSES_API.format(subject=subject)).json()
 
-def _get_course_detail(course_id: str) -> dict:
+def _get_course_info(course_id: str) -> dict:
     response = requests.get(COURSE_DETAIL_API.format(id=course_id)).json()
     if response["course_details"] == {}:
         raise ValueError("Invalid course ID; course with that ID does not exist")
