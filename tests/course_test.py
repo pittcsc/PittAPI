@@ -20,55 +20,309 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import json
 import unittest
 import responses
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from pathlib import Path
 
-from pittapi import course, course_helper
-
-SAMPLE_PATH = Path.cwd() / 'tests' / 'samples'
-
-
-class RequestText:
-    def __init__(self, text):
-        self.text = text
-
-
-class MockSession:
-
-    def __init__(self, text=None):
-        self.cookies = {'CSRFCookie': 'abc'}
-        self.text = text
-
-    def get(self, x):
-        return None
-
-    def post(self, *args, **kwargs):
-        return RequestText(self.text)
-
+from pittapi import course
 
 class CourseTest(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
-        with (SAMPLE_PATH / 'course_subject.html').open() as f:
-            self.cs_subject_data = ''.join(f.readlines())
-        with (SAMPLE_PATH / 'course_course.html').open() as f:
-            self.cs_course_data = ''.join(f.readlines())
-        with (SAMPLE_PATH / 'course_section.html').open() as f:
-            self.cs_section_data = ''.join(f.readlines())
-        with (SAMPLE_PATH / 'course_extra_1.html').open() as f:
-            self.cs_extra_data_1 = ''.join(f.readlines())
-        with (SAMPLE_PATH / 'course_extra_2.html').open() as f:
-            self.cs_extra_data_2 = ''.join(f.readlines())
-        with (SAMPLE_PATH / 'course_extra_3.html').open() as f:
-            self.cs_extra_data_3 = ''.join(f.readlines())
-        with (SAMPLE_PATH / 'course_extra_4.html').open() as f:
-            self.cs_extra_data_4 = ''.join(f.readlines())
-
-    def test_validate_subject(self):
-        for subject in course.SUBJECTS:
-            self.assertEqual(course._validate_subject(subject), subject)
-        self.assertRaises(ValueError, course._validate_subject, 'TEST')
+    def setUp(self):
+        mocked_subject_data = {
+            "subjects" : [
+                {
+                    "subject" : "CS",
+                    "descr" : "Computer Science"
+                }
+            ]
+        }
+        mocked_courses_data = {
+            "courses" : [
+                {
+                    "acad_career": "UGRD",
+                    "catalog_nbr": "0007",
+                    "descr": "INTRODUCTION TO COMPUTER PROGRAMMING",
+                    "crse_id": "105611",
+                    "crse_offer_nbr": "5",
+                    "effdt": "2018-06-30",
+                    "typ_offr": "FALL",
+                    "typ_offr_descr": "Fall",
+                    "has_open_terms": True,
+                    "multipleOfferings": False,
+                    "offerings": [
+                        {
+                            "crse_offer_nbr": "5",
+                            "careers": []
+                        }
+                    ]
+                }
+            ]
+        }
+        mocked_course_detail_data = {
+            "course_details": {
+                "descrlong": "This is a first course in computer science programming. It is recommended for those students intending to major in computer science who do not have the required background for cs 0401. It may also be of interest to students majoring in one of the social sciences or humanities. The focus of the course is on problem analysis and the development of algorithms and computer programs in a modern high-level language.",
+                "units_minimum": 3,
+                "units_maximum": 3,
+                "units_inc": 1,
+                "grading_basis": "OP2",
+                "grading_basis_descr": "LG/SNC Elective Basis",
+                "course_title": "INTRODUCTION TO COMPUTER PROGRAMMING",
+                "rqmnt_designtn": "",
+                "effdt": "2018-06-30",
+                "components": [
+                    {
+                        "descr": "Lecture",
+                        "optional": "N"
+                    },
+                    {
+                        "descr": "Recitation",
+                        "optional": "N"
+                    }
+                ],
+                "attributes": [
+                    {
+                        "crse_attribute": "DSGE",
+                        "crse_attribute_descr": "*DSAS General Ed. Requirements",
+                        "crse_attribute_value": "ALG",
+                        "crse_attribute_value_descr": "Algebra"
+                    },
+                    {
+                        "crse_attribute": "DSGE",
+                        "crse_attribute_descr": "*DSAS General Ed. Requirements",
+                        "crse_attribute_value": "QFR",
+                        "crse_attribute_value_descr": "Quant.-Formal Reasoning"
+                    }
+                ],
+                "offerings": [
+                    {
+                        "crse_offer_nbr": 1,
+                        "subject": "CS",
+                        "catalog_nbr": "0007",
+                        "acad_career": "Undergraduate",
+                        "acad_group": "Sch Computing and Information",
+                        "acad_org": "Computer Science",
+                        "campus": "Pittsburgh Campus",
+                        "campus_cd": "PIT",
+                        "req_group": "",
+                        "planner_message": "You have no active career, so you can not add this course to a planner.",
+                        "open_terms": [
+                            {
+                                "strm": "2224",
+                                "descr": "Spring Term 2021-2022",
+                                "default_term": False
+                            },
+                            {
+                                "strm": "2227",
+                                "descr": "Summer Term 2021-2022",
+                                "default_term": False
+                            },
+                            {
+                                "strm": "2231",
+                                "descr": "Fall Term 2022-2023",
+                                "default_term": True
+                            }
+                        ],
+                        "enrollable_terms": [
+                            {
+                                "strm": "2224"
+                            },
+                            {
+                                "strm": "2227"
+                            },
+                            {
+                                "strm": "2231"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+        mocked_course_sections_data = {
+            "show_reserve_cap": True,
+            "show_share": False,
+            "mobile_url": "https://cs92-dev.mhighpoint.com",
+            "sections": [
+                {
+                    "combined_section": False,
+                    "enrl_stat": "O",
+                    "enrl_stat_descr": "Open",
+                    "crse_id": "105611",
+                    "crse_offer_nbr": 1,
+                    "crs_topic_id": 0,
+                    "descr": "INTRO TO COMPUTER PROGRAMMING",
+                    "subject": "CS",
+                    "catalog_nbr": "0007",
+                    "class_section": "1000",
+                    "class_nbr": 27815,
+                    "class_type": "N",
+                    "session_code": "AT",
+                    "session": "Academic Term",
+                    "schedule_print": "Y",
+                    "class_stat": "A",
+                    "wait_tot": 7,
+                    "wait_cap": 50,
+                    "class_capacity": 28,
+                    "enrollment_total": 24,
+                    "enrollment_available": 4,
+                    "component": "REC",
+                    "start_dt": "08/29/2022",
+                    "end_dt": "12/09/2022",
+                    "units": "0",
+                    "topic": "",
+                    "instructors": [
+                        {
+                            "name": "To be Announced",
+                            "email": ""
+                        }
+                    ],
+                    "section_type": "REC",
+                    "meetings": [
+                        {
+                            "days": "Fr",
+                            "start_time": "10.00.00.000000-05:00",
+                            "end_time": "10.50.00.000000-05:00",
+                            "start_dt": "08/29/2022",
+                            "end_dt": "12/09/2022",
+                            "instructor": "To be Announced"
+                        }
+                    ],
+                    "reserve_caps": []
+                }
+            ]
+        }
+        mocked_section_details_data = {
+            "show_validate": "N",
+            "show_waitlist": "Y",
+            "section_info": {
+                "class_details": {
+                    "institution": "UPITT",
+                    "subject": "CS",
+                    "catalog_nbr": "0007",
+                    "status": "Open",
+                    "class_number": 27815,
+                    "component": "REC",
+                    "course_offer_nbr": 1,
+                    "session": "Academic Term",
+                    "session_code": "AT",
+                    "class_section": "1000",
+                    "section_descr": "CS 0007 - 1000",
+                    "units": "0 units",
+                    "acad_career": "UGRD",
+                    "acad_career_descr": "",
+                    "course_id": "105611",
+                    "course_title": "INTRODUCTION TO COMPUTER PROGRAMMING",
+                    "course_status": "A",
+                    "instruction_mode": "",
+                    "grading_basis": "",
+                    "campus": "Pittsburgh Campus",
+                    "campus_code": "PIT",
+                    "location": "Pittsburgh Campus",
+                    "topic": "",
+                    "class_components": "<table class=\"PSTEXT\"><tr><td>Lecture Required, Recitation Required</td></tr></table>"
+                },
+                "meetings": [
+                    {
+                        "meets": "Fr 10:00am - 10:50am",
+                        "stnd_mtg_pat": "Fr",
+                        "meeting_time_start": "10:00AM",
+                        "meeting_time_end": "10:50AM",
+                        "bldg_cd": "SENSQ",
+                        "meeting_topic": "TBA",
+                        "instructors": [
+                            {
+                                "name": "To be Announced",
+                                "email": ""
+                            }
+                        ],
+                        "start_date": "08/29/2022",
+                        "end_date": "12/09/2022",
+                        "topic": "TBA",
+                        "show_topic": False,
+                        "date_range": "08/29/2022 - 12/09/2022"
+                    }
+                ],
+                "enrollment_information": {
+                    "add_consent": "",
+                    "drop_consent": "",
+                    "enroll_requirements": "",
+                    "requirement_desig": "",
+                    "class_attributes": "DSAS Algebra General Ed. Requirement \rDSAS Quant.-Formal Reason General Ed. Requirement \rAsian Studies"
+                },
+                "class_availability": {
+                    "class_capacity": "28",
+                    "enrollment_total": "24",
+                    "enrollment_available": 4,
+                    "wait_list_capacity": "50",
+                    "wait_list_total": "7"
+                },
+                "reserve_caps": [],
+                "is_combined": False,
+                "notes": {
+                    "class_notes": "",
+                    "subject_notes": ""
+                },
+                "catalog_descr": {
+                    "crse_catalog_description": "This is a first course in computer science programming. It is recommended for those students intending to major in computer science who do not have the required background for cs 0401. It may also be of interest to students majoring in one of the social sciences or humanities. The focus of the course is on problem analysis and the development of algorithms and computer programs in a modern high-level language."
+                },
+                "materials": {
+                    "txb_none": "N",
+                    "txb_status": "P",
+                    "txb_special_instructions": "",
+                    "textbooks_message": "Textbooks to be determined"
+                },
+                "valid_to_enroll": "T"
+            },
+            "class_enroll_info": {
+                "last_enrl_dt_passed": False,
+                "is_related": True
+            },
+            "additionalLinks": [],
+            "cfg": {
+                "is_related": False,
+                "show_crse_id": False,
+                "show_crse_offer_nbr": False,
+                "show_campus": True,
+                "show_location": True,
+                "show_consent_to_add": True,
+                "show_consent_to_drop": True,
+                "show_enroll_req": True,
+                "show_req_desig": True,
+                "show_class_attributes": True,
+                "show_class_availability": True,
+                "show_combined": True,
+                "show_class_notes": True,
+                "show_catalog_descr": True,
+                "show_textbook_info": True,
+                "show_common_attributes": False,
+                "can_add_to_planner": False,
+                "show_enroll": False,
+                "can_add_to_cart": False,
+                "can_enroll_class": False,
+                "can_validate_class": False,
+                "can_edit_class": False,
+                "can_delete_class": False,
+                "show_friend_suggest": False,
+                "show_bookstore": False,
+                "show_share": False,
+                "show_wait_list": True,
+                "show_instruction_mode": False,
+                "show_topic": False,
+                "show_add_to_wish_list": False,
+                "wish_list_enabled": False,
+                "show_actions": True
+            },
+            "messages": {
+                "shareLink": "Copy link to share the class with friends.",
+                "shareSocial": "Or share on social media networks.",
+                "reserveInfo": "Seats in this class have been reserved for students for the specified programs, majors or groups listed below. Reserved seats are subject to change without notice.",
+                "noMeetingInfo": "No meeting info found"
+            }
+        }
+        course._get_subjects = MagicMock(return_value=mocked_subject_data)
+        course._get_subject_courses = MagicMock(return_value=mocked_courses_data)
+        course._get_course_detail = MagicMock(return_value=mocked_course_detail_data)
+        course._get_course_sections = MagicMock(return_value=mocked_course_sections_data)
+        course._get_section_details = MagicMock(return_value=mocked_section_details_data)
 
     def test_validate_term(self):
         # If convert to string
@@ -80,6 +334,11 @@ class CourseTest(unittest.TestCase):
         self.assertRaises(ValueError, course._validate_term, '214')
         self.assertRaises(ValueError, course._validate_term, '1111')
         self.assertRaises(ValueError, course._validate_term, '12345')
+
+    def test_validate_subject(self):
+        self.assertEqual(course._validate_subject('CS'), 'CS')
+        
+        self.assertRaises(ValueError, course._validate_subject, 'foobar')
 
     def test_validate_course(self):
         self.assertEqual(course._validate_course(7), '0007')
@@ -98,117 +357,7 @@ class CourseTest(unittest.TestCase):
         self.assertRaises(ValueError, course._validate_course, 'Hello')
         self.assertRaises(ValueError, course._validate_course, '10000')
 
-    def test_get_payload(self):
-        TRUE_PAYLOAD = {'CSRFToken': 'abc', 'term': '2194', 'campus': 'PIT', 'subject': 'CS', 'acad_career': '',
-                        'catalog_nbr': '1501', 'class_nbr': '27740'}
-        with patch('requests.Session') as mock:
-            mock.return_value = MockSession()
-
-            payload = course._get_payload('2194', subject='CS', course='1501', section='27740')[-1]
-            for k, v in payload.items():
-                self.assertEqual(v, TRUE_PAYLOAD[k])
-
-    def test_get_term_courses(self):
-        with patch('requests.Session') as mock:
-            mock.return_value = MockSession(self.cs_subject_data)
-            cs_subject = course.get_courses('2194', 'CS')
-            self.assertTrue('0004' in cs_subject.courses)
-            self.assertTrue(cs_subject['0004'].number in cs_subject.courses)
-
-            self.assertRaises(ValueError, cs_subject.__getitem__, '1111')
-            self.assertRaises(ValueError, cs_subject.__getitem__, 4)
-
-            self.assertIsInstance(cs_subject.to_dict(), dict)
-            self.assertEqual(repr(cs_subject), json.dumps(cs_subject.to_dict()))
-            for absolute in ['0004', '0007']:
-                self.assertTrue(absolute in cs_subject.courses)
-            self.assertEqual(str(cs_subject), 'PittSubject(2194, CS)')
-
-    def test_get_term_courses_parent(self):
-        with patch('requests.Session') as mock:
-            mock.return_value = MockSession(self.cs_subject_data)
-            cs_subject = course.get_courses('2194', 'CS')
-            self.assertEqual(cs_subject['0004'].term, '2194')
-            self.assertEqual(cs_subject['0004'].subject, 'CS')
-            self.assertEqual(cs_subject['0004'][0].term, '2194')
-            self.assertEqual(cs_subject['0004'][0].subject, 'CS')
-
-    def test_get_course_sections(self):
-        with patch('requests.Session') as mock:
-            mock.return_value = MockSession(self.cs_course_data)
-            cs_course = course.get_course_sections('2194', 'CS', '0007')
-            self.assertEqual(cs_course.number, '0007')
-            self.assertEqual(cs_course.term, '2194')
-            self.assertEqual(cs_course.subject, 'CS')
-
-            self.assertEqual(cs_course[0], cs_course.sections[0])
-            self.assertEqual(len(cs_course[0:2]), 2)
-            self.assertEqual(cs_course[0].course_number, cs_course.number)
-            self.assertEqual(cs_course[0].course_title, cs_course.title)
-            self.assertEqual(str(cs_course), 'PittCourse(2194, CS, 0007)')
-            self.assertEqual(repr(cs_course), json.dumps(cs_course.to_dict()))
-
-    @responses.activate
-    def test_get_section_details_improper_section_type(self):
-        responses.add(responses.GET, 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/2194/27469',
-                      body=self.cs_extra_data_1, status=200)
-        with patch('requests.Session') as mock:
-            mock.return_value = MockSession(self.cs_section_data)
-            cs_section = course.get_section_details('2194', 27469)
-            self.assertEqual(cs_section.instructor, 'William Laboon')
-            self.assertEqual(str(cs_section), 'PittSection(CS, 1632, LEC, 27469, William Laboon)')
-
-    @responses.activate
-    def test_get_section_details_no_class_attribute(self):
-        responses.add(responses.GET, 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/2194/27469',
-                      body=self.cs_extra_data_1, status=200)
-        with patch('requests.Session') as mock:
-            mock.return_value = MockSession(self.cs_section_data)
-            cs_section = course.get_section_details('2194', '27469')
-            self.assertEqual(cs_section.instructor, 'William Laboon')
-            self.assertEqual(str(cs_section), 'PittSection(CS, 1632, LEC, 27469, William Laboon)')
-
-            self.assertIsInstance(cs_section.extra_details, dict)
-            self.assertIsInstance(cs_section.extra_details, dict)
-
-    @responses.activate
-    def test_get_section_details(self):
-        responses.add(responses.GET, 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/2194/27469',
-                      body=self.cs_extra_data_2, status=200)
-        with patch('requests.Session') as mock:
-            mock.return_value = MockSession(self.cs_section_data)
-            cs_section = course.get_section_details('2194', '27469')
-            self.assertEqual(cs_section.instructor, 'William Laboon')
-            self.assertEqual(str(cs_section), 'PittSection(CS, 1632, LEC, 27469, William Laboon)')
-
-            self.assertEqual(cs_section.term, '2194')
-            self.assertEqual(cs_section.subject, 'CS')
-            self.assertEqual(cs_section.course_number, '1632')
-            self.assertEqual(cs_section.course_title, 'SOFTWARE QUALITY ASSURANCE')
-            self.assertEqual(repr(cs_section), json.dumps(cs_section.to_dict()))
-
-            self.assertIsInstance(cs_section.extra_details, dict)
-            self.assertIsInstance(cs_section.extra_details, dict)
-
-            self.assertIsInstance(cs_section.to_dict(), dict)
-            self.assertIsInstance(cs_section.to_dict(extra_details=True), dict)
-
-    @responses.activate
-    def test_get_section_details_extra_details(self):
-        responses.add(responses.GET, 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/2194/27469',
-                      body=self.cs_extra_data_3, status=200)
-        with patch('requests.Session') as mock:
-            mock.return_value = MockSession(self.cs_section_data)
-            cs_section = course.get_section_details('2194', '27469')
-            self.assertIsInstance(cs_section.extra_details, dict)
-            self.assertIsInstance(cs_section.extra_details, dict)
-
-    @responses.activate
-    def test_get_section_details_basic_extra_details(self):
-        responses.add(responses.GET, 'https://psmobile.pitt.edu/app/catalog/classsection/UPITT/2194/27469',
-                      body=self.cs_extra_data_4, status=200)
-        with patch('requests.Session') as mock:
-            mock.return_value = MockSession(self.cs_section_data)
-            cs_section = course.get_section_details('2194', '27469')
-            self.assertIsInstance(cs_section.extra_details, dict)
-            self.assertIsInstance(cs_section.extra_details, dict)
+    def test_validate_academic_career(self):
+        self.assertEqual(course._validate_academic_career('UGRD'), 'UGRD')
+        
+        self.assertRaises(ValueError, course._validate_academic_career, 'foobar')

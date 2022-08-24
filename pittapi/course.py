@@ -17,9 +17,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+import datetime
 import re
 import requests
-from typing import List, Union
+from typing import List, NamedTuple, Union
 
 SUBJECTS_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_CatalogSubjects?institution=UPITT"
 SUBJECT_COURSES_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_SubjectCourses?institution=UPITT&subject={subject}"
@@ -34,84 +35,90 @@ VALID_TERMS = re.compile("2\d\d[147]")
 ACADEMIC_CAREERS = ['UGRD', 'MEDS', 'LAW', 'GRAD', 'DMED', 'CNED']
 
 class CombinedSection(NamedTuple):
-    term: str
-    course_name: str
-    subject_code: str
-    course_number: str
-    section_number: str
-    class_number: str
-    status: str
-    seats_taken: int
-    wait_list_total: int
+    pass
+#     term: str
+#     course_name: str
+#     subject_code: str
+#     course_number: str
+#     section_number: str
+#     class_number: str
+#     status: str
+#     seats_taken: int
+#     wait_list_total: int
 
 
 class SectionDetails(NamedTuple):
-    term: str
-    session: str
-    career: str
-    units: int
-    grading: str
-    components: List[str]
+    pass
+#     term: str
+#     session: str
+#     career: str
+#     units: int
+#     grading: str
+#     components: List[str]
 
-    status: str
-    seats_taken: int
-    seats_open: int
-    total_capacity: int
-    unrestricted_seats: int
-    restricted_seats: int
-    wait_list_total: int
-    wait_list_capacity: int
+#     status: str
+#     seats_taken: int
+#     seats_open: int
+#     total_capacity: int
+#     unrestricted_seats: int
+#     restricted_seats: int
+#     wait_list_total: int
+#     wait_list_capacity: int
 
-    preqs: str = ""
-    description: str = ""
-    attributes: Optional[List[str]] = None
-    seat_restrictions: Optional[Dict[str, int]] = None
-    combined_sections: Optional[List[CombinedSection]] = None
+#     preqs: str = ""
+#     description: str = ""
+#     attributes: Optional[List[str]] = None
+#     seat_restrictions: Optional[Dict[str, int]] = None
+#     combined_sections: Optional[List[CombinedSection]] = None
 
 
 class SubjectCode(NamedTuple):
-    subject_code: str
-    description: str
-    academic_group: str
+    pass
+#     subject_code: str
+#     description: str
+#     academic_group: str
 
 
 class Section(NamedTuple):
-    term: str
-    session: str
-    section_number: str
-    class_number: str
-    section_type: str
-    instructor: str
-    room: str
-    status: str
-    meetings_dates: Optional[List[Tuple[datetime, datetime]]] = None
-    days: Optional[List[str]] = None
-    times: Optional[List[str]] = None
+    pass
+#     term: str
+#     session: str
+#     section_number: str
+#     class_number: str
+#     section_type: str
+#     instructor: str
+#     room: str
+#     status: str
+#     meetings_dates: Optional[List[Tuple[datetime, datetime]]] = None
+#     days: Optional[List[str]] = None
+#     times: Optional[List[str]] = None
 
 
 class Course(NamedTuple):
-    subject_code: str
-    course_number: str
-    course_title: str
-    sections: Optional[List[Section]] = None
+    pass
+#     subject_code: str
+#     course_number: str
+#     course_title: str
+#     sections: Optional[List[Section]] = None
 
 
 class Subject(NamedTuple):
-    subject_code: str
-    courses: Dict[str, Course]
-    term: Optional[str] = None
+    pass
+#     subject_code: str
+#     courses: Dict[str, Course]
+#     term: Optional[str] = None
+
+def get_subject_courses(subject: str) -> Subject:
+    pass
 
 def get_term_courses(term: Union[str, int], subject: str) -> Subject:
-    term = _validate_term(term)
-    subject = _validate_subject(subject)
+    pass
 
 def get_course_sections(term: Union[str, int], subject: str, course: Union[str, int]) -> Course:
-    term = _validate_term(term)
-    subject = _validate_subject(subject)
-    course = _validate_course(course)
+    pass
 
 def get_section_details(term: Union[str, int], section_number: int) -> Section:
-    term = _validate_term(term)
+    pass
     
 
 def _validate_term(term: Union[str, int]) -> str:
