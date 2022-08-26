@@ -26,37 +26,28 @@ from pittapi import course
 from pittapi.course import Course, Instructor, Meeting, Section, Subject
 
 class CourseTest(unittest.TestCase):
+    mocked_subject_data = {
+        "subjects" : [
+            {
+                "subject" : "CS",
+                "descr" : "Computer Science"
+            }
+        ]
+    }
+    mocked_courses_data = {
+        "courses" : [
+            {
+                "catalog_nbr": "0007",
+                "descr": "INTRODUCTION TO COMPUTER PROGRAMMING",
+                "crse_id": "105611"
+            }
+        ]
+    }
+    mocked_courses_data_invalid = {}
+    mocked_course_info_data = {
+        
+    }
     def setUp(self):
-        mocked_subject_data = {
-            "subjects" : [
-                {
-                    "subject" : "CS",
-                    "descr" : "Computer Science"
-                }
-            ]
-        }
-        mocked_courses_data = {
-            "courses" : [
-                {
-                    "acad_career": "UGRD",
-                    "catalog_nbr": "0007",
-                    "descr": "INTRODUCTION TO COMPUTER PROGRAMMING",
-                    "crse_id": "105611",
-                    "crse_offer_nbr": "5",
-                    "effdt": "2018-06-30",
-                    "typ_offr": "FALL",
-                    "typ_offr_descr": "Fall",
-                    "has_open_terms": True,
-                    "multipleOfferings": False,
-                    "offerings": [
-                        {
-                            "crse_offer_nbr": "5",
-                            "careers": []
-                        }
-                    ]
-                }
-            ]
-        }
         mocked_course_detail_data = {
             "course_details": {
                 "descrlong": "This is a first course in computer science programming. It is recommended for those students intending to major in computer science who do not have the required background for cs 0401. It may also be of interest to students majoring in one of the social sciences or humanities. The focus of the course is on problem analysis and the development of algorithms and computer programs in a modern high-level language.",
@@ -317,8 +308,7 @@ class CourseTest(unittest.TestCase):
                 "noMeetingInfo": "No meeting info found"
             }
         }
-        course._get_subjects = MagicMock(return_value=mocked_subject_data)
-        course._get_subject_courses = MagicMock(return_value=mocked_courses_data)
+        course._get_subjects = MagicMock(return_value=self.mocked_subject_data)
         course._get_course_detail = MagicMock(return_value=mocked_course_detail_data)
         course._get_course_sections = MagicMock(return_value=mocked_course_sections_data)
         course._get_section_details = MagicMock(return_value=mocked_section_details_data)
@@ -357,21 +347,28 @@ class CourseTest(unittest.TestCase):
         self.assertRaises(ValueError, course._validate_course, '10000')
 
     def test_get_subject_courses(self):
+        course._get_subject_courses = MagicMock(return_value=self.mocked_courses_data)
+
         subject_courses = course.get_subject_courses('CS')
 
+        course._get_subject_courses.assert_called_once_with('CS')
+        
         self.assertTrue(isinstance(subject_courses, Subject))
-        self.assertEqual(subject_courses.subject_code, 'CS')
+
         self.assertEqual(len(subject_courses.courses), 1)
         self.assertTrue('0007' in subject_courses.courses)
         test_course = subject_courses.courses['0007']
-        
         self.assertTrue(isinstance(test_course, Course))
-        self.assertEqual(test_course.subject_code, 'CS')
-        self.assertEqual(test_course.course_number, '0007')
-        self.assertEqual(test_course.course_id, '105611')
-        self.assertEqual(test_course.course_title, 'INTRODUCTION TO COMPUTER PROGRAMMING')
+
+    def test_get_subject_courses_invalid(self):
+        course._get_subject_courses = MagicMock(return_value=self.mocked_courses_data_invalid)
+
+        self.assertRaises(ValueError, course.get_subject_courses, "nonsense")
+        course._get_subject_courses.assert_not_called()
 
     def test_get_course_details(self):
+        course._get_subject_courses = MagicMock(return_value=self.mocked_courses_data)
+
         course_sections = course.get_course_details('2231', 'CS', '0007')
 
         self.assertTrue(isinstance(course_sections, Course))

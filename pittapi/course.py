@@ -30,7 +30,8 @@ SECTION_DETAILS_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB
     # id -> unique course ID, not to be confused with course code (for instance, CS 0007 has code 105611)
     # career -> for example, UGRD (undergraduate)
 
-VALID_TERMS = re.compile("2\d\d[147]")
+TERM_REGEX = "2\d\d[147]"
+VALID_TERMS = re.compile(TERM_REGEX)
 
 class CombinedSection(NamedTuple):
     pass
@@ -99,8 +100,8 @@ class Course(NamedTuple):
     course_number: str
     course_id: str
     course_title: str
-    course_description: str
-    credit_range: Tuple[int]
+    course_description: Optional[str] = None
+    credit_range: Optional[Tuple[int]] = None
     requisites: Optional[str] = None
     components: List[Component] = None
     sections: Optional[List[Section]] = None
@@ -122,8 +123,7 @@ def get_subject_courses(subject: str) -> Subject:
                 course_number=course["catalog_nbr"],
                 course_id=course["crse_id"],
                 course_title=course["descr"]
-            )
-            for course in json_response["courses"]
+            ) for course in json_response["courses"]
         }
     )
 
@@ -133,7 +133,7 @@ def get_course_details(term: Union[str, int], subject: str, course: Union[str, i
     course = _validate_course(course)
 
     internal_course_id = _get_course_id(subject, course)
-    json_respose = _get_course_info(internal_course_id)["course_details"]
+    json_response = _get_course_info(internal_course_id)["course_details"]
     json_response_details = _get_course_sections(internal_course_id, term)
     return Course(
         subject_code=subject,
@@ -141,8 +141,8 @@ def get_course_details(term: Union[str, int], subject: str, course: Union[str, i
         course_id=internal_course_id,
         course_title=json_response_details["sections"][0]["descr"],
         course_description=json_response["descrlong"],
-        credit_range=(json_response["units_minimum", "units_maximum"]),
-        requisites=json_response["offerings"][0]["req_group"] if offerings in json_response and len(json_response["offerings"]) != 0 and req_group in json_response["offerings"][0] else None,
+        credit_range=(json_response["units_minimum"], json_response["units_maximum"]),
+        requisites=json_response["offerings"][0]["req_group"] if "offerings" in json_response and len(json_response["offerings"]) != 0 and "req_group" in json_response["offerings"][0] else None,
         components=[
             Component(
                 component=component["descr"],
@@ -178,20 +178,20 @@ def get_course_details(term: Union[str, int], subject: str, course: Union[str, i
     )
 
 def get_section_details(term: Union[str, int], section_number: int) -> Section:
-    term = _validate_term
+    # term = _validate_term
 
-    json_response = _get_section_details(term, section_number)
-    return Section(
-        term=term
-        session=json_response
-    )
-    
+    # json_response = _get_section_details(term, section_number)
+    # return Section(
+    #     term=term
+    #     session=json_response
+    # )
+    pass
 
 def _validate_term(term: Union[str, int]) -> str:
     """Validates that the term entered follows the pattern that Pitt does for term codes."""
     if VALID_TERMS.match(str(term)):
         return str(term)
-    raise ValueError("Term entered isn't a valid Pitt term, must match regex 2\d\d[147]")
+    raise ValueError("Term entered isn't a valid Pitt term, must match regex " + TERM_REGEX)
 
 def _validate_subject(subject: str) -> str:
     """Validates that the subject code entered is present in the API request."""
