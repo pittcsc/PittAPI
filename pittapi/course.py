@@ -71,7 +71,7 @@ class SectionDetails(NamedTuple):
 #     combined_sections: Optional[List[CombinedSection]] = None
 class Instructor(NamedTuple):
     name: str
-    email: str
+    email: Optional[str] = None
 
 class Meeting(NamedTuple):
     days: str
@@ -279,7 +279,7 @@ def _get_course_section_details(term: str, json_response_details: dict) -> List[
                     end_time=meeting["end_time"],
                     start_date=meeting["start_dt"],
                     end_date=meeting["end_dt"],
-                    instructor=meeting["instructor"]
+                    instructor=Instructor(name=meeting["instructor"])
                 ) for meeting in section["meetings"]
             ] if len(section["meetings"]) != 0 else None
         ) for section in json_response_details["sections"]

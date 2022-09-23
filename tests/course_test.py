@@ -398,4 +398,5 @@ class CourseTest(unittest.TestCase):
         self.assertEqual(test_meeting.end_time, "10.50.00.000000-05:00")
         self.assertEqual(test_meeting.start_date, "08/29/2022")
         self.assertEqual(test_meeting.end_date, "12/09/2022")
-        self.assertEqual(test_meeting.instructor, "Robert Fishel")
+        self.assertTrue(isinstance(test_meeting.instructor, Instructor))
+        self.assertEqual(test_meeting.instructor.name, "Robert Fishel")
