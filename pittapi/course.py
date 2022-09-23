@@ -94,6 +94,7 @@ class Section(NamedTuple):
     status: str
     instructors: Optional[List[Instructor]] = None
     meetings: Optional[List[Meeting]] = None
+    details: Optional[SectionDetails] = None
 
 class Course(NamedTuple):
     subject_code: str
@@ -143,50 +144,35 @@ def get_course_details(term: Union[str, int], subject: str, course: Union[str, i
         course_description=json_response["descrlong"],
         credit_range=(json_response["units_minimum"], json_response["units_maximum"]),
         requisites=json_response["offerings"][0]["req_group"] if "offerings" in json_response and len(json_response["offerings"]) != 0 and "req_group" in json_response["offerings"][0] else None,
-        components=[
-            Component(
-                component=component["descr"],
-                required=True if component["optional"] == 'N' else False
-            ) for component in json_response["components"]
-        ] if "components" in json_response and len(json_response["components"]) != 0 else None,
-        sections=[
-            Section(
-                term=term,
-                session=section["session"],
-                section_number=section["class_section"],
-                class_number=str(section["class_nbr"]),
-                section_type=section["section_type"],
-                status=section["enrl_stat_descr"],
-                instructors=[
-                    Instructor(
-                        name=instructor["name"],
-                        email=instructor["email"]
-                    ) for instructor in section["instructors"]
-                ] if len(section["instructors"]) != 0 and section["instructors"][0] != "To be Announced" else None,
-                meetings=[
-                    Meeting(
-                        days=meeting["days"],
-                        start_time=meeting["start_time"],
-                        end_time=meeting["end_time"],
-                        start_date=meeting["start_dt"],
-                        end_date=meeting["end_dt"],
-                        instructor=meeting["instructor"]
-                    ) for meeting in section["meetings"]
-                ] if len(section["meetings"]) != 0 else None
-            ) for section in json_response_details["sections"]
-        ]
+        components=_get_course_components(json_response),
+        sections=_get_course_section_details(term, json_response_details)
     )
 
-def get_section_details(term: Union[str, int], section_number: int) -> Section:
-    # term = _validate_term
+def get_section_details(term: Union[str, int], section_number: int) -> SectionDetails:
+    term = _validate_term(term)
+    
+    json_response = _get_section_details(term, section_number)
+    details = json_response["section_info"]["class_details"]
+    meetings = json_response["section_info"]["meetings"]
+    return Section(
+        term=term,
+        session=details["session"],
+        section_number=details["class_section"],
+        class_number=str(details["class_nbr"]),
+        section_type=details["component"],
+        status=details["status"],
+        instructors=[
 
-    # json_response = _get_section_details(term, section_number)
-    # return Section(
-    #     term=term
-    #     session=json_response
-    # )
-    pass
+        ],
+        meetings=[
 
+        ],
+        details=SectionDetails(
+
+        )
+    )
+
+# validation for method inputs
 def _validate_term(term: Union[str, int]) -> str:
     """Validates that the term entered follows the pattern that Pitt does for term codes."""
     if VALID_TERMS.match(str(term)):
@@ -214,6 +200,32 @@ def _validate_course(course: Union[str, int]) -> str:
         raise ValueError("Invalid course number, must be 4 characters long")
     return str(course)
 
+# peoplesoft api calls
+def _get_subjects() -> dict:
+    return requests.get(SUBJECTS_API).json()
+
+def _get_subject_courses(subject: str) -> dict:
+    return requests.get(SUBJECT_COURSES_API.format(subject=subject)).json()
+
+def _get_course_info(course_id: str) -> dict:
+    response = requests.get(COURSE_DETAIL_API.format(id=course_id)).json()
+    if response["course_details"] == {}:
+        raise ValueError("Invalid course ID; course with that ID does not exist")
+    return response
+
+def _get_course_sections(course_id: str, term: str) -> dict:
+    response = requests.get(COURSE_SECTIONS_API.format(id=course_id, term=term)).json()
+    if len(response["sections"]) == 0:
+        raise ValueError("Invalid course ID; course with that ID does not exist")
+    return response
+
+def _get_section_details(term: str, section_id: str) -> dict:
+    response = requests.get(SECTION_DETAILS_API.format(term=term, id=section_id)).json()
+    if "error" in response:
+        raise ValueError("Invalid section ID; section with that ID does not exist")
+    return response
+
+# operations from api calls
 def _get_subject_codes() -> List[str]:
     response = _get_subjects()
     codes = []
@@ -235,26 +247,40 @@ def _get_course_id(subject: str, course: str) -> str:
         raise ValueError("No course with that number within listed subject")
     return subject_dict[str(course)]
 
-def _get_subjects() -> dict:
-    return requests.get(SUBJECTS_API).json()
+def _get_course_components(json_response: dict) -> List[Component]:
+    if "components" not in json_response or len(json_response["components"]) == 0:
+        return None
+    return [
+        Component(
+            component=component["descr"],
+            required=True if component["optional"] == 'N' else False
+        ) for component in json_response["components"]
+    ]
 
-def _get_subject_courses(subject: str) -> dict:
-    return requests.get(SUBJECT_COURSES_API.format(subject=subject)).json()
-
-def _get_course_info(course_id: str) -> dict:
-    response = requests.get(COURSE_DETAIL_API.format(id=course_id)).json()
-    if response["course_details"] == {}:
-        raise ValueError("Invalid course ID; course with that ID does not exist")
-    return response
-
-def _get_course_sections(course_id: str, term: str) -> dict:
-    response = requests.get(COURSE_SECTIONS_API.format(id=course_id, term=term)).json()
-    if len(response["sections"]) == 0:
-        raise ValueError("Invalid course ID; course with that ID does not exist")
-    return response
-
-def _get_section_details(term: str, section_id: str) -> dict:
-    response = requests.get(SECTION_DETAILS_API.format(term=term, id=section_id)).json()
-    if error in response:
-        raise ValueError("Invalid section ID; section with that ID does not exist")
-    return response
+def _get_course_section_details(term: str, json_response_details: dict) -> List[Section]:
+    return [
+        Section(
+            term=term,
+            session=section["session"],
+            section_number=section["class_section"],
+            class_number=str(section["class_nbr"]),
+            section_type=section["section_type"],
+            status=section["enrl_stat_descr"],
+            instructors=[
+                Instructor(
+                    name=instructor["name"],
+                    email=instructor["email"]
+                ) for instructor in section["instructors"]
+            ] if len(section["instructors"]) != 0 and section["instructors"][0] != "To be Announced" else None,
+            meetings=[
+                Meeting(
+                    days=meeting["days"],
+                    start_time=meeting["start_time"],
+                    end_time=meeting["end_time"],
+                    start_date=meeting["start_dt"],
+                    end_date=meeting["end_dt"],
+                    instructor=meeting["instructor"]
+                ) for meeting in section["meetings"]
+            ] if len(section["meetings"]) != 0 else None
+        ) for section in json_response_details["sections"]
+    ]

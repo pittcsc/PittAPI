@@ -45,141 +45,138 @@ class CourseTest(unittest.TestCase):
     }
     mocked_courses_data_invalid = {}
     mocked_course_info_data = {
-        
-    }
-    def setUp(self):
-        mocked_course_detail_data = {
-            "course_details": {
-                "descrlong": "This is a first course in computer science programming. It is recommended for those students intending to major in computer science who do not have the required background for cs 0401. It may also be of interest to students majoring in one of the social sciences or humanities. The focus of the course is on problem analysis and the development of algorithms and computer programs in a modern high-level language.",
-                "units_minimum": 3,
-                "units_maximum": 3,
-                "units_inc": 1,
-                "grading_basis": "OP2",
-                "grading_basis_descr": "LG/SNC Elective Basis",
-                "course_title": "INTRODUCTION TO COMPUTER PROGRAMMING",
-                "rqmnt_designtn": "",
-                "effdt": "2018-06-30",
-                "components": [
-                    {
-                        "descr": "Lecture",
-                        "optional": "N"
-                    },
-                    {
-                        "descr": "Recitation",
-                        "optional": "N"
-                    }
-                ],
-                "attributes": [
-                    {
-                        "crse_attribute": "DSGE",
-                        "crse_attribute_descr": "*DSAS General Ed. Requirements",
-                        "crse_attribute_value": "ALG",
-                        "crse_attribute_value_descr": "Algebra"
-                    },
-                    {
-                        "crse_attribute": "DSGE",
-                        "crse_attribute_descr": "*DSAS General Ed. Requirements",
-                        "crse_attribute_value": "QFR",
-                        "crse_attribute_value_descr": "Quant.-Formal Reasoning"
-                    }
-                ],
-                "offerings": [
-                    {
-                        "crse_offer_nbr": 1,
-                        "subject": "CS",
-                        "catalog_nbr": "0007",
-                        "acad_career": "Undergraduate",
-                        "acad_group": "Sch Computing and Information",
-                        "acad_org": "Computer Science",
-                        "campus": "Pittsburgh Campus",
-                        "campus_cd": "PIT",
-                        "req_group": "",
-                        "planner_message": "You have no active career, so you can not add this course to a planner.",
-                        "open_terms": [
-                            {
-                                "strm": "2224",
-                                "descr": "Spring Term 2021-2022",
-                                "default_term": False
-                            },
-                            {
-                                "strm": "2227",
-                                "descr": "Summer Term 2021-2022",
-                                "default_term": False
-                            },
-                            {
-                                "strm": "2231",
-                                "descr": "Fall Term 2022-2023",
-                                "default_term": True
-                            }
-                        ],
-                        "enrollable_terms": [
-                            {
-                                "strm": "2224"
-                            },
-                            {
-                                "strm": "2227"
-                            },
-                            {
-                                "strm": "2231"
-                            }
-                        ]
-                    }
-                ]
-            }
-        }
-        mocked_course_sections_data = {
-            "show_reserve_cap": True,
-            "show_share": False,
-            "mobile_url": "https://cs92-dev.mhighpoint.com",
-            "sections": [
+        "course_details": {
+            "descrlong": "This is a first course in computer science programming. It is recommended for those students intending to major in computer science who do not have the required background for cs 0401. It may also be of interest to students majoring in one of the social sciences or humanities. The focus of the course is on problem analysis and the development of algorithms and computer programs in a modern high-level language.",
+            "units_minimum": 3,
+            "units_maximum": 3,
+            "units_inc": 1,
+            "grading_basis": "OP2",
+            "grading_basis_descr": "LG/SNC Elective Basis",
+            "course_title": "INTRODUCTION TO COMPUTER PROGRAMMING",
+            "rqmnt_designtn": "",
+            "effdt": "2018-06-30",
+            "components": [
                 {
-                    "combined_section": False,
-                    "enrl_stat": "O",
-                    "enrl_stat_descr": "Open",
-                    "crse_id": "105611",
+                    "descr": "Lecture",
+                    "optional": "N"
+                },
+                {
+                    "descr": "Recitation",
+                    "optional": "N"
+                }
+            ],
+            "attributes": [
+                {
+                    "crse_attribute": "DSGE",
+                    "crse_attribute_descr": "*DSAS General Ed. Requirements",
+                    "crse_attribute_value": "ALG",
+                    "crse_attribute_value_descr": "Algebra"
+                },
+                {
+                    "crse_attribute": "DSGE",
+                    "crse_attribute_descr": "*DSAS General Ed. Requirements",
+                    "crse_attribute_value": "QFR",
+                    "crse_attribute_value_descr": "Quant.-Formal Reasoning"
+                }
+            ],
+            "offerings": [
+                {
                     "crse_offer_nbr": 1,
-                    "crs_topic_id": 0,
-                    "descr": "INTRO TO COMPUTER PROGRAMMING",
                     "subject": "CS",
                     "catalog_nbr": "0007",
-                    "class_section": "1000",
-                    "class_nbr": 27815,
-                    "class_type": "N",
-                    "session_code": "AT",
-                    "session": "Academic Term",
-                    "schedule_print": "Y",
-                    "class_stat": "A",
-                    "wait_tot": 7,
-                    "wait_cap": 50,
-                    "class_capacity": 28,
-                    "enrollment_total": 24,
-                    "enrollment_available": 4,
-                    "component": "REC",
-                    "start_dt": "08/29/2022",
-                    "end_dt": "12/09/2022",
-                    "units": "0",
-                    "topic": "",
-                    "instructors": [
+                    "acad_career": "Undergraduate",
+                    "acad_group": "Sch Computing and Information",
+                    "acad_org": "Computer Science",
+                    "campus": "Pittsburgh Campus",
+                    "campus_cd": "PIT",
+                    "req_group": "",
+                    "planner_message": "You have no active career, so you can not add this course to a planner.",
+                    "open_terms": [
                         {
-                            "name": "Robert Fishel",
-                            "email": "rmf105@pitt.edu"
+                            "strm": "2224",
+                            "descr": "Spring Term 2021-2022",
+                            "default_term": False
+                        },
+                        {
+                            "strm": "2227",
+                            "descr": "Summer Term 2021-2022",
+                            "default_term": False
+                        },
+                        {
+                            "strm": "2231",
+                            "descr": "Fall Term 2022-2023",
+                            "default_term": True
                         }
                     ],
-                    "section_type": "REC",
-                    "meetings": [
+                    "enrollable_terms": [
                         {
-                            "days": "Fr",
-                            "start_time": "10.00.00.000000-05:00",
-                            "end_time": "10.50.00.000000-05:00",
-                            "start_dt": "08/29/2022",
-                            "end_dt": "12/09/2022",
-                            "instructor": "Robert Fishel"
+                            "strm": "2224"
+                        },
+                        {
+                            "strm": "2227"
+                        },
+                        {
+                            "strm": "2231"
                         }
-                    ],
-                    "reserve_caps": []
+                    ]
                 }
             ]
         }
+    }
+    mocked_course_sections_data = {
+        "show_reserve_cap": True,
+        "show_share": False,
+        "mobile_url": "https://cs92-dev.mhighpoint.com",
+        "sections": [
+            {
+                "combined_section": False,
+                "enrl_stat": "O",
+                "enrl_stat_descr": "Open",
+                "crse_id": "105611",
+                "crse_offer_nbr": 1,
+                "crs_topic_id": 0,
+                "descr": "INTRO TO COMPUTER PROGRAMMING",
+                "subject": "CS",
+                "catalog_nbr": "0007",
+                "class_section": "1000",
+                "class_nbr": 27815,
+                "class_type": "N",
+                "session_code": "AT",
+                "session": "Academic Term",
+                "schedule_print": "Y",
+                "class_stat": "A",
+                "wait_tot": 7,
+                "wait_cap": 50,
+                "class_capacity": 28,
+                "enrollment_total": 24,
+                "enrollment_available": 4,
+                "component": "REC",
+                "start_dt": "08/29/2022",
+                "end_dt": "12/09/2022",
+                "units": "0",
+                "topic": "",
+                "instructors": [
+                    {
+                        "name": "Robert Fishel",
+                        "email": "rmf105@pitt.edu"
+                    }
+                ],
+                "section_type": "REC",
+                "meetings": [
+                    {
+                        "days": "Fr",
+                        "start_time": "10.00.00.000000-05:00",
+                        "end_time": "10.50.00.000000-05:00",
+                        "start_dt": "08/29/2022",
+                        "end_dt": "12/09/2022",
+                        "instructor": "Robert Fishel"
+                    }
+                ],
+                "reserve_caps": []
+            }
+        ]
+    }
+    def setUp(self):
         mocked_section_details_data = {
             "show_validate": "N",
             "show_waitlist": "Y",
@@ -309,8 +306,6 @@ class CourseTest(unittest.TestCase):
             }
         }
         course._get_subjects = MagicMock(return_value=self.mocked_subject_data)
-        course._get_course_detail = MagicMock(return_value=mocked_course_detail_data)
-        course._get_course_sections = MagicMock(return_value=mocked_course_sections_data)
         course._get_section_details = MagicMock(return_value=mocked_section_details_data)
 
     def test_validate_term(self):
@@ -367,7 +362,9 @@ class CourseTest(unittest.TestCase):
         course._get_subject_courses.assert_not_called()
 
     def test_get_course_details(self):
-        course._get_subject_courses = MagicMock(return_value=self.mocked_courses_data)
+        course._get_course_id = MagicMock(return_value='105611')
+        course._get_course_info = MagicMock(return_value=self.mocked_course_info_data)
+        course._get_course_sections = MagicMock(return_value=self.mocked_course_sections_data)
 
         course_sections = course.get_course_details('2231', 'CS', '0007')
 
