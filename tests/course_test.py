@@ -17,13 +17,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-import json
 import unittest
-import responses
 from unittest.mock import MagicMock
 
 from pittapi import course
-from pittapi.course import Course, Instructor, Meeting, Section, Subject
+from pittapi.course import Attribute, Component, Course, Instructor, Meeting, Section, SectionDetails, Subject
 
 class CourseTest(unittest.TestCase):
     mocked_subject_data = {
@@ -398,5 +396,7 @@ class CourseTest(unittest.TestCase):
         self.assertEqual(test_meeting.end_time, "10.50.00.000000-05:00")
         self.assertEqual(test_meeting.start_date, "08/29/2022")
         self.assertEqual(test_meeting.end_date, "12/09/2022")
-        self.assertTrue(isinstance(test_meeting.instructor, Instructor))
-        self.assertEqual(test_meeting.instructor.name, "Robert Fishel")
+        test_instructor = test_section.instructors[0]
+
+        self.assertTrue(isinstance(test_instructor, Instructor))
+        self.assertEqual(test_instructor.name, "Robert Fishel")

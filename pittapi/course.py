@@ -17,7 +17,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-import datetime
 import re
 import requests
 from typing import Dict, List, NamedTuple, Optional, Tuple, Union
@@ -33,42 +32,6 @@ SECTION_DETAILS_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB
 TERM_REGEX = "2\d\d[147]"
 VALID_TERMS = re.compile(TERM_REGEX)
 
-class CombinedSection(NamedTuple):
-    pass
-#     term: str
-#     course_name: str
-#     subject_code: str
-#     course_number: str
-#     section_number: str
-#     class_number: str
-#     status: str
-#     seats_taken: int
-#     wait_list_total: int
-
-
-class SectionDetails(NamedTuple):
-    pass
-#     term: str
-#     session: str
-#     career: str
-#     units: int
-#     grading: str
-#     components: List[str]
-
-#     status: str
-#     seats_taken: int
-#     seats_open: int
-#     total_capacity: int
-#     unrestricted_seats: int
-#     restricted_seats: int
-#     wait_list_total: int
-#     wait_list_capacity: int
-
-#     preqs: str = ""
-#     description: str = ""
-#     attributes: Optional[List[str]] = None
-#     seat_restrictions: Optional[Dict[str, int]] = None
-#     combined_sections: Optional[List[CombinedSection]] = None
 class Instructor(NamedTuple):
     name: str
     email: Optional[str] = None
@@ -79,11 +42,29 @@ class Meeting(NamedTuple):
     end_time: str
     start_date: str
     end_date: str
-    instructor: str
+    instructors: Optional[List[Instructor]] = None
+
+class Attribute(NamedTuple):
+    attribute: str
+    attribute_description: str
+    attribute_value: str
+    attribute_value_description: str
 
 class Component(NamedTuple):
     component: str
     required: bool
+
+class SectionDetails(NamedTuple):
+    units: str
+
+    class_capacity: str
+    enrollment_total: str
+    enrollment_available: str
+    wait_list_capacity: str
+    wait_list_total: str
+    valid_to_enroll: str
+
+    combined_section_numbers: Optional[List[str]] = None
 
 class Section(NamedTuple):
     term: str
@@ -105,6 +86,7 @@ class Course(NamedTuple):
     credit_range: Optional[Tuple[int]] = None
     requisites: Optional[str] = None
     components: List[Component] = None
+    attributes: List[Attribute] = None
     sections: Optional[List[Section]] = None
 
 class Subject(NamedTuple):
@@ -144,16 +126,56 @@ def get_course_details(term: Union[str, int], subject: str, course: Union[str, i
         course_description=json_response["descrlong"],
         credit_range=(json_response["units_minimum"], json_response["units_maximum"]),
         requisites=json_response["offerings"][0]["req_group"] if "offerings" in json_response and len(json_response["offerings"]) != 0 and "req_group" in json_response["offerings"][0] else None,
-        components=_get_course_components(json_response),
-        sections=_get_course_section_details(term, json_response_details)
+        components=[
+            Component(
+                component=component["descr"],
+                required=True if component["optional"] == 'N' else False
+            ) for component in json_response["components"]
+        ] if "components" in json_response and len(json_response["components"]) != 0 else None,
+        attributes=[
+            Attribute(
+                attribute=attribute["crse_attribute"],
+                attribute_description=attribute["crse_attribute_descr"],
+                attribute_value=attribute["crse_attribute_value"],
+                attribute_value_description=attribute["crse_attribute_value_descr"]
+            ) for attribute in json_response["attributes"]
+        ] if "attributes" in json_response and len(json_response["attributes"]) != 0 else None,
+        sections=[
+            Section(
+                term=term,
+                session=section["session"],
+                section_number=section["class_section"],
+                class_number=str(section["class_nbr"]),
+                section_type=section["section_type"],
+                status=section["enrl_stat_descr"],
+                instructors=[
+                    Instructor(
+                        name=instructor["name"],
+                        email=instructor["email"]
+                    ) for instructor in section["instructors"]
+                ] if len(section["instructors"]) != 0 and section["instructors"][0] != "To be Announced" else None,
+                meetings=[
+                    Meeting(
+                        days=meeting["days"],
+                        start_time=meeting["start_time"],
+                        end_time=meeting["end_time"],
+                        start_date=meeting["start_dt"],
+                        end_date=meeting["end_dt"],
+                        instructors=[Instructor(name=meeting["instructor"])]
+                    ) for meeting in section["meetings"]
+                ] if len(section["meetings"]) != 0 else None
+            ) for section in json_response_details["sections"]
+        ]
     )
 
-def get_section_details(term: Union[str, int], section_number: int) -> SectionDetails:
+def get_section_details(term: Union[str, int], section_number: int) -> Section:
     term = _validate_term(term)
     
     json_response = _get_section_details(term, section_number)
     details = json_response["section_info"]["class_details"]
     meetings = json_response["section_info"]["meetings"]
+    enrollment = json_response["section_info"]["class_availability"]
+
     return Section(
         term=term,
         session=details["session"],
@@ -161,14 +183,33 @@ def get_section_details(term: Union[str, int], section_number: int) -> SectionDe
         class_number=str(details["class_nbr"]),
         section_type=details["component"],
         status=details["status"],
-        instructors=[
-
-        ],
+        instructors=None,
         meetings=[
-
-        ],
+            Meeting(
+                days=meeting["stnd_mtg_pat"],
+                start_time=meeting["meeting_time_start"],
+                end_time=meeting["meeting_time_end"],
+                start_date=meeting["start_date"],
+                end_date=meeting["end_date"],
+                instructors=[
+                    Instructor(
+                        name=instructor["name"],
+                        email=instructor["email"]
+                    ) for instructor in meeting["instructors"]
+                ] if len(meeting["instructors"]) != 0 and meeting["instructors"][0][name] not in ["To be Announced", "-"] else None
+            ) for meeting in meetings
+        ] if len(meetings) != 0 else None,
         details=SectionDetails(
-
+            units=details["units"],
+            class_capacity=enrollment["class_capacity"],
+            enrollment_total=enrollment["enrollment_total"],
+            enrollment_available=enrollment["enrollment_available"],
+            wait_list_capacity=enrollment["wait_list_capacity"],
+            wait_list_total=enrollment["wait_list_total"],
+            valid_to_enroll=json_response["section_info"]["valid_to_enroll"],
+            combined_section_numbers=[
+                section["class_nbr"] for section in json_response["section_info"]["combined_sections"]
+            ] if json_response["section_info"]["is_combined"] else None
         )
     )
 
@@ -246,41 +287,3 @@ def _get_course_id(subject: str, course: str) -> str:
     if str(course) not in subject_dict:
         raise ValueError("No course with that number within listed subject")
     return subject_dict[str(course)]
-
-def _get_course_components(json_response: dict) -> List[Component]:
-    if "components" not in json_response or len(json_response["components"]) == 0:
-        return None
-    return [
-        Component(
-            component=component["descr"],
-            required=True if component["optional"] == 'N' else False
-        ) for component in json_response["components"]
-    ]
-
-def _get_course_section_details(term: str, json_response_details: dict) -> List[Section]:
-    return [
-        Section(
-            term=term,
-            session=section["session"],
-            section_number=section["class_section"],
-            class_number=str(section["class_nbr"]),
-            section_type=section["section_type"],
-            status=section["enrl_stat_descr"],
-            instructors=[
-                Instructor(
-                    name=instructor["name"],
-                    email=instructor["email"]
-                ) for instructor in section["instructors"]
-            ] if len(section["instructors"]) != 0 and section["instructors"][0] != "To be Announced" else None,
-            meetings=[
-                Meeting(
-                    days=meeting["days"],
-                    start_time=meeting["start_time"],
-                    end_time=meeting["end_time"],
-                    start_date=meeting["start_dt"],
-                    end_date=meeting["end_dt"],
-                    instructor=Instructor(name=meeting["instructor"])
-                ) for meeting in section["meetings"]
-            ] if len(section["meetings"]) != 0 else None
-        ) for section in json_response_details["sections"]
-    ]
