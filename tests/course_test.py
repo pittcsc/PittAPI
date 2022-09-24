@@ -95,6 +95,13 @@ class CourseTest(unittest.TestCase):
         self.assertEqual(course_sections.course_id, '105611')
         self.assertEqual(course_sections.course_title, 'INTRO TO COMPUTER PROGRAMMING')
         self.assertEqual(len(course_sections.sections), 1)
+        test_attribute = course_sections.attributes[0]
+
+        self.assertTrue(isinstance(test_attribute, Attribute))
+        self.assertEqual(test_attribute.attribute, 'DSGE')
+        self.assertEqual(test_attribute.attribute_description, '*DSAS General Ed. Requirements')
+        self.assertEqual(test_attribute.value, 'ALG')
+        self.assertEqual(test_attribute.value_description, 'Algebra')
         test_section = course_sections.sections[0]
 
         self.assertTrue(isinstance(test_section, Section))

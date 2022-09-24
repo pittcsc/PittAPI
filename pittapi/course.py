@@ -47,8 +47,8 @@ class Meeting(NamedTuple):
 class Attribute(NamedTuple):
     attribute: str
     attribute_description: str
-    attribute_value: str
-    attribute_value_description: str
+    value: str
+    value_description: str
 
 class Component(NamedTuple):
     component: str
@@ -136,8 +136,8 @@ def get_course_details(term: Union[str, int], subject: str, course: Union[str, i
             Attribute(
                 attribute=attribute["crse_attribute"],
                 attribute_description=attribute["crse_attribute_descr"],
-                attribute_value=attribute["crse_attribute_value"],
-                attribute_value_description=attribute["crse_attribute_value_descr"]
+                value=attribute["crse_attribute_value"],
+                value_description=attribute["crse_attribute_value_descr"]
             ) for attribute in json_response["attributes"]
         ] if "attributes" in json_response and len(json_response["attributes"]) != 0 else None,
         sections=[
