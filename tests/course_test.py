@@ -123,3 +123,40 @@ class CourseTest(unittest.TestCase):
 
         self.assertTrue(isinstance(test_instructor, Instructor))
         self.assertEqual(test_instructor.name, "Robert Fishel")
+
+    def test_get_section_details(self):
+        course._get_section_details = MagicMock(return_value=mocked_section_details_data)
+
+        section_details = course.get_section_details('2231', '27815')
+
+        self.assertTrue(isinstance(section_details, Section))
+        self.assertEqual(section_details.term, '2231')
+        self.assertEqual(section_details.session, 'Academic Term')
+        self.assertEqual(section_details.class_number, '27815')
+        self.assertEqual(section_details.section_type, 'REC')
+        self.assertEqual(section_details.status, 'Open')
+        self.assertIsNone(section_details.instructors)
+        test_meeting = section_details.meetings[0]
+
+        self.assertTrue(isinstance(test_meeting, Meeting))
+        self.assertEqual(test_meeting.days, 'Fr')
+        self.assertEqual(test_meeting.start_time, '10:00AM')
+        self.assertEqual(test_meeting.end_time, '10:50AM')
+        self.assertEqual(test_meeting.start_date, '08/29/2022')
+        self.assertEqual(test_meeting.end_date, '12/09/2022')
+        test_instructor = test_meeting.instructors[0]
+
+        self.assertTrue(isinstance(test_instructor, Instructor))
+        self.assertEqual(test_instructor.name, 'Robert Fishel')
+        self.assertEqual(test_instructor.email, 'rmf105@pitt.edu')
+
+        test_details = section_details.details
+        self.assertTrue(isinstance(test_details, SectionDetails))
+        self.assertEqual(test_details.units, '0 units')
+        self.assertEqual(test_details.class_capacity, '28')
+        self.assertEqual(test_details.enrollment_total, '24')
+        self.assertEqual(test_details.enrollment_available, '4')
+        self.assertEqual(test_details.wait_list_capacity, '50')
+        self.assertEqual(test_details.wait_list_total, '7')
+        self.assertEqual(test_details.valid_to_enroll, 'T')
+        self.assertIsNone(test_details.combined_section_numbers)

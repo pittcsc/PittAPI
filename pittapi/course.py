@@ -168,7 +168,7 @@ def get_course_details(term: Union[str, int], subject: str, course: Union[str, i
         ]
     )
 
-def get_section_details(term: Union[str, int], section_number: int) -> Section:
+def get_section_details(term: Union[str, int], section_number: Union[str, int]) -> Section:
     term = _validate_term(term)
     
     json_response = _get_section_details(term, section_number)
@@ -180,7 +180,7 @@ def get_section_details(term: Union[str, int], section_number: int) -> Section:
         term=term,
         session=details["session"],
         section_number=details["class_section"],
-        class_number=str(details["class_nbr"]),
+        class_number=str(section_number),
         section_type=details["component"],
         status=details["status"],
         instructors=None,
@@ -196,14 +196,14 @@ def get_section_details(term: Union[str, int], section_number: int) -> Section:
                         name=instructor["name"],
                         email=instructor["email"]
                     ) for instructor in meeting["instructors"]
-                ] if len(meeting["instructors"]) != 0 and meeting["instructors"][0][name] not in ["To be Announced", "-"] else None
+                ] if len(meeting["instructors"]) != 0 and meeting["instructors"][0]["name"] not in ["To be Announced", "-"] else None
             ) for meeting in meetings
         ] if len(meetings) != 0 else None,
         details=SectionDetails(
             units=details["units"],
             class_capacity=enrollment["class_capacity"],
             enrollment_total=enrollment["enrollment_total"],
-            enrollment_available=enrollment["enrollment_available"],
+            enrollment_available=str(enrollment["enrollment_available"]),
             wait_list_capacity=enrollment["wait_list_capacity"],
             wait_list_total=enrollment["wait_list_total"],
             valid_to_enroll=json_response["section_info"]["valid_to_enroll"],

@@ -193,8 +193,8 @@ mocked_section_details_data = {
                 "meeting_topic": "TBA",
                 "instructors": [
                     {
-                        "name": "To be Announced",
-                        "email": ""
+                        "name": "Robert Fishel",
+                        "email": "rmf105@pitt.edu"
                     }
                 ],
                 "start_date": "08/29/2022",
