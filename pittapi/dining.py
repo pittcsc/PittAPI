@@ -1,98 +1,147 @@
-"""
-The Pitt API, to access workable data of the University of Pittsburgh
-Copyright (C) 2015 Ritwik Gupta
+import requests
+import json
+import datetime
+from typing import Any, Dict, List
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+# pitt site id = 5e6fcc641ca48e0cacd93b04
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""
-
-import grequests
-from typing import Dict, List, Any
+locations = {
+    'The Eatery': '610b1f78e82971147c9f8ba5',
+    'The Perch': '6123ff86a9f13a2a48c2a8ed',
+    'The Pierogi': '62f65fd9e45d4305a44d80d5',
+    'Wicked Pie': '62f666cee45d4305a44e517d',
+    # more to go here, should i add all here?
+    # wrote get_all_locations() to do this as well
+}
 
 
-def _get_all_locations():
-    """Creates a generator of responses to fetch data on all dining locations"""
-    request_objs = []
-    for i in range(3):
-        payload = {
-            "_kgoui_object": "kgoui_Rcontent_I2",
-            "feed": "dining_locations",
-            "start": i * 10,
-        }
-        request_objs.append(
-            grequests.get("https://m.pitt.edu/dining/index.json", params=payload)
-        )
-    resps = grequests.imap(request_objs)
-    return resps
+def get_location_hours(date=datetime.datetime.today()) -> Dict[str, List[Any]]:
+    """
+    - gets hours of all locations for entire week
+        - starting from sunday to monday
+    - date must in YYYY-MM-DD format
+    - return format will be a dictionary
+        - keys => location name
+        - values => list containing info of each day of the week being a list of [date, status, open hours, close hours]
+    """
 
+    url = "https://api.dineoncampus.com/v1/locations/weekly_schedule?site_id=5e6fcc641ca48e0cacd93b04&date="
+    if type(date) == datetime.datetime:
+        url = url + date.strftime("%Y-%m-%d")
+    else:
+        url += date
 
-def get_locations():
-    """Gets information about all dining locations"""
-    return get_locations_by_status(None)
+    loc_hours = requests.get(url).json()
 
+    hours = {}
 
-def get_locations_by_status(status: str) -> List[Dict[str, Any]]:
-    """status can be nil, open, or closed
-    None    - returns all dining locations
-    'open'   - returns open dining locations
-    'closed' - returns closed dining locations"""
+    # location_name : [ [date, status, open, close], [], [], ... ]
+    for i in loc_hours["the_locations"]:
+        week_info = []  # week info contains list of [date, status, open time, close time]
+        for j in i["week"]:
+            date = j["date"]
 
-    dining_locations = []
-    resps = [
-        r.json()["response"]["regions"][0]["contents"] for r in _get_all_locations()
-    ]
-
-    for location in resps:
-        for content in location:
-            data = {}
-            fields = content["fields"]
-            if fields["type"] == "loadMore":
-                continue
-            if status in ["open", "closed"]:
-                if status != fields["status"]:
-                    continue
-
-            if isinstance(fields["title"], dict):
-                data["name"] = fields["title"]["value"]
+            if j["status"] == "closed":  # to handle so locations having hours despite being closed
+                start_time = 0
+                end_time = 0
             else:
-                data["name"] = fields["title"]
-            data["status"] = fields["status"]
-            try:
-                data["hours"] = fields["eventDate"]["formatted"]
-            except TypeError:
-                data["hours"] = "unavailable"
+                start_time = datetime.time(
+                    j["hours"][0]["start_hour"], j["hours"][0]["start_minutes"])
+                end_time = datetime.time(
+                    j["hours"][0]["end_hour"], j["hours"][0]["end_minutes"])
 
-            dining_locations.append(data)
+            week_info.append([datetime.datetime(int(date[0:4]), int(
+                date[5:7]), int(date[8:])), j["status"], start_time, end_time])
 
-    return dining_locations
+        hours[i["name"]] = week_info
+
+    return hours
 
 
-# def get_location_by_name(location):
-#    try:
-#        return get_locations()[location]
-#    except:
-#        raise ValueError('The dining location is invalid')
+def get_menu(location, date=datetime.datetime.today()):
+    """
+    location will be string of location name
+    date must be in YYYY-MM-DD format
 
-# def get_location_menu(location=None, date=None):
-# location can only be market, market's subordinates, and cathedral cafe
-# if location is none, return all menus, and date will be ignored
-# date has to be a day of the week, or if empty will return menus for all days of the week
-#
-# https://www.pc.pitt.edu/dining/menus/flyingStar.php
-# https://www.pc.pitt.edu/dining/menus/bellaTrattoria.php
-# https://www.pc.pitt.edu/dining/menus/basicKneads.php
-# https://www.pc.pitt.edu/dining/menus/basicKneads.php
-# https://www.pc.pitt.edu/dining/menus/magellans.php
-# https://www.pc.pitt.edu/dining/locations/cathedralCafe.php
-#    return []
+    Returns:
+        None if location is closed
+        
+
+    Raises Exception:
+        If req status is unsuccessful
+        Usually occurs when no menu is found
+    """
+    menu = {}
+    url = "https://api.dineoncampus.com/v1/location/"
+
+    loc_id = get_all_locations()[location]
+
+    url += loc_id
+    url += "/periods?platform=0&date="
+
+    # could probably restrict arguments
+    if(type(date) == datetime.datetime):
+        date = date.isoformat()
+        url += date
+    else:
+        url += date
+
+    req = requests.get(url).json()
+
+    if req["status"] == "success":
+        if req["closed"] == True:
+            return None
+    else:
+        raise Exception(req["msg:"])
+    
+    period_food = {} # is a dictionary containing the period (all day, breakfast, lunch, dinner) as value and the menu as a list 
+    for periods in req["periods"]:
+        period_id = periods["id"]
+        new_url = "https://api.dineoncampus.com/v1/location/" + loc_id + "/periods/" + period_id + "?platform=0&date=" + date
+
+        new_request = requests.get(new_url).json()
+
+        food = []
+        for i in new_request["menu"]["periods"]["categories"]:
+            for j in i["items"]:
+                food.append(j["name"])
+        
+        period_food[periods["name"]] = food
+    
+    menu[location] = period_food #returns a dictionary with the location as the key and a dictionary (see period_food) as the value
+
+    return menu
+
+
+
+
+
+
+# arguments don't really matter
+def get_all_locations(menus=True, address=False, buildings=True) -> Dict[str, str]:
+    """
+    gets all locations by their number and id
+    in case this is needed for designing a better api 🤷
+    """
+    url = "https://api.dineoncampus.com/v1/locations/all_locations?platform=0&site_id=5e6fcc641ca48e0cacd93b04"
+
+    # probably not needed
+    if menus == True:
+        url += "&for_menus=true"
+    if address == False:
+        url += "&with_address=false"
+    if buildings == True:
+        url += "&with_buildings=true"
+
+    print(url)
+
+    loc_info = requests.get(url).json()
+
+    loc_id_dict = {}
+    for i in loc_info["locations"]:
+        loc_id_dict[i["name"]] = i["id"]
+
+    return loc_id_dict
+
+
+print(get_menu("The Eatery", "2023-03-01"))
