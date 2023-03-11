@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 
 # pitt site id = 5e6fcc641ca48e0cacd93b04
 
+# This isn't used for reference if needed
+"""
 locations = {
     'The Eatery': '610b1f78e82971147c9f8ba5',
     'The Perch': '6123ff86a9f13a2a48c2a8ed',
@@ -13,7 +15,7 @@ locations = {
     # more to go here, should i add all here?
     # wrote get_all_locations() to do this as well
 }
-
+"""
 
 def get_location_hours(date=datetime.datetime.today()) -> Dict[str, List[Any]]:
     """
@@ -142,6 +144,3 @@ def get_all_locations(menus=True, address=False, buildings=True) -> Dict[str, st
         loc_id_dict[i["name"]] = i["id"]
 
     return loc_id_dict
-
-
-print(get_menu("The Eatery", "2023-03-01"))
