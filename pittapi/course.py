@@ -97,17 +97,25 @@ def get_subject_courses(subject: str) -> Subject:
     subject = _validate_subject(subject)
 
     json_response = _get_subject_courses(subject)
+
+    courses = {}
+    for course in json_response["courses"]:
+        course_number = course["catalog_nbr"]
+        course_id = course["crse_id"]
+        course_title = course["descr"]
+        
+        course_obj = Course(
+            subject_code=subject,
+            course_number=course_number,
+            course_id=course_id,
+            course_title=course_title
+        )
+
+        courses[course_number] = course_obj
+
     return Subject(
         subject_code=subject,
-        courses={
-            course["catalog_nbr"] : 
-            Course(
-                subject_code=subject,
-                course_number=course["catalog_nbr"],
-                course_id=course["crse_id"],
-                course_title=course["descr"]
-            ) for course in json_response["courses"]
-        }
+        courses=courses
     )
 
 def get_course_details(term: Union[str, int], subject: str, course: Union[str, int]) -> Course:
