@@ -14,7 +14,7 @@ Returns a `Subject` object containing the information of all courses underneath 
 
 ###### **Sample Usage**:
 ```python
->>> cs_subject = course.get_subject_courses(term='2194', subject='CS')
+>>> cs_subject = course.get_subject_courses(subject='CS')
 >>> str(cs_subject)
 Subject(
     subject_code='CS',
