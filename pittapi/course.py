@@ -227,41 +227,75 @@ def get_section_details(term: Union[str, int], section_number: Union[str, int]) 
     meetings = json_response["section_info"]["meetings"]
     enrollment = json_response["section_info"]["class_availability"]
 
+    session = details["session"]
+    section_num = details["class_section"]
+    section_type = details["component"]
+    status = details["status"]
+
+    meeting_objs = None
+    if len(meetings) != 0:
+        meeting_objs = []
+        for meeting in meetings:
+            days = meeting["stnd_mtg_pat"]
+            start_time = meeting["meeting_time_start"]
+            end_time = meeting["meeting_time_end"]
+            start_date = meeting["start_date"]
+            end_date = meeting["end_date"]
+
+            instructors = None
+            if len(meeting["instructors"]) != 0 and meeting["instructors"][0]["name"] not in ["To be Announced", "-"]:
+                instructors = []
+                for instructor in meeting["instructors"]:
+                    name = instructor["name"]
+                    email = instructor["email"]
+
+                    instructors.append(Instructor(name=name, email=email))
+
+            meeting_objs.append(
+                Meeting(
+                    days=days,
+                    start_time=start_time,
+                    end_time=end_time,
+                    start_date=start_date,
+                    end_date=end_date,
+                    instructors=instructors
+                )
+            )
+
+    units = details["units"]
+    class_capacity = enrollment["class_capacity"]
+    enrollment_total = enrollment["enrollment_total"]
+    enrollment_available = str(enrollment["enrollment_available"])
+    wait_list_capacity = enrollment["wait_list_capacity"]
+    wait_list_total = enrollment["wait_list_total"]
+    valid_to_enroll = json_response["section_info"]["valid_to_enroll"]
+    combined_section_numbers = None
+    if json_response["section_info"]["is_combined"]:
+        combined_section_numbers = []
+        for section in json_response["section_info"]["combined_sections"]:
+            combined_section_numbers.append(section["class_nbr"])
+
+    details = SectionDetails(
+        units=units,
+        class_capacity=class_capacity,
+        enrollment_total=enrollment_total,
+        enrollment_available=enrollment_available,
+        wait_list_capacity=wait_list_capacity,
+        wait_list_total=wait_list_total,
+        valid_to_enroll=valid_to_enroll,
+        combined_section_numbers=combined_section_numbers
+    )
+
     return Section(
         term=term,
-        session=details["session"],
-        section_number=details["class_section"],
+        session=session,
+        section_number=section_num,
         class_number=str(section_number),
-        section_type=details["component"],
-        status=details["status"],
+        section_type=section_type,
+        status=status,
         instructors=None,
-        meetings=[
-            Meeting(
-                days=meeting["stnd_mtg_pat"],
-                start_time=meeting["meeting_time_start"],
-                end_time=meeting["meeting_time_end"],
-                start_date=meeting["start_date"],
-                end_date=meeting["end_date"],
-                instructors=[
-                    Instructor(
-                        name=instructor["name"],
-                        email=instructor["email"]
-                    ) for instructor in meeting["instructors"]
-                ] if len(meeting["instructors"]) != 0 and meeting["instructors"][0]["name"] not in ["To be Announced", "-"] else None
-            ) for meeting in meetings
-        ] if len(meetings) != 0 else None,
-        details=SectionDetails(
-            units=details["units"],
-            class_capacity=enrollment["class_capacity"],
-            enrollment_total=enrollment["enrollment_total"],
-            enrollment_available=str(enrollment["enrollment_available"]),
-            wait_list_capacity=enrollment["wait_list_capacity"],
-            wait_list_total=enrollment["wait_list_total"],
-            valid_to_enroll=json_response["section_info"]["valid_to_enroll"],
-            combined_section_numbers=[
-                section["class_nbr"] for section in json_response["section_info"]["combined_sections"]
-            ] if json_response["section_info"]["is_combined"] else None
-        )
+        meetings=meeting_objs,
+        details=details
     )
 
 # validation for method inputs
