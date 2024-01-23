@@ -186,7 +186,7 @@ mocked_section_details_data = {
         "meetings": [
             {
                 "meets": "Fr 10:00am - 10:50am",
-                "stnd_mtg_pat": "Fr",
+                "days": "Fr",
                 "meeting_time_start": "10:00AM",
                 "meeting_time_end": "10:50AM",
                 "bldg_cd": "SENSQ",
