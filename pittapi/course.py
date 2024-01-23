@@ -21,11 +21,12 @@ import re
 import requests
 from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
-SUBJECTS_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_CatalogSubjects?institution=UPITT"
-SUBJECT_COURSES_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_SubjectCourses?institution=UPITT&subject={subject}"
-COURSE_DETAIL_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_CatalogCourseDetails?institution=UPITT&course_id={id}&effdt=2018-06-30&crse_offer_nbr=1&use_catalog_print=Y"
-COURSE_SECTIONS_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_BROWSE_CLASSES.FieldFormula.IScript_BrowseSections?institution=UPITT&campus=&location=&course_id={id}&institution=UPITT&term={term}&crse_offer_nbr=1"
-SECTION_DETAILS_API = "https://prd.ps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_CLASS_SEARCH.FieldFormula.IScript_ClassDetails?institution=UPITT&term={term}&class_nbr={id}"
+# https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_CLASS_SEARCH.FieldFormula.IScript_ClassSearch?institution=UPITT&term=2244&date_from=&date_thru=&subject=CS&subject_like=&catalog_nbr=&time_range=&days=&campus=PIT&location=&x_acad_career=UGRD&acad_group=&rqmnt_designtn=&instruction_mode=&keyword=&class_nbr=&acad_org=&enrl_stat=O&crse_attr=&crse_attr_value=&instructor_name=&instr_first_name=&session_code=&units=&trigger_search=&page=1
+SUBJECTS_API = "https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_CatalogSubjects?institution=UPITT"
+SUBJECT_COURSES_API = "https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_SubjectCourses?institution=UPITT&subject={subject}"
+COURSE_DETAIL_API = "https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_CatalogCourseDetails?institution=UPITT&course_id={id}&effdt=2018-06-30&crse_offer_nbr=1&use_catalog_print=Y"
+COURSE_SECTIONS_API = "https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_BROWSE_CLASSES.FieldFormula.IScript_BrowseSections?institution=UPITT&campus=&location=&course_id={id}&institution=UPITT&term={term}&crse_offer_nbr=1"
+SECTION_DETAILS_API = "https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_CLASS_SEARCH.FieldFormula.IScript_ClassDetails?institution=UPITT&term={term}&class_nbr={id}"
     # id -> unique course ID, not to be confused with course code (for instance, CS 0007 has code 105611)
     # career -> for example, UGRD (undergraduate)
 
@@ -236,11 +237,12 @@ def get_section_details(term: Union[str, int], section_number: Union[str, int]) 
     if len(meetings) != 0:
         meeting_objs = []
         for meeting in meetings:
-            days = meeting["stnd_mtg_pat"]
+            days = meeting["days"]
             start_time = meeting["meeting_time_start"]
             end_time = meeting["meeting_time_end"]
-            start_date = meeting["start_date"]
-            end_date = meeting["end_date"]
+            # start_date = meeting["start_date"]
+            # end_date = meeting["end_date"]
+            date_range = meeting["date_range"].split(" - ")
 
             instructors = None
             if len(meeting["instructors"]) != 0 and meeting["instructors"][0]["name"] not in ["To be Announced", "-"]:
@@ -256,8 +258,8 @@ def get_section_details(term: Union[str, int], section_number: Union[str, int]) 
                     days=days,
                     start_time=start_time,
                     end_time=end_time,
-                    start_date=start_date,
-                    end_date=end_date,
+                    start_date=date_range[0],
+                    end_date=date_range[1],
                     instructors=instructors
                 )
             )
