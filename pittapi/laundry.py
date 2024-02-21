@@ -117,7 +117,7 @@ def get_status_detailed(building_name: str) -> List[Dict[str, Union[str, int]]]:
             machine_type = "dryer"
         elif obj["type"] == "washFL":
             machine_type = "washer"
-        else:
+        elif obj["type"] == "washNDry":
             machine_type = "washAndDry"
 
         machine_id = obj["appliance_desc_key"]
