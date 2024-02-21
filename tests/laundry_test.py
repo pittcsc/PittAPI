@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import unittest
 import responses
+import json
 
 from pathlib import Path
 
@@ -31,31 +32,31 @@ TEST_BUILDING = list(laundry.LOCATION_LOOKUP.keys())[0]
 class LaundryTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
-        with (SAMPLE_PATH / 'laundry.htm').open() as f:
-            self.laundry_data = ''.join(f.readlines())
+        with open(SAMPLE_PATH / 'laundry_mock_response.json', 'r') as file:
+            self.mock_data = json.load(file)
 
     @responses.activate
     def test_get_status_simple(self):
         responses.add(
             responses.GET,
-            'http://m.laundryview.com/submitFunctions.php?monitor=true&lr=' + laundry.LOCATION_LOOKUP[TEST_BUILDING],
-            body=self.laundry_data,
+            'https://www.laundryview.com/api/currentRoomData?school_desc_key=197&location=' + laundry.LOCATION_LOOKUP[TEST_BUILDING],
+            json=self.mock_data,
             status=200
         )
         status = laundry.get_status_simple(TEST_BUILDING)
         self.assertIsInstance(status, dict)
         self.assertEqual(status['building'], TEST_BUILDING)
-        self.assertEqual(status['free_washers'], 2)
+        self.assertEqual(status['free_washers'], 7)
         self.assertEqual(status['free_dryers'], 2)
-        self.assertEqual(status['total_washers'], 4)
-        self.assertEqual(status['total_dryers'], 4)
+        self.assertEqual(status['total_washers'], 10)
+        self.assertEqual(status['total_dryers'], 10)
 
     @responses.activate
     def test_get_status_detailed(self):
         responses.add(
             responses.GET,
-            'http://m.laundryview.com/submitFunctions.php?monitor=true&lr=' + laundry.LOCATION_LOOKUP[TEST_BUILDING],
-            body=self.laundry_data,
+            'https://www.laundryview.com/api/currentRoomData?school_desc_key=197&location=' + laundry.LOCATION_LOOKUP[TEST_BUILDING],
+            json=self.mock_data,
             status=200
         )
         status = laundry.get_status_detailed(TEST_BUILDING)
