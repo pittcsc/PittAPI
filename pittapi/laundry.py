@@ -40,7 +40,7 @@ LOCATION_LOOKUP = {
 
 
 def _get_laundry_info(building_name: str) -> Any:
-    """Returns BeautifulSoup object of laundry view webpage"""
+    """Returns JSON object of laundry view webpage"""
     building_name = building_name.upper()
     url = BASE_URL.format(LOCATION_LOOKUP[building_name])
     response = requests.get(url)
@@ -62,19 +62,33 @@ def get_status_simple(building_name: str) -> Dict[str, str]:
         -> SUTH_EAST
         -> SUTH_WEST
     """
-    laundry_soup = _get_laundry_info(building_name)
-    re_format = re.compile(r"^([0-9]+) of ([0-9]+) available$")
-    washer_text = laundry_soup.find("span", {"id": "washer_available"}).text
-    dryer_text = laundry_soup.find("span", {"id": "dryer_available"}).text
-    washer_match = re_format.match(washer_text)
-    dryer_match = re_format.match(dryer_text)
+    laundry_info = _get_laundry_info(building_name)
+    freeWashers, freeDryers, totalWashers, totalDryers = 0,0,0,0
 
+    for obj in laundry_info["objects"]:
+        if obj["type"] == "washFL":
+            totalWashers += 1
+            if obj["status_toggle"] == 0:
+                freeWashers += 1
+        elif obj["type"] == "dry":
+            totalDryers += 1
+            if obj["status_toggle"] == 0:
+                freeDryers += 1
+        # for towers, they have "combo" machines with this type, no individual washers and dryers |
+        # one part of combo being in use marks the whole thing as in use, so we can only show if
+        # both parts are free. 
+        elif obj["type"] == "washNdry":
+            totalWashers += 1
+            totalDryers += 1
+            if obj["status_toggle"] == 0:
+                freeDryers += 1
+                freeWashers += 1
     return {
         "building": building_name,
-        "free_washers": int(washer_match.group(1)),
-        "total_washers": int(washer_match.group(2)),
-        "free_dryers": int(dryer_match.group(1)),
-        "total_dryers": int(dryer_match.group(2)),
+        "free_washers": freeWashers,
+        "total_washers": totalWashers,
+        "free_dryers": freeDryers,
+        "total_dryers": totalDryers,
     }
 
 
@@ -93,29 +107,24 @@ def get_status_detailed(building_name: str) -> List[Dict[str, Union[str, int]]]:
     """
     machines = []
     machine_type = "Unknown"
-    laundry_soup = _get_laundry_info(building_name)
+    laundry_info = _get_laundry_info(building_name)
 
-    for li in laundry_soup.findAll("li"):
-        if "id" in li.attrs:
-            machine_type = li.attrs["id"]
-            continue
+    for obj in laundry_info["objects"]:
+        if obj["type"] == "dry":
+            machine_type = "dryer"
+        elif obj["type"] == "washFL":
+            machine_type = "washer"
+        elif obj["type"] == "washNDry":
+            machine_type = "washAndDry"
 
-        machine_id = int(li.find("a").attrs["id"])
-        machine_status = li.find("p").text
-        machine_name = (
-            li.text.split(machine_status)[0].encode("ascii", "ignore").decode("utf-8")
-        )
-        time_left = (
-            int(machine_status[: machine_status.find(" ")])
-            if "mins left" in machine_status
-            else -1
-        )
+        machine_id = obj["appliance_desc_key"]
+        machine_status = obj["time_left_lite"]
+        time_left = obj["time_remaining"]
 
         machines.append(
             {
                 "machine_id": machine_id,
                 "machine_status": machine_status,
-                "machine_name": machine_name,
                 "machine_type": machine_type,
                 "time_left": time_left,
             }
