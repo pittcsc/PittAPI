@@ -83,9 +83,6 @@ def get_status_simple(building_name: str) -> Dict[str, str]:
             if obj["status_toggle"] == 0:
                 freeDryers += 1
                 freeWashers += 1
-
-   
-
     return {
         "building": building_name,
         "free_washers": freeWashers,
