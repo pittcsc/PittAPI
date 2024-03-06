@@ -21,9 +21,20 @@ import unittest
 
 from pittapi import people
 
-@unittest.skip
 class PeopleTest(unittest.TestCase):
     def test_people_get_person(self):
-        ans = people.get_person("smith", 19)
+        ans = people.get_person("John C Ramirez")
         self.assertIsInstance(ans, list)
-        self.assertTrue(len(ans) == 19)
+        self.assertTrue(ans[0]['email'] == "ramirez@cs.pitt.edu")
+        self.assertTrue(ans[0]['name'] == "Ramirez, John C")
+        self.assertTrue(ans[0]['office_phone'] == "(412) 624-8441")
+
+    def test_people_get_person_too_many(self):
+        ans = people.get_person("Smith")
+        self.assertIsInstance(ans,list)
+        self.assertEquals(ans, [{"ERROR":"Too many people matched your criteria."}])
+
+    def test_people_get_person_none(self):
+        ans = people.get_person("Lebron Iverson Jordan Kobe")
+        self.assertIsInstance(ans,list)
+        self.assertEquals(ans, [{"ERROR":"No one found."}])
