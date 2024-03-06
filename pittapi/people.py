@@ -61,8 +61,8 @@ def get_person(query: str) -> List[Dict[str, str]]:
     payload = {"search": query}
     session = HTMLSession()
     resp = session.post(PEOPLE_SEARCH_URL, data=payload)
-    if resp.text.startswith("Too many people matched your criteria."):
-        pass  # Return an exception
+    if resp.text.__contains__("Too many people matched your criteria."):
+        return [{"ERROR":"Too many people matched your criteria."}]  # Return an error
     elements = resp.html.xpath("/html/div/section")
     result = []
     for entry in elements:
@@ -70,4 +70,6 @@ def get_person(query: str) -> List[Dict[str, str]]:
         person = {"name": name.text}
         _parse_segments(person, segments)
         result.append(person)
+    if result == []:
+        return [{"ERROR":"No one found."}] # Return an error
     return result
