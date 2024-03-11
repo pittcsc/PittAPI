@@ -68,7 +68,7 @@ Tests
 -----
 
 | Run tests with
-  ``python3 -m "nose" --with-coverage --cov PittAPI/ --with-timer tests/*``.
+  ``pytest --cov=pittapi tests/``.
 | If your ``python -v`` is 3+, replace ``python3`` with ``python``.
 
 License

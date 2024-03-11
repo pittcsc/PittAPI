@@ -20,6 +20,9 @@ from requests_html import HTMLSession
 from typing import List, Dict
 from parse import compile
 
+# Please note that find.pitt.edu will not accept more than 10 requests within a few minutes
+# It will time out if that happens
+
 PEOPLE_SEARCH_URL = "https://find.pitt.edu/Search"
 
 LABEL_CONVERSION = {

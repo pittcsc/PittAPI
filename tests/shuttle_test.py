@@ -54,7 +54,7 @@ class ShuttleTest(unittest.TestCase):
         )
         stop_estimates = shuttle.get_vehicle_route_stop_estimates(25, 4)
         self.assertIsInstance(stop_estimates, list)
-        self.assertEquals(len(stop_estimates[0]['Estimates']), 4)
+        self.assertEqual(len(stop_estimates[0]['Estimates']), 4)
 
     @responses.activate
     def test_get_routes(self):
