@@ -32,9 +32,9 @@ class PeopleTest(unittest.TestCase):
     def test_people_get_person_too_many(self):
         ans = people.get_person("Smith")
         self.assertIsInstance(ans,list)
-        self.assertEquals(ans, [{"ERROR":"Too many people matched your criteria."}])
+        self.assertEqual(ans, [{"ERROR":"Too many people matched your criteria."}])
 
     def test_people_get_person_none(self):
         ans = people.get_person("Lebron Iverson Jordan Kobe")
         self.assertIsInstance(ans,list)
-        self.assertEquals(ans, [{"ERROR":"No one found."}])
+        self.assertEqual(ans, [{"ERROR":"No one found."}])

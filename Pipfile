@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 beautifulsoup4 = "*"
-coverage = "==4.4"
+coverage = "==7.4.3"
 requests = "*"
 responses = "*"
 grequests = "*"
@@ -19,8 +19,12 @@ black = "==19.10b0"
 sphinx = "*"
 requests-html = "*"
 parse = "*"
+pytest = "*"
+pytest-cov = "==4.1.0"
+pytest-xdist = "*"
+
 
 [dev-packages]
 
 [requires]
-python_version = "3.7"
+python_version = "3.12"

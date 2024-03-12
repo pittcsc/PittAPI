@@ -61,7 +61,7 @@ class DiningTest(unittest.TestCase):
         locations = dining.get_locations_by_status('open')
         self.assertIsInstance(locations, list)
         for location in locations:
-            self.assertEquals(location['status'], 'open')
+            self.assertEqual(location['status'], 'open')
 
     @responses.activate
     def test_get_dining_locations_by_status_closed(self):
@@ -77,4 +77,4 @@ class DiningTest(unittest.TestCase):
         locations = dining.get_locations_by_status('closed')
         self.assertIsInstance(locations, list)
         for location in locations:
-            self.assertEquals(location['status'], 'closed')
+            self.assertEqual(location['status'], 'closed')

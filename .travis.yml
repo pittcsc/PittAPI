@@ -4,6 +4,7 @@ python:
   - "3.5"
   - "3.6"
   - "3.7"
+  - "3.12"
 # command to install dependencies
 install:
   - "pip install pipenv"
@@ -11,7 +12,7 @@ install:
   - "coverage --version"
 # command to run tests
 script:
-  - pipenv run python -m "nose" --with-coverage --cover-inclusive --cover-package=pittapi --with-timer tests/*
+  - pytest --cov=pittapi tests/
 notifications:
     email: false
 os:
