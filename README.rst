@@ -64,7 +64,7 @@ Usage examples
 
 Local Setup
 -----
-| Install Python 3.12 and ``pipenv``. ``pyenv`` is a great way to let you easily switch between Python versions.
+| Install Python 3.12 and ``pipenv``.
 | Run ``pipenv install`` and ``pipenv shell`` to create and setup the virtual environment.
 
 
