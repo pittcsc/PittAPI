@@ -62,12 +62,18 @@ Usage examples
     one = dining.get_location_by_name("taco_bell-schenley_cafe")
     two = dining.get_location_by_name("cup_&_chaucer-hillman")
 
+Local Setup
+-----
+Install Python 3.12 and ``pipenv``. ``pyenv`` is a great way to let you easily switch between Python versions.
+Run ``pipenv install`` and ``pipenv shell`` to create and setup the virtual environment.
+
+
 Tests
 -----
 
 | Run tests with
   ``pytest --cov=pittapi tests/``.
-| If your ``python -v`` is 3+, replace ``python3`` with ``python``.
+|
 
 License
 -------
