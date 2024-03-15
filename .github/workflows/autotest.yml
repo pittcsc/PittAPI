@@ -1,4 +1,4 @@
-name: auto-test
+name: Monthly Full Test
 
 run-name: ${{ github.actor }} is running unit tests for PittAPI
 
