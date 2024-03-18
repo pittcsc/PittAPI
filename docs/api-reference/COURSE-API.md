@@ -9,7 +9,7 @@
   - `subject`: Subject Code | Example: `'CS'`
 
 #### **Returns**:
-Returns a `Subject` object containing the information of all courses underneath that subject. | Note: Some subject details will be retrieved as None; these can be obtained through a call to `get_course_details`
+Returns a `Subject` object containing the information of all courses underneath that subject.
 #### **Example**:
 
 ###### **Sample Usage**:
@@ -48,18 +48,20 @@ Subject(
 
 
 #### **Returns**:
-Returns a `Course` object containing information about the course and all sections offered.
+Returns a `CourseDetails` object containing information about the course and all sections offered.
 #### **Example**:
 
 ###### **Sample Usage**:
 ```python
 >>> cs_course = course.get_course_details(term='2194', subject='CS', course='1501')
 >>> str(cs_course)
-Course(
-    subject_code='CS',
-    course_number='1501',
-    course_id='105761',
-    course_title='ALGORITHM IMPLEMENTATION',
+CourseDetails(
+    course=Course(
+        subject_code='CS',
+        course_number='1501',
+        course_id='105761',
+        course_title='ALGORITHM IMPLEMENTATION'
+    ),
     course_description='The course covers a broad range...',
     credit_range=(3,3),
     requisites='PREQ: (CS 0441 or CS 0406) and (CS 0445 or CS 0455 or COE 0445) ; (MIN GRADE 'C' or Transfer FOR ALL COURSES LISTED)',
@@ -170,6 +172,11 @@ Object meant to broadly represent a Pitt course
 - __course_id__
     - Pitt course ID used to uniquely represent the course
 - __course_title__
+
+## PittAPI.course.CourseDetails
+Contains more detailed information about some Pitt course
+- __course__
+    - The Course object associated with this course
 - __course_description__
 - __credit_range__
     - Minimum and maximum num of credits course can be taken for
