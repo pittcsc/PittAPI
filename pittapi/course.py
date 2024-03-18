@@ -90,13 +90,15 @@ class Course(NamedTuple):
     course_number: str
     course_id: str
     course_title: str
+
+class CourseDetails(NamedTuple):
+    course: Course
     course_description: Optional[str] = None
     credit_range: Optional[Tuple[int]] = None
     requisites: Optional[str] = None
     components: List[Component] = None
     attributes: List[Attribute] = None
     sections: Optional[List[Section]] = None
-
 
 class Subject(NamedTuple):
     subject_code: str
@@ -128,7 +130,7 @@ def get_subject_courses(subject: str) -> Subject:
 
 def get_course_details(
     term: Union[str, int], subject: str, course: Union[str, int]
-) -> Course:
+) -> CourseDetails:
     term = _validate_term(term)
     subject = _validate_subject(subject)
     course = _validate_course(course)
@@ -220,11 +222,13 @@ def get_course_details(
             )
         )
 
-    return Course(
-        subject_code=subject,
-        course_number=course,
-        course_id=internal_course_id,
-        course_title=course_title,
+    return CourseDetails(
+        course=Course(
+            subject_code=subject,
+            course_number=course,
+            course_id=internal_course_id,
+            course_title=course_title
+        ),
         course_description=course_description,
         credit_range=credit_range,
         requisites=requisites,

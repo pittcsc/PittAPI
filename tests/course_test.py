@@ -21,7 +21,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from pittapi import course
-from pittapi.course import Attribute, Component, Course, Instructor, Meeting, Section, SectionDetails, Subject
+from pittapi.course import Attribute, Component, Course, CourseDetails, Instructor, Meeting, Section, SectionDetails, Subject
 from tests.mocks.course_mocks import mocked_subject_data, mocked_courses_data, mocked_courses_data_invalid, mocked_course_info_data, mocked_course_sections_data, mocked_section_details_data
 
 class CourseTest(unittest.TestCase):
@@ -89,21 +89,24 @@ class CourseTest(unittest.TestCase):
 
         course_sections = course.get_course_details('2231', 'CS', '0007')
 
-        self.assertTrue(isinstance(course_sections, Course))
-        self.assertEqual(course_sections.subject_code, 'CS')
-        self.assertEqual(course_sections.course_number, '0007')
-        self.assertEqual(course_sections.course_id, '105611')
-        self.assertEqual(course_sections.course_title, 'INTRO TO COMPUTER PROGRAMMING')
+        self.assertTrue(isinstance(course_sections, CourseDetails))
+        
+        self.assertTrue(isinstance(course_sections.course, Course))
+        course_obj = course_sections.course
+        self.assertEqual(course_obj.subject_code, 'CS')
+        self.assertEqual(course_obj.course_number, '0007')
+        self.assertEqual(course_obj.course_id, '105611')
+        self.assertEqual(course_obj.course_title, 'INTRO TO COMPUTER PROGRAMMING')
+
         self.assertEqual(len(course_sections.sections), 1)
         test_attribute = course_sections.attributes[0]
-
         self.assertTrue(isinstance(test_attribute, Attribute))
         self.assertEqual(test_attribute.attribute, 'DSGE')
         self.assertEqual(test_attribute.attribute_description, '*DSAS General Ed. Requirements')
         self.assertEqual(test_attribute.value, 'ALG')
+
         self.assertEqual(test_attribute.value_description, 'Algebra')
         test_section = course_sections.sections[0]
-
         self.assertTrue(isinstance(test_section, Section))
         self.assertEqual(test_section.term, '2231')
         self.assertEqual(test_section.session, 'Academic Term')
@@ -111,23 +114,22 @@ class CourseTest(unittest.TestCase):
         self.assertEqual(test_section.class_number, '27815')
         self.assertEqual(test_section.section_type, 'REC')
         self.assertEqual(test_section.status, 'Open')
+
         self.assertEqual(len(test_section.instructors), 1)
         self.assertEqual(len(test_section.meetings), 1)
         test_instructor = test_section.instructors[0]
         test_meeting = test_section.meetings[0]
-
         self.assertTrue(isinstance(test_instructor, Instructor))
         self.assertEqual(test_instructor.name, "Robert Fishel")
         self.assertEqual(test_instructor.email, "rmf105@pitt.edu")
-        
         self.assertTrue(isinstance(test_meeting, Meeting))
         self.assertEqual(test_meeting.days, "Fr")
         self.assertEqual(test_meeting.start_time, "10.00.00.000000-05:00")
         self.assertEqual(test_meeting.end_time, "10.50.00.000000-05:00")
         self.assertEqual(test_meeting.start_date, "08/29/2022")
         self.assertEqual(test_meeting.end_date, "12/09/2022")
+        
         test_instructor = test_section.instructors[0]
-
         self.assertTrue(isinstance(test_instructor, Instructor))
         self.assertEqual(test_instructor.name, "Robert Fishel")
 
