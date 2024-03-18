@@ -17,6 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+import datetime
 import re
 import requests
 from typing import Dict, List, NamedTuple, Optional, Tuple, Union
@@ -32,7 +33,6 @@ SECTION_DETAILS_API = "https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s
 
 TERM_REGEX = "2\d\d[147]"
 VALID_TERMS = re.compile(TERM_REGEX)
-
 
 class Instructor(NamedTuple):
     name: str
@@ -235,11 +235,11 @@ def get_course_details(
 
 
 def get_section_details(
-    term: Union[str, int], section_number: Union[str, int]
+    term: Union[str, int], class_number: Union[str, int]
 ) -> Section:
     term = _validate_term(term)
 
-    json_response = _get_section_details(term, section_number)
+    json_response = _get_section_details(term, class_number)
     details = json_response["section_info"]["class_details"]
     meetings = json_response["section_info"]["meetings"]
     enrollment = json_response["section_info"]["class_availability"]
@@ -310,7 +310,7 @@ def get_section_details(
         term=term,
         session=session,
         section_number=section_num,
-        class_number=str(section_number),
+        class_number=str(class_number),
         section_type=section_type,
         status=status,
         instructors=None,

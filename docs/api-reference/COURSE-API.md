@@ -9,7 +9,7 @@
   - `subject`: Subject Code | Example: `'CS'`
 
 #### **Returns**:
-Returns a `Subject` object containing the information of all courses underneath that subject.
+Returns a `Subject` object containing the information of all courses underneath that subject. | Note: Some subject details will be retrieved as None; these can be obtained through a call to `get_course_details`
 #### **Example**:
 
 ###### **Sample Usage**:
@@ -95,11 +95,11 @@ Course(
 
 ---
 
-### **get_section_details(term, section_number)**
+### **get_section_details(term, class_number)**
 
 #### **Parameters**:
   - `term`: Term  | Example: `2194`
-  - `section_number`: Section Number | Example: `27740` | Note: Potential section numbers can be determined via a call to `get_course_details`
+  - `class_number`: Class Number | Example: `27740` | Note: Potential class numbers can be determined via a call to `get_course_details`
 
 #### **Returns**:
 Return a `Section` object containing information for a particular section. 
