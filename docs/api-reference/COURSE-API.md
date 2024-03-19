@@ -3,77 +3,43 @@
 
 # Course API
 
-### **get_term_courses(term, subject)**
+### **get_subject_courses(subject)**
 
 #### **Parameters**:
-  - `term`: Term  | Example: `2194`
   - `subject`: Subject Code | Example: `'CS'`
 
 #### **Returns**:
-Returns a `PittSubject` object containing the information of all courses and sections offered during the term.
+Returns a `Subject` object containing the information of all courses underneath that subject.
 #### **Example**:
 
 ###### **Sample Usage**:
 ```python
->>> cs_subject = course.get_courses(term='2194', subject='CS')
+>>> cs_subject = course.get_subject_courses(subject='CS')
 >>> str(cs_subject)
-'PittSubject(2194, CS)'
->>> cs_subject  # This string representation comes from performing cs_subject.to_dict()
-{'0004': [{'days': ['Mo', 'We'],
-           'end_date': '2019-04-19 00:00:00',
-           'instructor': 'Michael Devine',
-           'number': '27865',
-           'room': '5502 Sennott Square',
-           'section': '1060',
-           'section_type': 'LEC',
-           'start_date': '2019-01-07 00:00:00',
-           'subject': 'CS',
-           'term': '2194',
-           'times': ['9:30am', '10:45am']},
-          {'days': ['Tu', 'Th'],
-           'end_date': '2019-04-19 00:00:00',
-           'instructor': 'Michael Devine',
-           'number': '27866',
-           'room': '209 Lawrence Hall',
-           'section': '1100',
-           'section_type': 'LEC',
-           'start_date': '2019-01-07 00:00:00',
-           'subject': 'CS',
-           'term': '2194',
-           'times': ['11:00am', '12:15pm']}],
- ...       
-}
->>> cs_subject.subject
-'CS'
->>> cs_subject.term
-'2194'
->>> str(cs_subject['449'])
-'PittCourse(2194, CS, 0449)'
->>> str(cs_subject['1501'])
-'PittCourse(2194, CS, 1501)'
->>> cs_subject['1501'].sections
-[{'days': ['Mo', 'We'],
-  'end_date': '2019-04-19 00:00:00',
-  'instructor': 'Nicholas Farnan',
-  'number': '27740',
-  'room': '5129 Sennott Square',
-  'section': '1040',
-  'section_type': 'LEC',
-  'start_date': '2019-01-07 00:00:00',
-  'subject': 'CS',
-  'term': '2194',
-  'times': ['9:30am', '10:45am']},
-  ...       
-]
->>> str(cs_subject['1501'].sections[0])
-'PittSection(CS, 1501, LEC, 27740, Nicholas Farnan)'
->>> str(cs_subject['1501'][0])
-'PittSection(CS, 1501, LEC, 27740, Nicholas Farnan)'
+Subject(
+    subject_code='CS',
+    courses={
+        '0004': Course(
+            subject_code='CS',
+            course_number='0004',
+            course_id='105609',
+            course_title='INTRO TO COMPUTER PROGRAMMING-BASIC'
+        ),
+        '0007': Course(
+            subject_code='CS',
+            course_number='0007',
+            course_id='105611',
+            course_title='INTRO TO COMPUTER PROGRAMMING'
+        )
+        ...
+    }
+)
+
 ```
 
 ---
 
-### **get_course_sections(term, subject, course)**
+### **get_course_details(term, subject, course)**
 
 #### **Parameters**:
   - `term`: Term  | Example: `2194`
@@ -82,62 +48,63 @@ Returns a `PittSubject` object containing the information of all courses and sec
 
 
 #### **Returns**:
-Returns a `PittCourse` object containing information about the course and all sections offered.
+Returns a `CourseDetails` object containing information about the course and all sections offered.
 #### **Example**:
 
 ###### **Sample Usage**:
 ```python
->>> cs_course = course.get_course_sections(term='2194', subject='CS', course='1501')
+>>> cs_course = course.get_course_details(term='2194', subject='CS', course='1501')
 >>> str(cs_course)
-'PittCourse(2194, CS, 1501)'
->>> cs_course # This string representation comes from performing cs_course.to_dict()
-[{'days': ['Mo', 'We'],
-  'end_date': '2019-04-19 00:00:00',
-  'instructor': 'Nicholas Farnan',
-  'number': '27740',
-  'room': '5129 Sennott Square',
-  'section': '1040',
-  'section_type': 'LEC',
-  'start_date': '2019-01-07 00:00:00',
-  'subject': 'CS',
-  'term': '2194',
-  'times': ['9:30am', '10:45am']},
-  ...       
-]
->>> cs_course.subject
-'CS'
->>> cs_course.term
-'2194'
->>> cs_course.number
-'1501'
->>> cs_course.sections
-[{'days': ['Mo', 'We'],
-  'end_date': '2019-04-19 00:00:00',
-  'instructor': 'Nicholas Farnan',
-  'number': '27740',
-  'room': '5129 Sennott Square',
-  'section': '1040',
-  'section_type': 'LEC',
-  'start_date': '2019-01-07 00:00:00',
-  'subject': 'CS',
-  'term': '2194',
-  'times': ['9:30am', '10:45am']},
-  ...       
-]
->>> str(cs_subject['1501'].sections[0])
-'PittSection(CS, 1501, LEC, 27740, Nicholas Farnan)'
+CourseDetails(
+    course=Course(
+        subject_code='CS',
+        course_number='1501',
+        course_id='105761',
+        course_title='ALGORITHM IMPLEMENTATION'
+    ),
+    course_description='The course covers a broad range...',
+    credit_range=(3,3),
+    requisites='PREQ: (CS 0441 or CS 0406) and (CS 0445 or CS 0455 or COE 0445) ; (MIN GRADE 'C' or Transfer FOR ALL COURSES LISTED)',
+    components=[
+        Component(component='Lecture', required=True), 
+        Component(component='Recitation', required=True)
+    ],
+    attributes=None,
+    sections=[
+        Section(
+            term='2194',
+            session='Academic Term',
+            section_number='1040',
+            class_number='27740',
+            section_type='Lecture',
+            status='Open',
+            instructors=[Instructor(name='Nicholas Farnan', email='')],
+            meetings=[
+                Meeting(
+                    days='MoWe', 
+                    start_time='09.30.00.000000-05:00', 
+                    end_time='10.45.00.000000-05:00', 
+                    start_date='01/07/2019', 
+                    end_date='04/19/2019', 
+                    instructors=[Instructor(name='Nicholas Farnan', email=None)]
+                )
+            ],
+            details=None
+        )
+    ]
+)
 ```
 
 ---
 
-### **get_section_details(term, section_number)**
+### **get_section_details(term, class_number)**
 
 #### **Parameters**:
   - `term`: Term  | Example: `2194`
-  - `section_number`: Section Number | Example: `27740`
+  - `class_number`: Class Number | Example: `27740` | Note: Potential class numbers can be determined via a call to `get_course_details`
 
 #### **Returns**:
-Return a `PittSection` object containing information for a particular section.
+Return a `Section` object containing information for a particular section. 
 
 #### **Example**:
 
@@ -145,139 +112,136 @@ Return a `PittSection` object containing information for a particular section.
 ```python
 >>> cs_section = course.get_section_details('2194', '27740')
 >>> str(cs_section)
-'PittSection(CS, 1501, LEC, 27740, Nicholas Farnan)'
->>> cs_section # This string representation comes from performing cs_section.to_dict()
-{'days': ['Mo', 'We'],
- 'end_date': '2019-04-19 00:00:00',
- 'instructor': 'Nicholas Farnan',
- 'number': '27740',
- 'room': '5129 Sennott Square',
- 'section': '1040',
- 'section_type': 'LEC',
- 'start_date': '2019-01-07 00:00:00',
- 'subject': 'CS',
- 'term': '2194',
- 'times': ['9:30am', '10:45am']}
->>> cs_section.subject
-'CS'
->>> cs_section.term
-'2194'
->>> cs_section.course_number
-'1501'
->>> cs_section.number
-'22740'
->>> cs_section.room
-'5129 Sennott Square'
->>> cs_section.extra_details
-{'class_attributes': 'Writing Requirement Course',
- 'description': 'The course covers a broad range of the most commonly used '
-                'algorithms:  some examples include algorithms for sorting, '
-                'searching, encryption, compression, and local search.  The '
-                'students will implement and test several algorithms.  The '
-                'course is programming intensive.',
- 'preq': '(CS 0441 or CS 0406) and (CS 0445 or CS 0455 or COE 0445) ; (MIN '
-         "GRADE 'C'  or Transfer FOR ALL COURSES LISTED)",
- 'units': '3 units'}
->>> cs_section.to_dict(extra_details=True)
-{'days': ['Mo', 'We'],
- 'end_date': '2019-04-19 00:00:00',
- 'extra': {'class_attributes': 'Writing Requirement Course',
-           'description': 'The course covers a broad range of the most '
-                          'commonly used algorithms:  some examples include '
-                          'algorithms for sorting, searching, encryption, '
-                          'compression, and local search.  The students will '
-                          'implement and test several algorithms.  The course '
-                          'is programming intensive.',
-           'preq': '(CS 0441 or CS 0406) and (CS 0445 or CS 0455 or COE 0445) '
-                   "; (MIN GRADE 'C'  or Transfer FOR ALL COURSES LISTED)",
-           'units': '3 units'},
- 'instructor': 'Nicholas Farnan',
- 'number': '27740',
- 'room': '5129 Sennott Square',
- 'section': '1040',
- 'section_type': 'LEC',
- 'start_date': '2019-01-07 00:00:00',
- 'subject': 'CS',
- 'term': '2194',
- 'times': ['9:30am', '10:45am']}
+Section(
+    term='2194', 
+    session='Academic Term', 
+    section_number='1040', 
+    class_number='27740', 
+    section_type='LEC', 
+    status='Open', 
+    instructors=None, 
+    meetings=[
+        Meeting(
+            days='MoWe', 
+            start_time='9:30AM', 
+            end_time='10:45AM', 
+            start_date='01/07/2019',
+            end_date='04/19/2019', 
+            instructors=[
+                Instructor(name='Nicholas Farnan', email='')
+            ]
+        )
+    ], 
+    details=SectionDetails(
+        units='3 units', 
+        class_capacity='26', 
+        enrollment_total='25', 
+        enrollment_available='1',
+         wait_list_capacity='20', 
+         wait_list_total='1', 
+         valid_to_enroll='F', 
+         combined_section_numbers=['21754', '27740', '27741']
+    )
+)
 ```
 
 ---
 
-## PittAPI.course.PittSubject
-- __courses__
-    - Returns a list of the numbers for the courses offered in that subject for a certain term
-    - Ex. `['0004', '0007', ...]`
-- __subject__
-    - The subject code
-- __term__
-    - The term number
-- __to_dict(extra_details=False)__
-    - Returns the object in a dictionary representation
-    - __Warning__: If extra details is set to true it might take incredibly long since it needs to request the web page for each section.
+## PittAPI.course.Attribute
+Represents a requirement or group this course can be applied to (i.e. a general education requirement)
+- __attribute__
+    - String name representing course attribute/requirement satisfaction
+- __attribute_description__
+    - More information about course attribute/requirement
+- __value__
+    - Specific representation of requirement being satisfied
+- __value_description__
+    - Description of specific representation of requirement being satisfied
 
-## PittAPI.course.PittCourse
-- __number__
-    - The course number
-- __parent_subject__
-    - Returns the `PittSubject` that the course is under
-    - This will be `None` if course was requested with `get_course_sections`
-    - __Note:__ Never get `term` and/or `subject` from the `parent_subject` because it can be `None` use the properties of this class since it will always contain that information.
-- __sections__
-    - List of PittSections for all sections of the course being offered
-- __subject__
-    - The subject code
-- __title__
-    - The title or name of the course
-- __term__
-    - The term number
-- __to_dict(extra_details=False)__
-    - Returns the object in a dictionary representation
-    - __Warning__: If extra details is set to true it might take incredibly long since it needs to request the web page for each section.
+## PittAPI.course.Component
+Specific types of sections that a course may contain (i.e. lecture, recitation, lab, etc.)
+- __component__
+    - Identifier/name for the course component
+- __required__
+    - True if this component is required for successful course completion, false otherwise
 
-## PittAPI.course.PittSubject
+## PittAPI.course.Course
+Object meant to broadly represent a Pitt course
+- __subject_code__
 - __course_number__
-    - The course number
+- __course_id__
+    - Pitt course ID used to uniquely represent the course
 - __course_title__
-    - The course title
+
+## PittAPI.course.CourseDetails
+Contains more detailed information about some Pitt course
+- __course__
+    - The Course object associated with this course
+- __course_description__
+- __credit_range__
+    - Minimum and maximum num of credits course can be taken for
+- __requisites__
+    - Description of course prerequisites and corequisites
+- __components__
+    - List of Component objects part of this course
+- __attributes__
+    - List of Attribute objects that can be satisfied by this course
+- __sections__
+    - Sections of this course for some term, if specified
+
+## PittAPI.course.Instructor
+- __name__
+- __email__
+
+## PittAPI.course.Meeting
+Representation of a course meeting (lecture, recitation, lab, etc.) within a specific section
 - __days__
-    - Returns a list of what days of the week the class occurs on
-    - Ex. `['Mo', 'We']`
-- __end_date__
-    - Returns a `datetime.datetime` object containing the end date of the class
-- __extra_details__
-    - Returns an dictionary containing extra details about the section including units, description, perquisites, and if present class attributes (if it meets a requirement such as writing).
-    - __Note:__ If called for the first time it will make a request for the section's page
-- __instructor__
-    - The instructor of the course
-- __number__
-    - The section number
-- __parent_course__
-    - Returns the `PittCourse` that the course is under
-    - This will be `None` if course was requested with `get_section_details`
-    - __Note:__ Never get `term`, `subject`, and/or `number`(course number) from the `parent_course` because it can be `None` use the properties of this class since it will always contain that information.
-- __parent_subject__
-    - Returns the `PittSubject` that the course is under
-    - This will be `None` if course was requested with `get_section_details`
-    - __Note:__ Never get `term` and/or `subject` from the `parent_subject` because it can be `None` use the properties of this class since it will always contain that information.
-- __room__
-    - The room the section is located in
-- __section__
-    - The number for the section (this is different from the `number`)
-- __section_type__
-    - The type of the section (Lecture, Recitation, etc.)
-    - Ex. `'LEC'`
+    - Day(s) of the week this meeting occurs
+- __start_time__
+- __end_time__
 - __start_date__
-    - Returns a `datetime.datetime` object containing the start date of the class
-- __subject__
-    - The subject code
+- __end_date__
+- __instructors__
+    - List of Instructor objects who are assigned to this meeting
+
+## PittAPI.course.Section
+A specific section offering of some Pitt course
 - __term__
-    - The term number
-- __times__
-    - Returns a list of strings containing the start time and end time of the section
-    - Ex. `['9:30am', '10:45am']`
-- __to_dict(extra_details=False)__
-    - Returns the object in a dictionary representation
-    - __Warning__: If extra details is set to true it might take incredibly long since it needs to request the web page for each section.
-- __url__
-    - The url for web page associated with this section
+- __session__
+    - Specific timing of this course section (i.e. Academic Term, 12 week, 6 week)
+- __section_number__
+    - Identifier for this specific section
+- __class_number__
+    - Identifier of section, unique to within course
+- __section_type__
+    - Type of this section (i.e. Lecutre, Recitation)
+- __status__
+    - Basic representation of enrollment status for this section
+- __instructors__
+    - List of Instructor objects who are assigned to this section
+- __meetings__
+    - List of Meeting objects part of this section
+- __details__
+    - Optional SectionDetails object providing more information about this section, as outlined below
+
+## PittAPI.course.SectionDetails
+Provides some additional, specialized details about a Section
+- __units__
+    - Amount of units this specific section contributes/counts for
+- __class_capacity__
+- __enrollment_total__
+    - Students currently enrolled in the course
+- __enrollment_available__
+- __wait_list_capacity__
+- __wait_list_total__
+    - Current number of students on wait list for this section
+- __valid_to_enroll__
+    - Character to indicate if course is in state where enrollment is allowed/restricted
+- __combined_section_numbers__
+    - If not null, outlines unique section identifiers for combined sections
+
+## PittAPI.course.Subject
+- __subject_code__
+    - Pitt code for a given subject (e.g. CS, MATH, PHYS)
+- __courses__
+    - Dictionary of course IDs mapped to their corresponding course object within this Subject

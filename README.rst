@@ -14,11 +14,13 @@ Usage examples
     from PittAPI import course, dining, lab, laundry, library, news, people, shuttle, textbook
 
     ### Courses
-    # Will return a list of dictionaries containing courses in subject
-    cs_subject = course.get_term_courses(term='2194', subject='CS')
-    cs_course = cs_subject['1501']
-    cs_section_list = cs_course.sections
-    big_dict = cs_section_list[0].to_dict()
+    # Will return a dictionary of all CS courses
+    cs_subject = course.get_subject_courses(subject='CS')
+    courses_dict = cs_subject.courses
+    
+    # Will return a list of sections of a course during a given term
+    cs_course = course.get_course_details(term='2244', subject='CS', course='1501')
+    section_list = cs_course.sections
 
     ### Textbook
     # Will return a list of dictionaries containing textbooks for a class
@@ -73,7 +75,6 @@ Tests
 
 | Run tests with
   ``pytest --cov=pittapi tests/``
-|
 
 License
 -------
