@@ -1,7 +1,7 @@
 Pitt API
 ========
 
-|Build Status| |License GPLv2| |Python >= 3.12|
+|Build Status| |License GPLv2| |Python >= 3.6|
 
 Made by Ritwik Gupta at the University of Pittsburgh in an effort to get
 more open data from Pitt.
