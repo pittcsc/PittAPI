@@ -15,64 +15,75 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Academic calendar data published by the University of Pittsburgh.
 """
 
-from typing import NamedTuple
+from dataclasses import dataclass
+from typing import Any
 
-import requests
+from pittapi.base_client import BaseClient
+
+__all__ = ["CalendarClient", "Event"]
+
+ACADEMIC_CALENDAR_URL = "https://25livepub.collegenet.com/calendars/pitt-academic-calendar.json"
+GRADES_CALENDAR_URL = "https://25livepub.collegenet.com/calendars/pitt-grades-calendar.json"
+ENROLLMENT_CALENDAR_URL = "https://25livepub.collegenet.com/calendars/pitt-enrollment-calendar.json"
+COURSE_CALENDAR_URL = "https://25livepub.collegenet.com/calendars/pitt-courseclass-calendar.json"
+GRADUATION_CALENDAR_URL = "https://25livepub.collegenet.com/calendars/pitt-graduation-calendar.json"
 
 
-class Event(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class Event:
+    """One event from a Pitt calendar."""
+
     date: str
     title: str
     content: str
-    meta: list[str]
+    categories: tuple[str, ...]
 
 
-ACADEMIC_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-academic-calendar.json"
-GRADES_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-grades-calendar.json"
-ENROLLMENT_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-enrollment-calendar.json"
-COURSE_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-courseclass-calendar.json"
-GRADUATION_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-graduation-calendar.json"
+class CalendarClient(BaseClient):
+    """Fetch events from Pitt's public calendars."""
+
+    def get_academic_calendar(self) -> tuple[Event, ...]:
+        return self.fetch_events(ACADEMIC_CALENDAR_URL)
+
+    def get_grades_calendar(self) -> tuple[Event, ...]:
+        return self.fetch_events(GRADES_CALENDAR_URL)
+
+    def get_enrollment_calendar(self) -> tuple[Event, ...]:
+        return self.fetch_events(ENROLLMENT_CALENDAR_URL)
+
+    def get_course_calendar(self) -> tuple[Event, ...]:
+        """Return dates on which courses for future terms are determined."""
+        return self.fetch_events(COURSE_CALENDAR_URL)
+
+    def get_graduation_calendar(self) -> tuple[Event, ...]:
+        return self.fetch_events(GRADUATION_CALENDAR_URL)
+
+    def fetch_events(self, url: str) -> tuple[Event, ...]:
+        data = self.request("GET", url).json()
+        if not isinstance(data, list):
+            raise ValueError("calendar response must contain a list of events")
+
+        events = []
+        for raw_event in data:
+            events.append(parse_event(raw_event))
+        return tuple(events)
 
 
-def _fetch_calendar_events(url: str) -> list[Event]:
-    """"""
-    data = requests.get(url).json()
-    events = []
-    for calendar_event in data:
-        assert calendar_event["customFields"][0]["label"] == "Event Title"
-        event = Event(
-            title=calendar_event["title"],
-            date=calendar_event["startDateTime"][:10],
-            content=calendar_event["customFields"][0]["value"],
-            meta=calendar_event["categoryCalendar"].split("|"),
+def parse_event(raw_event: dict[str, Any]) -> Event:
+    """Convert one provider event into PittAPI's supported event model."""
+    try:
+        event_field = raw_event["customFields"][0]
+        if event_field["label"] != "Event Title":
+            raise ValueError("calendar event has an unexpected custom field")
+        return Event(
+            title=raw_event["title"],
+            date=raw_event["startDateTime"][:10],
+            content=event_field["value"],
+            categories=tuple(raw_event["categoryCalendar"].split("|")),
         )
-        events.append(event)
-    return events
-
-
-def get_academic_calendar() -> list[Event]:
-    """"""
-    return _fetch_calendar_events(ACADEMIC_CALENDAR_URL)
-
-
-def get_grades_calendar() -> list[Event]:
-    """"""
-    return _fetch_calendar_events(GRADES_CALENDAR_URL)
-
-
-def get_enrollment_calendar() -> list[Event]:
-    """"""
-    return _fetch_calendar_events(ENROLLMENT_CALENDAR_URL)
-
-
-def get_course_calendar() -> list[Event]:
-    """This is not a calendar about course schedule but rather
-    when courses/class are being determined for the next semester"""
-    return _fetch_calendar_events(COURSE_CALENDAR_URL)
-
-
-def get_graduation_calendar() -> list[Event]:
-    """"""
-    return _fetch_calendar_events(GRADUATION_CALENDAR_URL)
+    except (KeyError, IndexError, TypeError) as error:
+        raise ValueError("calendar event is missing required data") from error

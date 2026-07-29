@@ -1,45 +1,40 @@
-"""
-The Pitt API, to access workable data of the University of Pittsburgh
-Copyright (C) 2015 Ritwik Gupta
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""
-
 import json
-import unittest
-import responses
-
 from pathlib import Path
 
-from pittapi import status
+import pytest
+import responses
 
-SAMPLE_PATH = Path() / "tests" / "samples"
+from pittapi.status import STATUS_URL, StatusClient, StatusSummary
+
+SAMPLE_PATH = Path("tests/samples/status.json")
 
 
-class StatusTest(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
-        with (SAMPLE_PATH / "status.json").open() as f:
-            self.status_data = json.load(f)
+@responses.activate
+def test_get_status_models_nested_data():
+    responses.add(responses.GET, STATUS_URL, json=json.loads(SAMPLE_PATH.read_text()))
 
-    @responses.activate
-    def test_get_status(self):
-        responses.add(
-            responses.GET,
-            "https://status.pitt.edu/index.json",
-            json=self.status_data,
-            status=200,
-        )
-        self.assertIsInstance(status.get_status(), dict)
+    result = StatusClient().get_status()
+
+    assert isinstance(result, StatusSummary)
+    assert result.components
+    assert result.incidents
+    assert result.incidents[0].incident_updates
+    assert result.incidents[0].incident_updates[0].affected_components
+
+
+@responses.activate
+def test_get_status_rejects_missing_data():
+    responses.add(responses.GET, STATUS_URL, json={})
+    with pytest.raises(ValueError, match="missing required data"):
+        StatusClient().get_status()
+
+
+@responses.activate
+def test_incident_update_allows_null_affected_components():
+    data = json.loads(SAMPLE_PATH.read_text())
+    data["incidents"][0]["incident_updates"][0]["affected_components"] = None
+    responses.add(responses.GET, STATUS_URL, json=data)
+
+    result = StatusClient().get_status()
+
+    assert result.incidents[0].incident_updates[0].affected_components == ()

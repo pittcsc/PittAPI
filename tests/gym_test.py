@@ -1,69 +1,69 @@
-import unittest
+import pytest
 import responses
-from pittapi import gym
-from tests.mocks.gym_mocks import mock_gym_html
+
+from pittapi.gym import GYM_URL, Gym, GymClient
+
+GYMS = [
+    {
+        "LocationId": 1,
+        "LocationName": "Campus Recreation",
+        "FacilityId": 10,
+        "FacilityName": "Baierl Rec Center",
+        "TotalCapacity": 200,
+        "LastCount": 0,
+        "PercetageCapacity": 0,
+        "LastUpdatedDateAndTime": "07/09/2024 09:05 AM",
+        "IsClosed": False,
+        "Ignored": "provider extension",
+    },
+    {
+        "LocationId": 2,
+        "LocationName": "Trees Hall",
+        "FacilityId": 20,
+        "FacilityName": "Trees Fitness Center",
+        "TotalCapacity": 100,
+        "LastCount": 0,
+        "PercetageCapacity": 0,
+        "LastUpdatedDateAndTime": "07/09/2024 09:06 AM",
+        "IsClosed": True,
+    },
+]
 
 
-class GymTest(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
+@responses.activate
+def test_fetch_all_gyms_preserves_zero_and_closed_state():
+    responses.add(responses.GET, GYM_URL, json=GYMS)
 
-    @responses.activate
-    def test_fetch_gym_info(self):
+    gyms = GymClient().get_all_gyms_info()
 
-        responses.add(responses.GET, gym.GYM_URL, body=mock_gym_html, status=200)
+    assert gyms[0] == Gym(
+        location_id=1,
+        location_name="Campus Recreation",
+        facility_id=10,
+        facility_name="Baierl Rec Center",
+        total_capacity=200,
+        current_count=0,
+        percent_full=0,
+        last_updated="07/09/2024 09:05 AM",
+        is_closed=False,
+    )
+    assert gyms[1].current_count == 0
+    assert gyms[1].is_closed
 
-        gym_info = gym.get_all_gyms_info()
-        expected_info = [
-            gym.Gym(name="Baierl Rec Center", last_updated="07/09/2024 09:05 AM", current_count=100, percent_full=50),
-            gym.Gym(
-                name="Bellefield Hall: Fitness Center & Weight Room",
-                last_updated="07/09/2024 09:05 AM",
-                current_count=50,
-                percent_full=0,
-            ),
-            gym.Gym(name="Bellefield Hall: Court & Dance Studio"),
-            gym.Gym(name="Trees Hall: Fitness Center", last_updated="07/09/2024 09:05 AM", current_count=70, percent_full=58),
-            gym.Gym(name="Trees Hall: Courts", last_updated="07/09/2024 09:05 AM", current_count=20, percent_full=33),
-            gym.Gym(
-                name="Trees Hall: Racquetball Courts & Multipurpose Room",
-                last_updated="07/09/2024 09:05 AM",
-                current_count=10,
-                percent_full=25,
-            ),
-            gym.Gym(name="William Pitt Union", last_updated="07/09/2024 09:05 AM", current_count=25, percent_full=25),
-            gym.Gym(name="Pitt Sports Dome", last_updated="07/09/2024 09:05 AM", current_count=15, percent_full=20),
-        ]
 
-        self.assertEqual(gym_info, expected_info)
+@responses.activate
+def test_get_gym_info_and_unknown_gym():
+    responses.add(responses.GET, GYM_URL, json=GYMS)
+    assert GymClient().get_gym_info("Campus Recreation").facility_id == 10
 
-    @responses.activate
-    def test_get_gym_info(self):
-        responses.add(responses.GET, gym.GYM_URL, body=mock_gym_html, status=200)
+    responses.add(responses.GET, GYM_URL, json=GYMS)
+    with pytest.raises(LookupError, match="gym not found"):
+        GymClient().get_gym_info("Missing Gym")
 
-        gym_info = gym.get_gym_info("Baierl Rec Center")
-        expected_info = gym.Gym(
-            name="Baierl Rec Center", last_updated="07/09/2024 09:05 AM", current_count=100, percent_full=50
-        )
-        self.assertEqual(gym_info, expected_info)
 
-    @responses.activate
-    def test_invalid_gym_name(self):
-        responses.add(responses.GET, gym.GYM_URL, body=mock_gym_html, status=200)
-
-        gym_info = gym.get_gym_info("Invalid Gym Name")
-        self.assertIsNone(gym_info)
-
-    @responses.activate
-    def test_valid_gym_name_not_all_info(self):
-        responses.add(responses.GET, gym.GYM_URL, body=mock_gym_html, status=200)
-
-        gym_info = gym.get_gym_info("Bellefield Hall: Court & Dance Studio")
-        self.assertIsNone(gym_info)
-
-    @responses.activate
-    def test_percentage_value_error(self):
-        responses.add(responses.GET, gym.GYM_URL, body=mock_gym_html, status=200)
-
-        gym_info = gym.get_gym_info("Bellefield Hall: Fitness Center & Weight Roomo")
-        self.assertIsNone(gym_info)
+@pytest.mark.parametrize("payload", [{}, [{}]])
+@responses.activate
+def test_malformed_gym_response(payload):
+    responses.add(responses.GET, GYM_URL, json=payload)
+    with pytest.raises(ValueError, match="gym response"):
+        GymClient().get_all_gyms_info()
