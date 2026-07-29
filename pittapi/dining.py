@@ -15,147 +15,236 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Dining locations, hours, and menus on Pitt's campus.
 """
 
 from __future__ import annotations
 
-import requests
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-JSON = dict[str, Any]
+from pittapi.base_client import BaseClient
+
+__all__ = [
+    "DiningClient",
+    "DiningLocation",
+    "DiningStatus",
+    "HoursInterval",
+    "LocationHours",
+    "Menu",
+    "MenuCategory",
+    "MenuItem",
+    "MenuPeriod",
+    "Nutrient",
+]
 
 REQUEST_HEADERS = {"User-Agent": "Chrome/103.0.5026.0"}
-
-LOCATIONS = {
-    "ETHEL'S",
-    "THE EATERY",
-    "PANERA BREAD",
-    "TRUE BURGER",
-    "THE PERCH",
-    "FORBES STREET MARKET",
-    "BUNSEN BREWER",
-    "WICKED PIE",
-    "SMOKELAND BBQ AT THE PETERSEN EVENTS CENTER",
-    "THE MARKET AT TOWERS",
-    "THE DELICATESSEN",
-    "CAMPUS COFFEE & TEA CO - TOWERS",
-    "PA TACO CO.",
-    "FT. PITT SUBS",
-    "CREATE",
-    "POM & HONEY",
-    "THE ROOST",
-    "CATHEDRAL SUSHI",
-    "BURRITO BOWL",
-    "CHICK-FIL-A",
-    "SHAKE SMART",
-    "STEEL CITY KITCHEN",
-    "SMOKELAND BBQ FOOD TRUCK",
-    "CAMPUS COFFEE & TEA CO - SUTHERLAND",
-    "THE MARKET AT SUTHERLAND",
-    "PLATE TO PLATE AT SUTHERLAND MARKET",
-    "EINSTEIN BROS. BAGELS - POSVAR",
-    "EINSTEIN BROS. BAGELS - BENEDUM",
-    "BOTTOM LINE BISTRO",
-    "CAFE VICTORIA",
-    "CAFE 1787",
-    "CAMPUS COFFEE & TEA CO - PUBLIC HEALTH",
-    "RXPRESSO",
-    "SIDEBAR CAFE",
-    "CAFE 1923",
-}
-
 LOCATIONS_URL = "https://api.dineoncampus.com/v1/locations/status?site_id=5e6fcc641ca48e0cacd93b04&platform="
-HOURS_URL = "https://api.dineoncampus.com/v1/locations/weekly_schedule?site_id=5e6fcc641ca48e0cacd93b04&date=%22{date_str}%22"
-PERIODS_URL = "https://api.dineoncampus.com/v1/location/{location_id}/periods?platform=0&date={date_str}"
-MENU_URL = "https://api.dineoncampus.com/v1/location/{location_id}/periods/{period_id}?platform=0&date={date_str}"
+HOURS_URL = "https://api.dineoncampus.com/v1/locations/weekly_schedule?site_id=5e6fcc641ca48e0cacd93b04&date=%22{date}%22"
+PERIODS_URL = "https://api.dineoncampus.com/v1/location/{location_id}/periods?platform=0&date={date}"
+MENU_URL = "https://api.dineoncampus.com/v1/location/{location_id}/periods/{period_id}?platform=0&date={date}"
 
 
-def get_locations() -> dict[str, JSON]:
-    """Gets data about all dining locations"""
-    resp = requests.get(LOCATIONS_URL, headers=REQUEST_HEADERS)
-    locations = resp.json()["locations"]
-    dining_locations = {location["name"].upper(): location for location in locations}
-
-    return dining_locations
+@dataclass(frozen=True, slots=True)
+class DiningStatus:
+    label: str
+    message: str
+    color: str
 
 
-def get_location_hours(location_name: str | None = None, date: datetime | None = None) -> dict[str, list[dict[str, int]]]:
-    """Returns dictionary containing Opening and Closing times of locations open on date.
-    - Ex:{'The Eatery': [{'start_hour': 7, 'start_minutes': 0, 'end_hour': 0, 'end_minutes': 0}]}
-    - if location_name is None, returns times for all locations
-    - date must be in YYYY,MM,DD format, will return data on current day if None
-    """
+@dataclass(frozen=True, slots=True)
+class DiningLocation:
+    id: str
+    name: str
+    is_open: bool
+    status: DiningStatus
+    occupancy: str | None
+    address: str | None
 
-    if location_name is not None:
-        location_name = location_name.upper()
-        if location_name not in LOCATIONS:
-            raise ValueError("Invalid Dining Location")
 
-    if date is None:
-        date = datetime.now()
+@dataclass(frozen=True, slots=True)
+class HoursInterval:
+    start_hour: int
+    start_minutes: int
+    end_hour: int
+    end_minutes: int
 
-    date_str = date.strftime("%Y-%m-%d")
-    resp = requests.get(
-        HOURS_URL.format(date_str=date_str),
-        headers=REQUEST_HEADERS,
+
+@dataclass(frozen=True, slots=True)
+class LocationHours:
+    name: str
+    date: str
+    hours: tuple[HoursInterval, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class Nutrient:
+    name: str
+    value: str
+    unit: str
+    numeric_value: str
+
+
+@dataclass(frozen=True, slots=True)
+class MenuItem:
+    id: str
+    name: str
+    description: str | None
+    portion: str | None
+    ingredients: str | None
+    nutrients: tuple[Nutrient, ...]
+    filters: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class MenuCategory:
+    id: str
+    name: str
+    items: tuple[MenuItem, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class MenuPeriod:
+    id: str
+    name: str
+    categories: tuple[MenuCategory, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class Menu:
+    id: int
+    date: str
+    period: MenuPeriod
+
+
+class DiningClient(BaseClient):
+    """Fetch dining locations, hours, and menus."""
+
+    def get_locations(self) -> tuple[DiningLocation, ...]:
+        data = self.request("GET", LOCATIONS_URL, headers=REQUEST_HEADERS).json()
+        try:
+            return tuple(parse_location(item) for item in data["locations"])
+        except (KeyError, TypeError) as error:
+            raise ValueError("dining location response is missing required data") from error
+
+    def get_location_hours(
+        self,
+        location_name: str | None = None,
+        date: datetime | None = None,
+    ) -> tuple[LocationHours, ...]:
+        selected_date = date or datetime.now()
+        date_text = selected_date.strftime("%Y-%m-%d")
+        url = HOURS_URL.format(date=date_text)
+        data = self.request("GET", url, headers=REQUEST_HEADERS).json()
+
+        try:
+            locations = data["the_locations"]
+            matching_hours = []
+            for location in locations:
+                if location_name and location["name"].casefold() != location_name.casefold():
+                    continue
+                for day in location["week"]:
+                    if day["date"] == date_text:
+                        matching_hours.append(parse_location_hours(location["name"], day))
+            if location_name and not matching_hours:
+                raise LookupError(f"dining location not found: {location_name}")
+            return tuple(matching_hours)
+        except (KeyError, TypeError) as error:
+            raise ValueError("dining hours response is missing required data") from error
+
+    def get_location_menu(
+        self,
+        location_name: str,
+        date: datetime | None = None,
+        period_name: str | None = None,
+    ) -> Menu:
+        selected_date = date or datetime.today()
+        date_text = selected_date.strftime("%y-%m-%d")
+        location = self.find_location(location_name)
+
+        periods_url = PERIODS_URL.format(location_id=location.id, date=date_text)
+        periods_data = self.request("GET", periods_url, headers=REQUEST_HEADERS).json()
+        try:
+            period = select_period(periods_data["periods"], period_name)
+        except (KeyError, TypeError) as error:
+            raise ValueError("dining periods response is missing required data") from error
+
+        menu_url = MENU_URL.format(location_id=location.id, period_id=period["id"], date=date_text)
+        menu_data = self.request("GET", menu_url, headers=REQUEST_HEADERS).json()
+        try:
+            return parse_menu(menu_data["menu"])
+        except (KeyError, TypeError) as error:
+            raise ValueError("dining menu response is missing required data") from error
+
+    def find_location(self, location_name: str) -> DiningLocation:
+        for location in self.get_locations():
+            if location.name.casefold() == location_name.casefold():
+                return location
+        raise LookupError(f"dining location not found: {location_name}")
+
+
+def parse_location(data: dict[str, Any]) -> DiningLocation:
+    status = data["status"]
+    return DiningLocation(
+        id=data["id"],
+        name=data["name"],
+        is_open=data["open"],
+        status=DiningStatus(label=status["label"], message=status["message"], color=status["color"]),
+        occupancy=data.get("occupancy"),
+        address=data.get("address"),
     )
 
-    if resp.status_code == 502:
-        raise ValueError("Invalid Date")
 
-    locations = resp.json()["the_locations"]
-
-    if location_name is None:
-        hours = {
-            location["name"]: day["hours"] for location in locations for day in location["week"] if day["date"] == date_str
-        }
-        return hours
-
-    for location in locations:
-        if location["name"].upper() == location_name:
-            hours = {location["name"]: day["hours"] for day in location["week"] if day["date"] == date_str}
-            return hours
-
-    return {}
+def parse_location_hours(name: str, data: dict[str, Any]) -> LocationHours:
+    hours = tuple(HoursInterval(**interval) for interval in data["hours"])
+    return LocationHours(name=name, date=data["date"], hours=hours)
 
 
-def get_location_menu(location: str, date: datetime | None = None, period_name: str | None = None) -> JSON:
-    """Returns menu data for given dining location on given day/period
-    - period_name used for locations with different serving periods(i.e. 'Breakfast','Lunch','Dinner','Late Night')
-    - None -> Returns menu for first(or only) period at location
-    """
-    location = location.upper()
-    if location not in LOCATIONS:
-        raise ValueError("Invalid Dining Location")
-
-    if date is None:
-        date = datetime.today()
-    if period_name is not None:
-        period_name = period_name.lower()
-
-    date_str = date.strftime("%y-%m-%d")
-    location_id = get_locations()[location]["id"]
-    periods_resp = requests.get(
-        PERIODS_URL.format(location_id=location_id, date_str=date_str),
-        headers=REQUEST_HEADERS,
-    )
-
-    if periods_resp.status_code == 502:
-        raise ValueError("Invalid Date")
-
-    periods = periods_resp.json()["periods"]
+def select_period(periods: list[dict[str, Any]], period_name: str | None) -> dict[str, Any]:
+    if not periods:
+        raise LookupError("no dining periods are available")
     if period_name is None or len(periods) == 1:
-        period_id = periods[0]["id"]
-    else:
-        for period in periods:
-            if period["name"].lower() == period_name:
-                period_id = period["id"]
+        return periods[0]
+    for period in periods:
+        if period["name"].casefold() == period_name.casefold():
+            return period
+    raise LookupError(f"dining period not found: {period_name}")
 
-    menu_resp = requests.get(
-        MENU_URL.format(location_id=location_id, period_id=period_id, date_str=date_str),
-        headers=REQUEST_HEADERS,
+
+def parse_menu(data: dict[str, Any]) -> Menu:
+    period_data = data["periods"]
+    categories = []
+    for category_data in period_data["categories"]:
+        items = tuple(parse_menu_item(item) for item in category_data["items"])
+        categories.append(MenuCategory(id=category_data["id"], name=category_data["name"], items=items))
+    period = MenuPeriod(
+        id=period_data["id"],
+        name=period_data["name"],
+        categories=tuple(categories),
     )
-    menu: JSON = menu_resp.json()["menu"]
+    return Menu(id=data["id"], date=data["date"], period=period)
 
-    return menu
+
+def parse_menu_item(data: dict[str, Any]) -> MenuItem:
+    nutrients = []
+    for nutrient in data["nutrients"]:
+        nutrients.append(
+            Nutrient(
+                name=nutrient["name"],
+                value=nutrient["value"],
+                unit=nutrient["uom"],
+                numeric_value=nutrient["value_numeric"],
+            )
+        )
+    filters = tuple(item["name"] for item in data["filters"])
+    return MenuItem(
+        id=data["id"],
+        name=data["name"],
+        description=data.get("desc"),
+        portion=data.get("portion"),
+        ingredients=data.get("ingredients"),
+        nutrients=tuple(nutrients),
+        filters=filters,
+    )

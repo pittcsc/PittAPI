@@ -1,282 +1,118 @@
-"""
-The Pitt API, to access workable data of the University of Pittsburgh
-Copyright (C) 2015 Ritwik Gupta
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""
-
-import unittest
-import responses
 import pytest
+import responses
 
-from pittapi import lab
-import tests.mocks.lab_mocks as lab_mocks
+from pittapi.lab import LOCATIONS_URL, PITT_BASE_URL, Lab, LabClient, LabLocation, parse_lab
+
+LOCATIONS = [
+    {
+        "ident": "first-id",
+        "pname": "Thaw Hall M06",
+        "name": "Pitt Digital Lab: Thaw Hall M06",
+        "title": "Thaw Hall M06",
+        "publish": True,
+        "unknown": "ignored",
+    },
+    {
+        "ident": "hidden-id",
+        "pname": "Hidden Lab",
+        "name": "Hidden Lab",
+        "title": "Hidden Lab",
+        "publish": False,
+    },
+    {
+        "ident": "second-id",
+        "pname": "Hillman",
+        "name": "Hillman",
+        "title": "Hillman",
+        "publish": True,
+    },
+]
 
 
-def create_test_url(lab_name: str) -> str:
-    return lab.PITT_BASE_URL + lab.AVAIL_LAB_ID_MAP[lab_name] + "/status.json?noredir=1"
+def lab_url(location):
+    return f"{PITT_BASE_URL}{location.id}/status.json?noredir=1"
 
 
-class LabTest(unittest.TestCase):
-    @responses.activate
-    def test_get_status_bellefield(self):
-        responses.add(
-            responses.GET,
-            create_test_url("BELLEFIELD"),
-            json=lab_mocks.mocked_bellefield_data,
-        )
+def lab_response(name):
+    return {"hours": {name: {"closed": False}}, "state": {}}
 
-        result = lab.get_one_lab_data("BELLEFIELD")
 
-        self.assertIsInstance(result, lab.Lab)
-        self.assertEqual(
-            result,
-            lab.Lab(
-                name="Bellefield 314",
-                status=False,
-                available_computers=29,
-                off_computers=1,
-                in_use_computers=0,
-                out_of_service_computers=0,
-                total_computers=30,
-            ),
-        )
+@responses.activate
+def test_discover_published_labs_in_provider_order():
+    responses.add(responses.GET, LOCATIONS_URL, json={"results": {"maps": LOCATIONS}})
 
-    @responses.activate
-    def test_get_status_lawrence(self):
-        responses.add(
-            responses.GET,
-            create_test_url("LAWRENCE"),
-            json=lab_mocks.mocked_lawrence_data,
-        )
+    locations = LabClient().get_locations()
 
-        result = lab.get_one_lab_data("LAWRENCE")
+    assert locations == (
+        LabLocation("first-id", "Thaw Hall M06", "Thaw Hall M06"),
+        LabLocation("second-id", "Hillman", "Hillman"),
+    )
 
-        self.assertIsInstance(result, lab.Lab)
-        self.assertEqual(
-            result,
-            lab.Lab(
-                name="David Lawrence 230",
-                status=False,
-                available_computers=25,
-                off_computers=10,
-                in_use_computers=5,
-                out_of_service_computers=0,
-                total_computers=40,
-            ),
-        )
 
-    @responses.activate
-    def test_get_status_sutherland(self):
-        responses.add(
-            responses.GET,
-            create_test_url("SUTH"),
-            json=lab_mocks.mocked_sutherland_data,
-        )
+@responses.activate
+def test_get_status():
+    location = LabLocation("first-id", "Thaw Hall M06", "Thaw Hall M06")
+    responses.add(responses.GET, lab_url(location), json=lab_response(location.title))
 
-        result = lab.get_one_lab_data("SUTH")
+    result = LabClient().get_status(location)
 
-        self.assertIsInstance(result, lab.Lab)
-        self.assertEqual(
-            result,
-            lab.Lab(
-                name="Sutherland 120",
-                status=False,
-                available_computers=11,
-                off_computers=1,
-                in_use_computers=0,
-                out_of_service_computers=0,
-                total_computers=12,
-            ),
-        )
+    assert result == Lab(
+        name="Thaw Hall M06",
+        is_closed=False,
+        available_computers=0,
+        off_computers=0,
+        in_use_computers=0,
+        out_of_service_computers=0,
+        total_computers=0,
+    )
 
-    @responses.activate
-    def test_get_status_cathg27(self):
-        responses.add(
-            responses.GET,
-            create_test_url("CATH_G27"),
-            json=lab_mocks.mocked_cathy_g27_data,
-        )
 
-        result = lab.get_one_lab_data("CATH_G27")
+@responses.activate
+def test_get_all_statuses_preserves_discovery_order():
+    locations = (
+        LabLocation("first-id", "Thaw Hall M06", "Thaw Hall M06"),
+        LabLocation("second-id", "Hillman", "Hillman"),
+    )
+    responses.add(responses.GET, LOCATIONS_URL, json={"results": {"maps": LOCATIONS}})
+    for location in locations:
+        responses.add(responses.GET, lab_url(location), json=lab_response(location.title))
 
-        self.assertIsInstance(result, lab.Lab)
-        self.assertEqual(
-            result,
-            lab.Lab(
-                name="Cathedral G27",
-                status=False,
-                available_computers=16,
-                off_computers=3,
-                in_use_computers=11,
-                out_of_service_computers=0,
-                total_computers=30,
-            ),
-        )
+    labs = LabClient().get_all_statuses()
+    assert tuple(lab.name for lab in labs) == ("Thaw Hall M06", "Hillman")
 
-    @responses.activate
-    def test_get_status_cathg62(self):
-        responses.add(
-            responses.GET,
-            create_test_url("CATH_G62"),
-            json=lab_mocks.mocked_cathy_g62_data,
-        )
 
-        result = lab.get_one_lab_data("CATH_G62")
+@pytest.mark.parametrize("payload", [{}, {"results": {"maps": [{}]}}])
+@responses.activate
+def test_malformed_location_discovery(payload):
+    responses.add(responses.GET, LOCATIONS_URL, json=payload)
+    with pytest.raises(ValueError, match="discovery response"):
+        LabClient().get_locations()
 
-        self.assertIsInstance(result, lab.Lab)
-        self.assertEqual(
-            result,
-            lab.Lab(
-                name="Cathedral G62",
-                status=False,
-                available_computers=26,
-                off_computers=5,
-                in_use_computers=0,
-                out_of_service_computers=0,
-                total_computers=31,
-            ),
-        )
 
-    @responses.activate
-    def test_get_status_benedum(self):
-        responses.add(
-            responses.GET,
-            create_test_url("BENEDUM"),
-            json=lab_mocks.mocked_benedum_data,
-        )
+def test_parse_all_machine_states():
+    data = {
+        "hours": {"Test Lab": {"closed": True}},
+        "state": {
+            "off": {"up": 0},
+            "available": {"up": 1},
+            "used": {"up": 2},
+            "service": {"up": 3},
+        },
+    }
+    result = parse_lab(data)
+    assert result.is_closed
+    assert result.off_computers == 1
+    assert result.available_computers == 1
+    assert result.in_use_computers == 1
+    assert result.out_of_service_computers == 1
 
-        result = lab.get_one_lab_data("BENEDUM")
 
-        self.assertIsInstance(result, lab.Lab)
-        self.assertEqual(
-            result,
-            lab.Lab(
-                name="Benedum B06",
-                status=False,
-                available_computers=28,
-                off_computers=7,
-                in_use_computers=4,
-                out_of_service_computers=0,
-                total_computers=39,
-            ),
-        )
+def test_parse_rejects_unknown_state():
+    data = {"hours": {"Test": {"closed": False}}, "state": {"machine": {"up": 99}}}
+    with pytest.raises(ValueError, match="unknown computer state for unknown computer"):
+        parse_lab(data)
 
-    @responses.activate
-    def test_get_all_lab_data(self):
-        responses.add(
-            responses.GET,
-            create_test_url("BELLEFIELD"),
-            json=lab_mocks.mocked_bellefield_data,
-        )
-        responses.add(
-            responses.GET,
-            create_test_url("LAWRENCE"),
-            json=lab_mocks.mocked_lawrence_data,
-        )
-        responses.add(
-            responses.GET,
-            create_test_url("SUTH"),
-            json=lab_mocks.mocked_sutherland_data,
-        )
-        responses.add(
-            responses.GET,
-            create_test_url("CATH_G27"),
-            json=lab_mocks.mocked_cathy_g27_data,
-        )
-        responses.add(
-            responses.GET,
-            create_test_url("CATH_G62"),
-            json=lab_mocks.mocked_cathy_g62_data,
-        )
-        responses.add(
-            responses.GET,
-            create_test_url("BENEDUM"),
-            json=lab_mocks.mocked_benedum_data,
-        )
 
-        results = lab.get_all_labs_data()
-
-        self.assertIsInstance(results, list)
-        self.assertEqual(len(results), 6)
-
-        for item in results:
-            self.assertIsInstance(item, lab.Lab)
-
-    def test_invalid_lab_name(self):
-        with pytest.raises(
-            ValueError,
-            match="Invalid lab name: INVALID. Valid options: BELLEFIELD, LAWRENCE, SUTH, CATH_G27, CATH_G62, BENEDUM",
-        ):
-            lab.get_one_lab_data("INVALID")
-
-    @responses.activate
-    def test_handle_invalid_lab_id(self):
-        responses.add(
-            responses.GET,
-            create_test_url("CATH_G27"),
-            body="Resource not found",
-            status=404,
-        )
-
-        with pytest.raises(
-            lab.LabAPIError,
-            match="The Lab ID was invalid. Please open a GitHub issue so we can resolve this.",
-        ):
-            lab.get_one_lab_data("CATH_G27")
-
-    @responses.activate
-    def test_handle_unexpected_fetch_err(self):
-        responses.add(
-            responses.GET,
-            create_test_url("CATH_G27"),
-            body="Unauthorized",
-            status=401,
-        )
-
-        with pytest.raises(
-            lab.LabAPIError,
-            match="An unexpected error occurred while fetching lab data: Unauthorized",
-        ):
-            lab.get_one_lab_data("CATH_G27")
-
-    @responses.activate
-    def test_out_of_service_computer(self):
-        responses.add(
-            responses.GET,
-            create_test_url("BELLEFIELD"),
-            json={
-                "hours": {"Test Lab": {"closed": False}},
-                "state": {"computer": {"up": 3, "addr": "computer.example.edu"}},
-            },
-        )
-
-        result = lab.get_one_lab_data("BELLEFIELD")
-
-        self.assertEqual(result.out_of_service_computers, 1)
-
-    @responses.activate
-    def test_unknown_computer_state(self):
-        responses.add(
-            responses.GET,
-            create_test_url("BELLEFIELD"),
-            json={
-                "hours": {"Test Lab": {"closed": False}},
-                "state": {"computer": {"up": 99, "addr": "computer.example.edu"}},
-            },
-        )
-
-        with pytest.raises(lab.LabAPIError, match="Unknown 'up' value for computer.example.edu"):
-            lab.get_one_lab_data("BELLEFIELD")
+def test_parse_rejects_missing_data():
+    with pytest.raises(ValueError, match="missing required data"):
+        parse_lab({})

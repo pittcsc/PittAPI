@@ -1,34 +1,20 @@
 > [Home](README.md) > Laundry API
----
 
 # Laundry API
 
-### **location_dict**
-- Litchfield Towers: `"TOWERS"`
-- Brackenridge Hall: `"BRACKENRIDGE"`
-- Holland Hall: `"HOLLAND"`
-- Lothrop Hall: `"LOTHROP"`
-- McCormick Hall: `"MCCORMICK"`
-- Sutherland Hall: `"SUTH_WEST"`
-- Sutherland Hall: `"SUTH_EAST"`
-- Forbes Hall: `"FORBES_CRAIG"`
+`LaundryClient.get_locations()` returns Pitt's currently published rooms as `LaundryLocation` models. Pass a
+discovered location to either status method:
 
----
+```python
+from pittapi import LaundryClient
 
-### **get_status_simple(building_name)**
+with LaundryClient() as laundry:
+    locations = laundry.get_locations()
+    holland = next(location for location in locations if location.name == "Holland Hall")
+    machines = laundry.get_machine_statuses(holland)
+    summary = laundry.get_building_status(holland)
+```
 
-#### **Parameters**:
-  - `building_name`: Building name (comes from LaundryAPI's **location_dict**)
-
-
-#### **Returns**:
-Returns a dictionary with free washers and dryers as well as total washers and dryers for a given building.
-
----
-
-### **get_status_detailed(building_name)**
-
-#### **Parameters**:
-  - `building_name`: Building name (comes from LaundryAPI's **location_dict**)
-
-#### **Returns**:
+`get_machine_statuses()` returns immutable `LaundryMachine` models with the provider's status, message, remaining
+time, progress, model number, and stacked/combo flags. `get_building_status()` summarizes free and total washers and
+dryers.
