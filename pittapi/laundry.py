@@ -20,12 +20,13 @@ Availability and machine status for Pitt residence-hall laundries.
 """
 
 from dataclasses import dataclass
+from enum import IntEnum
 import re
 from typing import Any, Literal
 
 from pittapi.base_client import BaseClient
 
-__all__ = ["BuildingStatus", "LaundryClient", "LaundryMachine"]
+__all__ = ["BuildingStatus", "LaundryClient", "LaundryMachine", "MachineStatus"]
 
 BASE_URL = "https://www.laundryview.com/api/currentRoomData?school_desc_key=197&location={location}"
 LOCATION_IDS = {
@@ -42,6 +43,16 @@ NUMBER_PATTERN = re.compile(r"\d+")
 MachineType = Literal["washer", "dryer"]
 
 
+class MachineStatus(IntEnum):
+    """LaundryView's documented machine states."""
+
+    AVAILABLE = 0
+    IDLE = 1
+    RUNNING = 2
+    OUT_OF_SERVICE = 3
+    OFFLINE = 4
+
+
 @dataclass(frozen=True, slots=True)
 class BuildingStatus:
     building: str
@@ -55,9 +66,19 @@ class BuildingStatus:
 class LaundryMachine:
     name: str
     id: str
-    status: str
     type: MachineType
-    time_left: int | None
+    status: MachineStatus
+    status_message: str
+    minutes_remaining: int | None
+    cycle_progress_percent: float | None
+    model_number: str | None
+    average_cycle_minutes: int
+    is_combo: bool
+    is_stacked: bool
+
+    @property
+    def is_available(self) -> bool:
+        return self.status is MachineStatus.AVAILABLE
 
 
 class LaundryClient(BaseClient):
@@ -66,8 +87,8 @@ class LaundryClient(BaseClient):
     def get_building_status(self, building_name: str) -> BuildingStatus:
         normalized_name = building_name.upper()
         machines = self.get_laundry_machine_statuses(normalized_name)
-        free_washers = sum(machine.type == "washer" and machine.status == "Available" for machine in machines)
-        free_dryers = sum(machine.type == "dryer" and machine.status == "Available" for machine in machines)
+        free_washers = sum(machine.type == "washer" and machine.is_available for machine in machines)
+        free_dryers = sum(machine.type == "dryer" and machine.is_available for machine in machines)
         total_washers = sum(machine.type == "washer" for machine in machines)
         total_dryers = sum(machine.type == "dryer" for machine in machines)
         return BuildingStatus(
@@ -95,22 +116,35 @@ class LaundryClient(BaseClient):
 
 
 def parse_laundry_object(data: dict[str, Any]) -> tuple[LaundryMachine, ...]:
-    machine_type = data["type"]
-    if machine_type == "washNdry":
+    object_type = data["type"]
+    is_combo = object_type == "washNdry"
+    is_stacked = bool(data.get("stacked") or data.get("manualStack"))
+
+    if is_combo:
         first_type = infer_combo_type(data["appliance_desc"])
-        second_type = infer_combo_type(data["appliance_desc2"])
-        return (
-            parse_machine(data, first_type),
-            parse_machine(data, second_type, suffix="2"),
+    elif object_type == "washFL":
+        first_type = "washer"
+    elif object_type in ("dry", "dblDry"):
+        first_type = "dryer"
+    else:
+        return ()
+
+    machines = [parse_machine(data, first_type, is_combo=is_combo, is_stacked=is_stacked)]
+    if "appliance_desc_key2" in data:
+        if is_combo:
+            second_type = infer_combo_type(data["appliance_desc2"])
+        else:
+            second_type = "washer" if data.get("type2") == "washFL" else "dryer"
+        machines.append(
+            parse_machine(
+                data,
+                second_type,
+                suffix="2",
+                is_combo=is_combo,
+                is_stacked=is_stacked,
+            )
         )
-    if machine_type in ("washFL", "dry"):
-        first_type: MachineType = "washer" if machine_type == "washFL" else "dryer"
-        machines = [parse_machine(data, first_type)]
-        if "type2" in data:
-            second_type: MachineType = "washer" if data["type2"] == "washFL" else "dryer"
-            machines.append(parse_machine(data, second_type, suffix="2"))
-        return tuple(machines)
-    return ()
+    return tuple(machines)
 
 
 def infer_combo_type(machine_name: str) -> MachineType:
@@ -120,13 +154,37 @@ def infer_combo_type(machine_name: str) -> MachineType:
     return "washer" if int(number.group()) % 2 == 0 else "dryer"
 
 
-def parse_machine(data: dict[str, Any], machine_type: MachineType, suffix: str = "") -> LaundryMachine:
-    status = data[f"time_left_lite{suffix}"]
-    time_left = None if status in ("Out of service", "Offline") else data[f"time_remaining{suffix}"]
+def parse_machine(
+    data: dict[str, Any],
+    machine_type: MachineType,
+    suffix: str = "",
+    is_combo: bool = False,
+    is_stacked: bool = False,
+) -> LaundryMachine:
+    status_code = data[f"status_toggle{suffix}"]
+    try:
+        status = MachineStatus(status_code)
+    except ValueError as error:
+        raise ValueError(f"unknown laundry status code: {status_code}") from error
+
+    minutes_remaining = None
+    cycle_progress = None
+    if status is MachineStatus.RUNNING:
+        minutes_remaining = data[f"time_remaining{suffix}"]
+        progress = data[f"percentage{suffix}"]
+        if 0 <= progress <= 100:
+            cycle_progress = progress
+
     return LaundryMachine(
         name=data[f"appliance_desc{suffix}"],
         id=data[f"appliance_desc_key{suffix}"],
-        status=status,
         type=machine_type,
-        time_left=time_left,
+        status=status,
+        status_message=data[f"time_left_lite{suffix}"],
+        minutes_remaining=minutes_remaining,
+        cycle_progress_percent=cycle_progress,
+        model_number=data.get(f"model_number{suffix}", data.get("model_number")),
+        average_cycle_minutes=data[f"average_run_time{suffix}"],
+        is_combo=is_combo,
+        is_stacked=is_stacked,
     )
