@@ -1,10 +1,18 @@
 import json
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 import responses
 
-from pittapi.library import LIBRARY_URL, QUERY_START, STUDY_ROOMS_URL, Document, LibraryClient
+from pittapi.library import (
+    LIBRARY_PARAMS,
+    LIBRARY_URL,
+    STUDY_ROOM_PARAMS,
+    STUDY_ROOMS_URL,
+    Document,
+    LibraryClient,
+)
 
 SAMPLES = Path("tests/samples")
 QUERY_DATA = json.loads((SAMPLES / "library_mock_response_water.json").read_text())
@@ -13,26 +21,29 @@ ROOM_DATA = json.loads((SAMPLES / "hillman_study_room_mock_response.json").read_
 
 @responses.activate
 def test_get_documents():
-    responses.add(responses.GET, LIBRARY_URL + QUERY_START + "water+cycle", json=QUERY_DATA)
+    responses.add(responses.GET, LIBRARY_URL, json=QUERY_DATA)
     result = LibraryClient().get_documents("water cycle")
     assert result.num_pages == 10
     assert len(result.documents) == 10
     assert isinstance(result.documents[0], Document)
     assert isinstance(result.documents[0].title, tuple)
+    params = parse_qs(urlparse(responses.calls[0].request.url).query)
+    assert params["q"] == ["any,contains,water cycle"]
+    assert params["inst"] == [LIBRARY_PARAMS["inst"]]
 
 
 @responses.activate
 def test_bookmark_success_unrelated_error_and_invalid():
-    responses.add(responses.GET, LIBRARY_URL + "&bookMark=valid", json=QUERY_DATA)
+    responses.add(responses.GET, LIBRARY_URL, json=QUERY_DATA)
     assert LibraryClient().get_document_by_bookmark("valid").num_pages == 10
 
     unrelated = QUERY_DATA | {"errors": [{"code": "other"}]}
-    responses.add(responses.GET, LIBRARY_URL + "&bookMark=other", json=unrelated)
+    responses.add(responses.GET, LIBRARY_URL, json=unrelated)
     assert LibraryClient().get_document_by_bookmark("other").num_pages == 10
 
     responses.add(
         responses.GET,
-        LIBRARY_URL + "&bookMark=bad",
+        LIBRARY_URL,
         json={"errors": [{"code": "invalid.bookmark.format"}]},
     )
     with pytest.raises(ValueError, match="invalid bookmark"):
@@ -48,11 +59,14 @@ def test_room_reservations_and_empty_data():
     assert client.hillman_total_reserved() == 4
     assert len(client.reserved_hillman_times()) == 4
     assert client.reserved_hillman_times() == ()
+    params = parse_qs(urlparse(responses.calls[0].request.url).query)
+    assert params["lid"] == [STUDY_ROOM_PARAMS["lid"]]
+    assert "_" not in params
 
 
 @responses.activate
 def test_malformed_library_responses():
-    responses.add(responses.GET, LIBRARY_URL + QUERY_START + "bad", json={})
+    responses.add(responses.GET, LIBRARY_URL, json={})
     with pytest.raises(ValueError, match="library response"):
         LibraryClient().get_documents("bad")
 

@@ -26,19 +26,17 @@ from typing import Any, Literal
 
 from pittapi.base_client import BaseClient
 
-__all__ = ["BuildingStatus", "LaundryClient", "LaundryMachine", "MachineStatus"]
+__all__ = [
+    "BuildingStatus",
+    "LaundryClient",
+    "LaundryLocation",
+    "LaundryMachine",
+    "MachineStatus",
+]
 
-BASE_URL = "https://www.laundryview.com/api/currentRoomData?school_desc_key=197&location={location}"
-LOCATION_IDS = {
-    "TOWERS": "2430136",
-    "BRACKENRIDGE": "2430119",
-    "HOLLAND": "2430137",
-    "LOTHROP": "2430151",
-    "MCCORMICK": "2430120",
-    "SUTH_EAST": "2430135",
-    "SUTH_WEST": "2430134",
-    "FORBES_CRAIG": "2430142",
-}
+SCHOOL_ID = "197"
+LOCATIONS_URL = "https://www.laundryview.com/api/c_room"
+CURRENT_ROOM_URL = "https://www.laundryview.com/api/currentRoomData"
 NUMBER_PATTERN = re.compile(r"\d+")
 MachineType = Literal["washer", "dryer"]
 
@@ -63,6 +61,15 @@ class BuildingStatus:
 
 
 @dataclass(frozen=True, slots=True)
+class LaundryLocation:
+    """A laundry room published for Pitt's LaundryView account."""
+
+    id: str
+    name: str
+    campus: str
+
+
+@dataclass(frozen=True, slots=True)
 class LaundryMachine:
     name: str
     id: str
@@ -84,28 +91,40 @@ class LaundryMachine:
 class LaundryClient(BaseClient):
     """Fetch laundry information for Pitt residence halls."""
 
-    def get_building_status(self, building_name: str) -> BuildingStatus:
-        normalized_name = building_name.upper()
-        machines = self.get_laundry_machine_statuses(normalized_name)
+    def get_locations(self) -> tuple[LaundryLocation, ...]:
+        """Return the laundry rooms currently published for Pitt."""
+        data = self.request("GET", LOCATIONS_URL, params={"cui": "1", "loc": SCHOOL_ID}).json()
+        try:
+            return tuple(
+                LaundryLocation(
+                    id=str(item["laundry_room_location"]),
+                    name=item["laundry_room_name"],
+                    campus=item["campus_name"],
+                )
+                for item in data["room_data"]
+            )
+        except (KeyError, TypeError) as error:
+            raise ValueError("laundry discovery response is missing required data") from error
+
+    def get_building_status(self, location: LaundryLocation) -> BuildingStatus:
+        """Summarize washer and dryer availability for a discovered room."""
+        machines = self.get_machine_statuses(location)
         free_washers = sum(machine.type == "washer" and machine.is_available for machine in machines)
         free_dryers = sum(machine.type == "dryer" and machine.is_available for machine in machines)
         total_washers = sum(machine.type == "washer" for machine in machines)
         total_dryers = sum(machine.type == "dryer" for machine in machines)
         return BuildingStatus(
-            building=normalized_name,
+            building=location.name,
             free_washers=free_washers,
             total_washers=total_washers,
             free_dryers=free_dryers,
             total_dryers=total_dryers,
         )
 
-    def get_laundry_machine_statuses(self, building_name: str) -> tuple[LaundryMachine, ...]:
-        normalized_name = building_name.upper()
-        if normalized_name not in LOCATION_IDS:
-            raise ValueError(f"invalid laundry building: {building_name}")
-
-        url = BASE_URL.format(location=LOCATION_IDS[normalized_name])
-        data = self.request("GET", url).json()
+    def get_machine_statuses(self, location: LaundryLocation) -> tuple[LaundryMachine, ...]:
+        """Return individual machines for a discovered laundry room."""
+        params = {"school_desc_key": SCHOOL_ID, "location": location.id}
+        data = self.request("GET", CURRENT_ROOM_URL, params=params).json()
         try:
             machines = []
             for item in data["objects"]:

@@ -23,6 +23,8 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+import json
+import re
 from typing import Any
 
 from bs4 import BeautifulSoup
@@ -30,14 +32,14 @@ import requests
 
 from pittapi.base_client import BaseClient
 
-__all__ = ["CourseInfo", "Textbook", "TextbookClient"]
+__all__ = ["CourseInfo", "Textbook", "TextbookClient", "TextbookTerm"]
 
 BASE_URL = "https://pitt.verbacompare.com/"
 SUBJECTS_URL = BASE_URL + "compare/departments/?term={term_id}"
 COURSES_URL = BASE_URL + "compare/courses/?id={department_id}&term_id={term_id}"
 BOOKS_URL = BASE_URL + "compare/books?id={section_id}"
-CURRENT_TERM_ID = 78104
 MAX_REQUEST_ATTEMPTS = 3
+TERMS_PATTERN = re.compile(r"Collections\.Terms\((\[.*?\])\)", re.DOTALL)
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,17 +75,28 @@ class Textbook:
     citation: str | None
 
 
+@dataclass(frozen=True, slots=True)
+class TextbookTerm:
+    """A bookstore term available for textbook inquiries."""
+
+    id: str
+    name: str
+    inquiry_enabled: bool
+    ordering_enabled: bool
+
+
 class TextbookClient(BaseClient):
     """Fetch textbooks while keeping credentials and subjects per client."""
 
     def __init__(
         self,
-        term_id: int = CURRENT_TERM_ID,
+        term: TextbookTerm | None = None,
         session: requests.Session | None = None,
         timeout: float = 10.0,
     ) -> None:
         super().__init__(session=session, timeout=timeout)
-        self.term_id = term_id
+        self.term = term
+        self.terms: tuple[TextbookTerm, ...] | None = None
         self.headers: dict[str, str] | None = None
         self.subject_ids: dict[str, str] | None = None
 
@@ -101,17 +114,49 @@ class TextbookClient(BaseClient):
             csrf_token = csrf_element.get("content") if csrf_element else None
             if not isinstance(csrf_token, str):
                 raise requests.ConnectionError("textbook site did not provide valid request credentials")
+
+            terms_match = TERMS_PATTERN.search(response.text)
+            if terms_match is None:
+                raise ValueError("textbook site did not provide available terms")
+            try:
+                terms_data = json.loads(terms_match.group(1))
+                self.terms = tuple(
+                    TextbookTerm(
+                        id=str(item["id"]),
+                        name=item["name"],
+                        inquiry_enabled=item["inquiry"],
+                        ordering_enabled=item["ordering"],
+                    )
+                    for item in terms_data
+                )
+            except (json.JSONDecodeError, KeyError, TypeError) as error:
+                raise ValueError("textbook term response is missing required data") from error
+
             self.headers = {"X-CSRF-Token": csrf_token}
             return
         raise requests.ConnectionError(
             f"failed to connect to textbook site after {MAX_REQUEST_ATTEMPTS} attempts"
         ) from last_error
 
+    def get_terms(self) -> tuple[TextbookTerm, ...]:
+        """Return the terms currently published by the bookstore."""
+        if self.terms is None:
+            self.initialize_headers()
+        return self.terms or ()
+
+    def select_term(self, term: TextbookTerm) -> None:
+        """Select a discovered term and clear term-specific subject state."""
+        if term != self.term:
+            self.term = term
+            self.subject_ids = None
+
     def initialize_subjects(self) -> None:
+        if self.term is None:
+            raise ValueError("select a textbook term before requesting subjects")
         if self.headers is None:
             self.initialize_headers()
 
-        url = SUBJECTS_URL.format(term_id=self.term_id)
+        url = SUBJECTS_URL.format(term_id=self.term.id)
         last_error = None
         for attempt in range(MAX_REQUEST_ATTEMPTS):
             try:
@@ -133,6 +178,8 @@ class TextbookClient(BaseClient):
         return self.get_textbooks_for_courses((course,))
 
     def get_textbooks_for_courses(self, courses: tuple[CourseInfo, ...] | list[CourseInfo]) -> tuple[Textbook, ...]:
+        if self.term is None:
+            raise ValueError("select a textbook term before requesting textbooks")
         if self.subject_ids is None:
             self.initialize_subjects()
 
@@ -156,12 +203,14 @@ class TextbookClient(BaseClient):
         return tuple(textbooks)
 
     def get_courses(self, subject: str) -> list[dict[str, Any]]:
+        if self.term is None:
+            raise ValueError("select a textbook term before requesting courses")
         if self.headers is None:
             self.initialize_headers()
         if self.subject_ids is None or subject not in self.subject_ids:
             raise LookupError(f"invalid textbook subject: {subject}")
 
-        url = COURSES_URL.format(department_id=self.subject_ids[subject], term_id=self.term_id)
+        url = COURSES_URL.format(department_id=self.subject_ids[subject], term_id=self.term.id)
         last_error = None
         for attempt in range(MAX_REQUEST_ATTEMPTS):
             try:
@@ -179,6 +228,8 @@ class TextbookClient(BaseClient):
         raise requests.ConnectionError(f"failed to retrieve {subject} courses") from last_error
 
     def get_textbooks_for_section(self, section_id: str) -> tuple[Textbook, ...]:
+        if self.term is None:
+            raise ValueError("select a textbook term before requesting textbooks")
         if self.headers is None:
             self.initialize_headers()
         data = self.request("GET", BOOKS_URL.format(section_id=section_id), headers=self.headers).json()

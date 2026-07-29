@@ -23,55 +23,56 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from bs4 import BeautifulSoup
-
 from pittapi.base_client import BaseClient
 
 __all__ = ["Gym", "GymClient"]
 
-GYM_URL = "https://connect2concepts.com/connect2/?type=bar&key=17c2cbcb-ec92-4178-a5f5-c4860330aea0"
-REQUEST_HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"}
+GYM_URL = "https://goboardapi.azurewebsites.net/api/FacilityCount/GetCountsByAccount"
+PITT_ACCOUNT_KEY = "17c2cbcb-ec92-4178-a5f5-c4860330aea0"
 
 
 @dataclass(frozen=True, slots=True)
 class Gym:
     """Occupancy information for one recreation facility."""
 
-    name: str
-    last_updated: str | None = None
-    current_count: int | None = None
-    percent_full: int | None = None
-
-    @classmethod
-    def from_text(cls, text: str) -> Gym:
-        fields = text.split("|")
-        if len(fields) < 4:
-            return cls(name=fields[0])
-
-        try:
-            percent_full = int(fields[4].removesuffix("%"))
-        except (IndexError, ValueError):
-            percent_full = 0
-
-        return cls(
-            name=fields[0],
-            current_count=int(fields[2].removeprefix("Last Count: ")),
-            last_updated=fields[3].removeprefix("Updated: "),
-            percent_full=percent_full,
-        )
+    location_id: int
+    location_name: str
+    facility_id: int
+    facility_name: str
+    total_capacity: int
+    current_count: int
+    percent_full: int
+    last_updated: str
+    is_closed: bool
 
 
 class GymClient(BaseClient):
     """Fetch recreation facility occupancy."""
 
     def get_all_gyms_info(self) -> tuple[Gym, ...]:
-        response = self.request("GET", GYM_URL, headers=REQUEST_HEADERS)
-        soup = BeautifulSoup(response.text, "html.parser")
-        gym_elements = soup.find_all("div", class_="barChart")
-        return tuple(Gym.from_text(element.get_text("|", strip=True)) for element in gym_elements)
+        data = self.request("GET", GYM_URL, params={"AccountAPIKey": PITT_ACCOUNT_KEY}).json()
+        if not isinstance(data, list):
+            raise ValueError("gym response must contain a list")
+        try:
+            return tuple(
+                Gym(
+                    location_id=item["LocationId"],
+                    location_name=item["LocationName"],
+                    facility_id=item["FacilityId"],
+                    facility_name=item["FacilityName"],
+                    total_capacity=item["TotalCapacity"],
+                    current_count=item["LastCount"],
+                    percent_full=item["PercetageCapacity"],
+                    last_updated=item["LastUpdatedDateAndTime"],
+                    is_closed=item["IsClosed"],
+                )
+                for item in data
+            )
+        except (KeyError, TypeError) as error:
+            raise ValueError("gym response is missing required data") from error
 
     def get_gym_info(self, gym_name: str) -> Gym:
         for gym in self.get_all_gyms_info():
-            if gym.name == gym_name:
+            if gym.location_name == gym_name:
                 return gym
         raise LookupError(f"gym not found: {gym_name}")

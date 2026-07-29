@@ -17,6 +17,7 @@ from pittapi.sports import (
 def team_data(status="STATUS_FINAL"):
     return {
         "team": {
+            "id": "221",
             "record": {"items": [{"summary": "11-21"}]},
             "standingSummary": "12th in ACC",
             "nextEvent": [
@@ -105,7 +106,7 @@ def test_record_fallback_and_standings_error():
 )
 def test_invalid_competitors(competitors):
     with pytest.raises(ValueError):
-        find_competitors(competitors)
+        find_competitors(competitors, "221")
 
 
 def test_malformed_game_data():

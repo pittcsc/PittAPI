@@ -28,21 +28,6 @@ from pittapi.base_client import BaseClient
 __all__ = ["Person", "PersonField", "PeopleClient"]
 
 PEOPLE_SEARCH_URL = "https://find.pitt.edu/Search"
-LABEL_NAMES = {
-    "Email": "email",
-    "Nickname": "nickname",
-    "Student Campus": "campus",
-    "Student Plan(s)": "academic_plan",
-    "Web Page": "website",
-    "Employee Information": "employment_info",
-    "Office Phone": "office_phone",
-    "Office Mailing Address": "office_mailing_address",
-    "Office Location Address": "office_location_address",
-    "Mobile Phone": "mobile_phone",
-    "UPMC Department": "upmc_department",
-    "UPMC Position": "upmc_position",
-    "UPMC Email": "upmc_email",
-}
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,8 +64,8 @@ def parse_segments(segments: list[Tag]) -> tuple[PersonField, ...]:
     for segment in segments:
         text = segment.get_text(strip=True)
         if "row-label" in segment.get("class", ()):
-            current_name = LABEL_NAMES.get(text)
-        elif current_name is not None:
+            current_name = text or None
+        elif current_name is not None and text:
             values_by_name.setdefault(current_name, []).append(text)
 
     return tuple(PersonField(name=name, values=tuple(values)) for name, values in values_by_name.items())

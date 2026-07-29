@@ -3,16 +3,35 @@ import responses
 
 from pittapi.shuttle import (
     ARRIVAL_TIMES_URL,
+    CONFIGURATION_URL,
     ROUTES_URL,
     STOP_ESTIMATES_URL,
     VEHICLE_POINTS_URL,
     Route,
     ShuttleClient,
+    ShuttleConfiguration,
     StopArrival,
     VehiclePoint,
     VehicleStopEstimates,
 )
 
+CONFIGURATION = ShuttleConfiguration(
+    api_key="discovered-key",
+    title="Pitt Shuttles",
+    map_latitude=40.44,
+    map_longitude=-79.95,
+    map_zoom=14,
+    time_format="h:mm tt",
+)
+CONFIGURATION_DATA = {
+    "ApiKey": "discovered-key",
+    "SiteTitle": "Pitt Shuttles",
+    "StartLatitude": 40.44,
+    "StartLongitude": -79.95,
+    "StartZoom": 14,
+    "TimeDisplayFormat": "h:mm tt",
+    "Unknown": "ignored",
+}
 VEHICLE = {
     "GroundSpeed": 3.0,
     "Heading": 317,
@@ -72,16 +91,19 @@ ROUTE = {
 
 @responses.activate
 def test_shuttle_endpoints_return_domain_models():
+    responses.add(responses.GET, CONFIGURATION_URL, json=CONFIGURATION_DATA)
     responses.add(responses.GET, VEHICLE_POINTS_URL, json=[VEHICLE])
     responses.add(responses.GET, ARRIVAL_TIMES_URL, json=[ARRIVAL])
     responses.add(responses.GET, STOP_ESTIMATES_URL, json=[ESTIMATES])
     responses.add(responses.GET, ROUTES_URL, json=[ROUTE])
     client = ShuttleClient()
 
-    assert isinstance(client.get_map_vehicle_points()[0], VehiclePoint)
-    assert isinstance(client.get_route_stop_arrivals(times_per_stop=3)[0], StopArrival)
+    configuration = client.get_configuration()
+    assert configuration == CONFIGURATION
+    assert isinstance(client.get_map_vehicle_points(configuration)[0], VehiclePoint)
+    assert isinstance(client.get_route_stop_arrivals(configuration, times_per_stop=3)[0], StopArrival)
     assert isinstance(client.get_vehicle_route_stop_estimates("25", 4)[0], VehicleStopEstimates)
-    route = client.get_routes()[0]
+    route = client.get_routes(configuration)[0]
     assert isinstance(route, Route)
     assert route.stops[0].map_points[0].latitude == 40.44
 
@@ -90,11 +112,18 @@ def test_shuttle_endpoints_return_domain_models():
 def test_shuttle_requires_list_response():
     responses.add(responses.GET, ROUTES_URL, json={})
     with pytest.raises(ValueError, match="contain a list"):
-        ShuttleClient().get_routes()
+        ShuttleClient().get_routes(CONFIGURATION)
 
 
 @responses.activate
 def test_shuttle_wraps_missing_required_fields():
     responses.add(responses.GET, ROUTES_URL, json=[{}])
     with pytest.raises(ValueError, match="missing required data"):
-        ShuttleClient().get_routes()
+        ShuttleClient().get_routes(CONFIGURATION)
+
+
+@responses.activate
+def test_shuttle_rejects_malformed_configuration():
+    responses.add(responses.GET, CONFIGURATION_URL, json={})
+    with pytest.raises(ValueError, match="configuration"):
+        ShuttleClient().get_configuration()

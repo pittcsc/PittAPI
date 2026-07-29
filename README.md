@@ -40,14 +40,11 @@ change a response after it is returned.
 ```python
 from datetime import datetime
 
-from pittapi import DiningClient, LabClient, LibraryClient, NewsClient
+from pittapi import DiningClient, LibraryClient, NewsClient
 
 with DiningClient() as dining:
     locations = dining.get_locations()
     hours = dining.get_location_hours("The Eatery", datetime(2024, 4, 12))
-
-with LabClient() as labs:
-    thaw = labs.get_one_lab_data("THAW")
 
 with LibraryClient() as library:
     books = library.get_documents("computer science")
@@ -56,6 +53,30 @@ with NewsClient() as news:
     topics = news.get_topics()
     technology = next(topic for topic in topics if topic.name == "Technology & Science")
     articles = news.get_articles_by_topic(technology, max_num_results=5)
+```
+
+Services whose available resources change over time provide discovery methods:
+
+```python
+from pittapi import LabClient, LaundryClient, ShuttleClient, TextbookClient
+from pittapi.textbook import CourseInfo
+
+with LabClient() as labs:
+    locations = labs.get_locations()
+    status = labs.get_status(locations[0])
+
+with LaundryClient() as laundry:
+    rooms = laundry.get_locations()
+    machines = laundry.get_machine_statuses(rooms[0])
+
+with ShuttleClient() as shuttle:
+    configuration = shuttle.get_configuration()
+    routes = shuttle.get_routes(configuration)
+
+with TextbookClient() as textbooks:
+    term = next(term for term in textbooks.get_terms() if term.inquiry_enabled)
+    textbooks.select_term(term)
+    books = textbooks.get_textbooks_for_course(CourseInfo("CS", "0441"))
 ```
 
 Network and HTTP failures remain standard `requests` exceptions. Invalid arguments or malformed provider responses

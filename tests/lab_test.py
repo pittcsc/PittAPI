@@ -1,44 +1,60 @@
 import pytest
 import responses
 
-from pittapi.lab import AVAILABLE_LAB_IDS, PITT_BASE_URL, Lab, LabClient, parse_lab
+from pittapi.lab import LOCATIONS_URL, PITT_BASE_URL, Lab, LabClient, LabLocation, parse_lab
 
-LAB_NAMES = {
-    "THAW": "Thaw Hall M06",
-    "LAWRENCE": "David Lawrence 230",
-    "CATH_LMC": "Catheral - LMC",
-    "SUTH": "Sutherland 120",
-    "CATH_G27": "Cathedral G27",
-    "HILLMAN": "Hillman",
-    "CATH_G62": "Cathedral G62",
-}
+LOCATIONS = [
+    {
+        "ident": "first-id",
+        "pname": "Thaw Hall M06",
+        "name": "Pitt Digital Lab: Thaw Hall M06",
+        "title": "Thaw Hall M06",
+        "publish": True,
+        "unknown": "ignored",
+    },
+    {
+        "ident": "hidden-id",
+        "pname": "Hidden Lab",
+        "name": "Hidden Lab",
+        "title": "Hidden Lab",
+        "publish": False,
+    },
+    {
+        "ident": "second-id",
+        "pname": "Hillman",
+        "name": "Hillman",
+        "title": "Hillman",
+        "publish": True,
+    },
+]
 
 
-def lab_url(name):
-    return f"{PITT_BASE_URL}{AVAILABLE_LAB_IDS[name]}/status.json?noredir=1"
+def lab_url(location):
+    return f"{PITT_BASE_URL}{location.id}/status.json?noredir=1"
 
 
 def lab_response(name):
     return {"hours": {name: {"closed": False}}, "state": {}}
 
 
-def test_lab_ids_match_the_published_keyserve_maps():
-    assert AVAILABLE_LAB_IDS == {
-        "THAW": "bba4a8796295ff6a8df116524b40e178",
-        "LAWRENCE": "98a4759fc02ca3655d56cd58abed4e90",
-        "CATH_LMC": "8b2a1c62ea8a23745101b998439310d2",
-        "SUTH": "8adaaeb974aa38b2283c73532c095ca7",
-        "CATH_G27": "6fd5a4e0dd0a32e3ccb441e25a1a2d78",
-        "HILLMAN": "6638c1e72b9a56e5119ff9848b2bdc98",
-        "CATH_G62": "04853e8d1453c90a910a0b803529a3a0",
-    }
+@responses.activate
+def test_discover_published_labs_in_provider_order():
+    responses.add(responses.GET, LOCATIONS_URL, json={"results": {"maps": LOCATIONS}})
+
+    locations = LabClient().get_locations()
+
+    assert locations == (
+        LabLocation("first-id", "Thaw Hall M06", "Thaw Hall M06"),
+        LabLocation("second-id", "Hillman", "Hillman"),
+    )
 
 
 @responses.activate
-def test_get_one_lab():
-    responses.add(responses.GET, lab_url("THAW"), json=lab_response("Thaw Hall M06"))
+def test_get_status():
+    location = LabLocation("first-id", "Thaw Hall M06", "Thaw Hall M06")
+    responses.add(responses.GET, lab_url(location), json=lab_response(location.title))
 
-    result = LabClient().get_one_lab_data("THAW")
+    result = LabClient().get_status(location)
 
     assert result == Lab(
         name="Thaw Hall M06",
@@ -52,17 +68,25 @@ def test_get_one_lab():
 
 
 @responses.activate
-def test_get_all_labs():
-    for key, name in LAB_NAMES.items():
-        responses.add(responses.GET, lab_url(key), json=lab_response(name))
+def test_get_all_statuses_preserves_discovery_order():
+    locations = (
+        LabLocation("first-id", "Thaw Hall M06", "Thaw Hall M06"),
+        LabLocation("second-id", "Hillman", "Hillman"),
+    )
+    responses.add(responses.GET, LOCATIONS_URL, json={"results": {"maps": LOCATIONS}})
+    for location in locations:
+        responses.add(responses.GET, lab_url(location), json=lab_response(location.title))
 
-    labs = LabClient().get_all_labs_data()
-    assert tuple(lab.name for lab in labs) == tuple(LAB_NAMES.values())
+    labs = LabClient().get_all_statuses()
+    assert tuple(lab.name for lab in labs) == ("Thaw Hall M06", "Hillman")
 
 
-def test_invalid_lab_name():
-    with pytest.raises(ValueError, match="invalid lab name"):
-        LabClient().get_one_lab_data("INVALID")
+@pytest.mark.parametrize("payload", [{}, {"results": {"maps": [{}]}}])
+@responses.activate
+def test_malformed_location_discovery(payload):
+    responses.add(responses.GET, LOCATIONS_URL, json=payload)
+    with pytest.raises(ValueError, match="discovery response"):
+        LabClient().get_locations()
 
 
 def test_parse_all_machine_states():

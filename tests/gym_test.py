@@ -2,41 +2,68 @@ import pytest
 import responses
 
 from pittapi.gym import GYM_URL, Gym, GymClient
-from tests.mocks.gym_mocks import mock_gym_html
+
+GYMS = [
+    {
+        "LocationId": 1,
+        "LocationName": "Campus Recreation",
+        "FacilityId": 10,
+        "FacilityName": "Baierl Rec Center",
+        "TotalCapacity": 200,
+        "LastCount": 0,
+        "PercetageCapacity": 0,
+        "LastUpdatedDateAndTime": "07/09/2024 09:05 AM",
+        "IsClosed": False,
+        "Ignored": "provider extension",
+    },
+    {
+        "LocationId": 2,
+        "LocationName": "Trees Hall",
+        "FacilityId": 20,
+        "FacilityName": "Trees Fitness Center",
+        "TotalCapacity": 100,
+        "LastCount": 0,
+        "PercetageCapacity": 0,
+        "LastUpdatedDateAndTime": "07/09/2024 09:06 AM",
+        "IsClosed": True,
+    },
+]
 
 
 @responses.activate
-def test_fetch_all_gyms():
-    responses.add(responses.GET, GYM_URL, body=mock_gym_html)
+def test_fetch_all_gyms_preserves_zero_and_closed_state():
+    responses.add(responses.GET, GYM_URL, json=GYMS)
 
     gyms = GymClient().get_all_gyms_info()
 
-    assert len(gyms) == 8
     assert gyms[0] == Gym(
-        name="Baierl Rec Center",
+        location_id=1,
+        location_name="Campus Recreation",
+        facility_id=10,
+        facility_name="Baierl Rec Center",
+        total_capacity=200,
+        current_count=0,
+        percent_full=0,
         last_updated="07/09/2024 09:05 AM",
-        current_count=100,
-        percent_full=50,
+        is_closed=False,
     )
-    assert gyms[1].percent_full == 0
-    assert gyms[2] == Gym(name="Bellefield Hall: Court & Dance Studio")
+    assert gyms[1].current_count == 0
+    assert gyms[1].is_closed
 
 
 @responses.activate
-def test_get_gym_including_zero_occupancy():
-    html = '<div class="barChart">Test Gym|x|Last Count: 0|Updated: now|0%</div>'
-    responses.add(responses.GET, GYM_URL, body=html)
+def test_get_gym_info_and_unknown_gym():
+    responses.add(responses.GET, GYM_URL, json=GYMS)
+    assert GymClient().get_gym_info("Campus Recreation").facility_id == 10
 
-    assert GymClient().get_gym_info("Test Gym").current_count == 0
-
-
-@responses.activate
-def test_unknown_gym_raises_lookup_error():
-    responses.add(responses.GET, GYM_URL, body=mock_gym_html)
+    responses.add(responses.GET, GYM_URL, json=GYMS)
     with pytest.raises(LookupError, match="gym not found"):
         GymClient().get_gym_info("Missing Gym")
 
 
-def test_missing_percentage_defaults_to_zero():
-    gym = Gym.from_text("Test|unused|Last Count: 1|Updated: today")
-    assert gym.percent_full == 0
+@pytest.mark.parametrize("payload", [{}, [{}]])
+@responses.activate
+def test_malformed_gym_response(payload):
+    responses.add(responses.GET, GYM_URL, json=payload)
+    with pytest.raises(ValueError, match="gym response"):
+        GymClient().get_all_gyms_info()

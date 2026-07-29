@@ -5,10 +5,12 @@ import pytest
 import responses
 
 from pittapi.laundry import (
-    BASE_URL,
-    LOCATION_IDS,
+    CURRENT_ROOM_URL,
+    LOCATIONS_URL,
+    SCHOOL_ID,
     BuildingStatus,
     LaundryClient,
+    LaundryLocation,
     MachineStatus,
     infer_combo_type,
     parse_laundry_object,
@@ -18,41 +20,68 @@ from pittapi.laundry import (
 SAMPLES = Path("tests/samples")
 HOLLAND_DATA = json.loads((SAMPLES / "laundry_mock_response_holland.json").read_text())
 TOWERS_DATA = json.loads((SAMPLES / "laundry_mock_response_towers.json").read_text())
+HOLLAND = LaundryLocation("2430137", "Holland Hall", "Pittsburgh")
+TOWERS = LaundryLocation("2430136", "Litchfield Towers", "Pittsburgh")
 
 
 @pytest.mark.parametrize(
-    ("building", "data", "expected"),
+    ("location", "data", "expected"),
     [
-        ("HOLLAND", HOLLAND_DATA, BuildingStatus("HOLLAND", 0, 14, 15, 21)),
-        ("towers", TOWERS_DATA, BuildingStatus("TOWERS", 1, 54, 1, 55)),
+        (HOLLAND, HOLLAND_DATA, BuildingStatus("Holland Hall", 0, 14, 15, 21)),
+        (TOWERS, TOWERS_DATA, BuildingStatus("Litchfield Towers", 1, 54, 1, 55)),
     ],
 )
 @responses.activate
-def test_building_status(building, data, expected):
-    responses.add(responses.GET, BASE_URL.format(location=LOCATION_IDS[building.upper()]), json=data)
-    assert LaundryClient().get_building_status(building) == expected
+def test_building_status(location, data, expected):
+    responses.add(responses.GET, CURRENT_ROOM_URL, json=data)
+    assert LaundryClient().get_building_status(location) == expected
+
+
+@responses.activate
+def test_location_discovery_preserves_order_and_ignores_unknown_fields():
+    data = {
+        "room_data": [
+            {
+                "laundry_room_location": 2430137,
+                "laundry_room_name": "Holland Hall",
+                "campus_name": "Pittsburgh",
+                "unknown": "ignored",
+            },
+            {
+                "laundry_room_location": "2430136",
+                "laundry_room_name": "Litchfield Towers",
+                "campus_name": "Pittsburgh",
+            },
+        ]
+    }
+    responses.add(responses.GET, LOCATIONS_URL, json=data)
+    assert LaundryClient().get_locations() == (HOLLAND, TOWERS)
+    assert responses.calls[0].request.url.endswith(f"cui=1&loc={SCHOOL_ID}")
 
 
 @responses.activate
 def test_machine_statuses_are_models():
-    responses.add(responses.GET, BASE_URL.format(location=LOCATION_IDS["HOLLAND"]), json=HOLLAND_DATA)
-    machines = LaundryClient().get_laundry_machine_statuses("HOLLAND")
+    responses.add(responses.GET, CURRENT_ROOM_URL, json=HOLLAND_DATA)
+    machines = LaundryClient().get_machine_statuses(HOLLAND)
     assert len(machines) == 35
     assert any(machine.minutes_remaining is None for machine in machines)
     assert any(machine.minutes_remaining is not None for machine in machines)
     assert all(machine.model_number for machine in machines)
 
 
-def test_invalid_building_and_payload():
-    with pytest.raises(ValueError, match="invalid laundry building"):
-        LaundryClient().get_laundry_machine_statuses("Missing")
+@pytest.mark.parametrize("payload", [{}, {"room_data": [{}]}])
+@responses.activate
+def test_malformed_location_discovery(payload):
+    responses.add(responses.GET, LOCATIONS_URL, json=payload)
+    with pytest.raises(ValueError, match="discovery response"):
+        LaundryClient().get_locations()
 
 
 @responses.activate
 def test_malformed_payload():
-    responses.add(responses.GET, BASE_URL.format(location=LOCATION_IDS["HOLLAND"]), json={})
+    responses.add(responses.GET, CURRENT_ROOM_URL, json={})
     with pytest.raises(ValueError, match="missing required data"):
-        LaundryClient().get_laundry_machine_statuses("HOLLAND")
+        LaundryClient().get_machine_statuses(HOLLAND)
 
 
 def test_object_parsing_variants():

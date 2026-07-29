@@ -26,9 +26,8 @@ from pittapi.base_client import BaseClient
 
 __all__ = ["Address", "GameInfo", "SportsClient", "Team", "Venue"]
 
-FOOTBALL_URL = "http://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/pitt"
-MENS_BASKETBALL_URL = "http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/pittsburgh"
-PITT_TEAM_ID = "221"
+FOOTBALL_URL = "https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/pitt"
+MENS_BASKETBALL_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/pittsburgh"
 NO_RECORD = "There's no record right now."
 
 
@@ -109,7 +108,8 @@ def parse_next_game(data: dict[str, Any]) -> GameInfo:
             return GameInfo(status="NO_GAME_SCHEDULED")
         event = events[0]
         competition = event["competitions"][0]
-        pitt, opponent = find_competitors(competition["competitors"])
+        pitt_team_id = str(data["team"]["id"])
+        pitt, opponent = find_competitors(competition["competitors"], pitt_team_id)
         opponent_team = opponent["team"]
         venue = competition["venue"]
         status_name = competition["status"]["type"]["name"]
@@ -135,12 +135,15 @@ def parse_next_game(data: dict[str, Any]) -> GameInfo:
         raise ValueError("sports response is missing game data") from error
 
 
-def find_competitors(competitors: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
+def find_competitors(
+    competitors: list[dict[str, Any]],
+    pitt_team_id: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
     if len(competitors) != 2:
         raise ValueError("a sports competition must contain two teams")
     first, second = competitors
-    if str(first["id"]) == PITT_TEAM_ID:
+    if str(first["id"]) == pitt_team_id:
         return first, second
-    if str(second["id"]) == PITT_TEAM_ID:
+    if str(second["id"]) == pitt_team_id:
         return second, first
     raise ValueError("Pitt is not present in the competition")

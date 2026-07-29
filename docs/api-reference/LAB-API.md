@@ -1,37 +1,18 @@
-> [Home](README.md) > LAB API
----
+> [Home](README.md) > Lab API
 
 # Lab API
 
-### **Location Codes:**
-  - Alumni Hall: `"ALUMNI"`
-  - Benedum Hall: `"BENEDUM"`
-  - Cathedral G27: `"CATH_G27"`
-  - Cathedral G62: `"CATH_G62"`
-  - David Lawrence Hall: `"LAWRENCE"`
-  - Hillman Library: `"HILLMAN"`
-  - Sutherland Hall: `"SUTH"`
+`LabClient.get_locations()` returns the computing labs currently published by Pitt as `LabLocation` models. Pass one
+of those models to `get_status()`:
 
----
-
-### **get_status(lab_name)**
-
-#### **Parameters**:
-  - `lab_name`: Lab name (comes from LabAPI's **LOCATIONS**)
-
-#### **Returns**:
-Returns a dictionary with status and amount of OS machines.
-
-#### **Example**:
-
-###### **Code**:
 ```python
-get_status(lab_name='ALUMNI')
-get_status(lab_name='CATH_G62')
+from pittapi import LabClient
+
+with LabClient() as labs:
+    locations = labs.get_locations()
+    thaw = next(location for location in locations if location.name == "Thaw Hall M06")
+    status = labs.get_status(thaw)
 ```
 
-###### **Sample Output**:
-```python
-{'status': 'closed', 'windows': 0, 'mac': 0, 'linux': 0}
-{'status': 'open', 'windows': 96, 'mac': 29, 'linux': 2}
-```
+`get_all_statuses()` discovers the locations and returns a `Lab` for each one in the same order. A `Lab` contains
+open/closed state and counts for available, off, in-use, out-of-service, and total computers.

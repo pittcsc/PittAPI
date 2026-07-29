@@ -1,4 +1,5 @@
 from copy import deepcopy
+import json
 
 import pytest
 import responses
@@ -53,6 +54,27 @@ def test_get_subject_courses_returns_models():
 
 
 @responses.activate
+def test_people_soft_redirect_preserves_session_cookie():
+    url = SUBJECT_COURSES_API.format(subject=SUBJECT)
+    responses.add(
+        responses.GET,
+        url,
+        status=302,
+        headers={"Location": f"{url}&", "Set-Cookie": "pscheck=accepted; Path=/"},
+    )
+
+    def return_courses(request):
+        assert "pscheck=accepted" in request.headers["Cookie"]
+        return 200, {"Content-Type": "application/json"}, json.dumps(mocked_courses_data)
+
+    responses.add_callback(responses.GET, f"{url}&", callback=return_courses)
+
+    assert CourseClient().get_subject_course_data(SUBJECT) == mocked_courses_data
+    assert responses.calls[0].request.url == url
+    assert responses.calls[1].request.url == f"{url}&"
+
+
+@responses.activate
 def test_get_course_details_returns_nested_models():
     add_subject_response()
     responses.add(responses.GET, SUBJECT_COURSES_API.format(subject=SUBJECT), json=mocked_courses_data)
@@ -65,6 +87,7 @@ def test_get_course_details_returns_nested_models():
 
     result = CourseClient().get_course_details(TERM, SUBJECT, 7)
 
+    assert "effdt" not in responses.calls[2].request.url
     assert isinstance(result, CourseDetails)
     assert result.course.course_id == COURSE_ID
     assert result.components[0].required

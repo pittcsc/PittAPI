@@ -24,18 +24,19 @@ from typing import Any
 
 from pittapi.base_client import BaseClient
 
-__all__ = ["Lab", "LabClient"]
+__all__ = ["Lab", "LabClient", "LabLocation"]
 
 PITT_BASE_URL = "https://pitt-keyserve-prod.univ.pitt.edu/maps/std/"
-AVAILABLE_LAB_IDS = {
-    "THAW": "bba4a8796295ff6a8df116524b40e178",
-    "LAWRENCE": "98a4759fc02ca3655d56cd58abed4e90",
-    "CATH_LMC": "8b2a1c62ea8a23745101b998439310d2",
-    "SUTH": "8adaaeb974aa38b2283c73532c095ca7",
-    "CATH_G27": "6fd5a4e0dd0a32e3ccb441e25a1a2d78",
-    "HILLMAN": "6638c1e72b9a56e5119ff9848b2bdc98",
-    "CATH_G62": "04853e8d1453c90a910a0b803529a3a0",
-}
+LOCATIONS_URL = PITT_BASE_URL + "avail.json"
+
+
+@dataclass(frozen=True, slots=True)
+class LabLocation:
+    """A computing lab published by Pitt's availability map."""
+
+    id: str
+    name: str
+    title: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,18 +55,26 @@ class Lab:
 class LabClient(BaseClient):
     """Fetch computing-lab availability."""
 
-    def get_one_lab_data(self, lab_name: str) -> Lab:
-        if lab_name not in AVAILABLE_LAB_IDS:
-            choices = ", ".join(AVAILABLE_LAB_IDS)
-            raise ValueError(f"invalid lab name: {lab_name}. Valid options: {choices}")
+    def get_locations(self) -> tuple[LabLocation, ...]:
+        """Return the labs currently published by Pitt."""
+        data = self.request("GET", LOCATIONS_URL).json()
+        try:
+            maps = data["results"]["maps"]
+            return tuple(
+                LabLocation(id=item["ident"], name=item["pname"], title=item["title"]) for item in maps if item["publish"]
+            )
+        except (KeyError, TypeError) as error:
+            raise ValueError("lab discovery response is missing required data") from error
 
-        lab_id = AVAILABLE_LAB_IDS[lab_name]
-        url = f"{PITT_BASE_URL}{lab_id}/status.json?noredir=1"
+    def get_status(self, location: LabLocation) -> Lab:
+        """Return availability for a discovered lab location."""
+        url = f"{PITT_BASE_URL}{location.id}/status.json?noredir=1"
         data = self.request("GET", url).json()
         return parse_lab(data)
 
-    def get_all_labs_data(self) -> tuple[Lab, ...]:
-        return tuple(self.get_one_lab_data(lab_name) for lab_name in AVAILABLE_LAB_IDS)
+    def get_all_statuses(self) -> tuple[Lab, ...]:
+        """Discover every lab and return statuses in provider order."""
+        return tuple(self.get_status(location) for location in self.get_locations())
 
 
 def parse_lab(data: dict[str, Any]) -> Lab:

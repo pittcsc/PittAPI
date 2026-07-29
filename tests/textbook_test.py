@@ -9,12 +9,12 @@ from pittapi.textbook import (
     BASE_URL,
     BOOKS_URL,
     COURSES_URL,
-    CURRENT_TERM_ID,
     MAX_REQUEST_ATTEMPTS,
     SUBJECTS_URL,
     CourseInfo,
     Textbook,
     TextbookClient,
+    TextbookTerm,
     find_section,
     find_section_id,
     parse_textbook,
@@ -32,14 +32,15 @@ MATH_ID = "22528"
 CS_SECTION = "4558031"
 MATH_SECTION = "4631097"
 HEADERS = {"X-CSRF-Token": "token"}
+TERM = TextbookTerm("78104", "Fall 24", True, True)
 
 
-def subjects_url(term=CURRENT_TERM_ID):
-    return SUBJECTS_URL.format(term_id=term)
+def subjects_url(term=TERM):
+    return SUBJECTS_URL.format(term_id=term.id)
 
 
-def courses_url(subject_id, term=CURRENT_TERM_ID):
-    return COURSES_URL.format(department_id=subject_id, term_id=term)
+def courses_url(subject_id, term=TERM):
+    return COURSES_URL.format(department_id=subject_id, term_id=term.id)
 
 
 @pytest.mark.parametrize(
@@ -71,6 +72,33 @@ def test_initialize_headers():
     client = TextbookClient()
     client.initialize_headers()
     assert client.headers
+    assert client.terms == (TERM,)
+
+
+@responses.activate
+def test_get_terms_caches_discovery_and_selecting_a_new_term_resets_subjects():
+    responses.add(responses.GET, BASE_URL, body=BASE_HTML)
+    client = TextbookClient()
+    assert client.get_terms() == (TERM,)
+    assert client.get_terms() == (TERM,)
+    assert len(responses.calls) == 1
+
+    client.subject_ids = {"CS": CS_ID}
+    client.select_term(TERM)
+    assert client.subject_ids is None
+    client.subject_ids = {"CS": CS_ID}
+    client.select_term(TERM)
+    assert client.subject_ids == {"CS": CS_ID}
+
+
+@responses.activate
+def test_get_terms_allows_empty_discovery():
+    html = BASE_HTML.replace(
+        '[{"id":"78104","name":"Fall 24","inquiry":true,"ordering":true}]',
+        "[]",
+    )
+    responses.add(responses.GET, BASE_URL, body=html)
+    assert TextbookClient().get_terms() == ()
 
 
 @pytest.mark.parametrize(
@@ -87,6 +115,21 @@ def test_initialize_headers_requires_token(html):
         TextbookClient().initialize_headers()
 
 
+@pytest.mark.parametrize(
+    "html",
+    [
+        "<meta name='csrf-token' content='token'>",
+        "<meta name='csrf-token' content='token'><script>new Verba.Compare.Collections.Terms(not-json)</script>",
+        ("<meta name='csrf-token' content='token'><script>" "new Verba.Compare.Collections.Terms([{}])</script>"),
+    ],
+)
+@responses.activate
+def test_initialize_headers_requires_valid_terms(html):
+    responses.add(responses.GET, BASE_URL, body=html)
+    with pytest.raises(ValueError, match="term"):
+        TextbookClient().initialize_headers()
+
+
 @responses.activate
 def test_initialize_headers_retries_then_fails():
     responses.add(responses.GET, BASE_URL, status=400)
@@ -98,14 +141,14 @@ def test_initialize_headers_retries_then_fails():
 @responses.activate
 def test_initialize_subjects_with_existing_and_missing_headers():
     responses.add(responses.GET, subjects_url(), json=SUBJECTS)
-    client = TextbookClient()
+    client = TextbookClient(TERM)
     client.headers = HEADERS
     client.initialize_subjects()
     assert client.subject_ids["CS"] == CS_ID
 
     responses.add(responses.GET, BASE_URL, body=BASE_HTML)
     responses.add(responses.GET, subjects_url(), json=SUBJECTS)
-    fresh_client = TextbookClient()
+    fresh_client = TextbookClient(TERM)
     fresh_client.initialize_subjects()
     assert fresh_client.headers
 
@@ -113,7 +156,7 @@ def test_initialize_subjects_with_existing_and_missing_headers():
 @responses.activate
 def test_initialize_subjects_rejects_malformed_data():
     responses.add(responses.GET, subjects_url(), json=[{}])
-    client = TextbookClient()
+    client = TextbookClient(TERM)
     client.headers = HEADERS
     with pytest.raises(ValueError, match="subject response"):
         client.initialize_subjects()
@@ -123,7 +166,7 @@ def test_initialize_subjects_rejects_malformed_data():
 def test_initialize_subjects_refreshes_and_eventually_fails():
     responses.add(responses.GET, subjects_url(), status=400)
     responses.add(responses.GET, BASE_URL, body=BASE_HTML)
-    client = TextbookClient()
+    client = TextbookClient(TERM)
     client.headers = HEADERS
     with pytest.raises(requests.ConnectionError, match="retrieve subjects"):
         client.initialize_subjects()
@@ -132,7 +175,7 @@ def test_initialize_subjects_refreshes_and_eventually_fails():
 @responses.activate
 def test_get_courses_success_and_validation():
     responses.add(responses.GET, courses_url(CS_ID), json=CS_COURSES)
-    client = TextbookClient()
+    client = TextbookClient(TERM)
     client.headers = HEADERS
     client.subject_ids = {"CS": CS_ID}
     assert client.get_courses("CS") == CS_COURSES
@@ -146,7 +189,7 @@ def test_get_courses_success_and_validation():
 def test_get_courses_initializes_headers_and_rejects_nonlist():
     responses.add(responses.GET, BASE_URL, body=BASE_HTML)
     responses.add(responses.GET, courses_url(CS_ID), json={})
-    client = TextbookClient()
+    client = TextbookClient(TERM)
     client.subject_ids = {"CS": CS_ID}
     with pytest.raises(ValueError, match="must contain a list"):
         client.get_courses("CS")
@@ -156,7 +199,7 @@ def test_get_courses_initializes_headers_and_rejects_nonlist():
 def test_get_courses_refreshes_and_fails():
     responses.add(responses.GET, courses_url(CS_ID), status=400)
     responses.add(responses.GET, BASE_URL, body=BASE_HTML)
-    client = TextbookClient()
+    client = TextbookClient(TERM)
     client.headers = HEADERS
     client.subject_ids = {"CS": CS_ID}
     with pytest.raises(requests.ConnectionError, match="retrieve CS courses"):
@@ -170,7 +213,7 @@ def test_get_textbooks_for_one_course():
     responses.add(responses.GET, courses_url(CS_ID), json=CS_COURSES)
     responses.add(responses.GET, BOOKS_URL.format(section_id=CS_SECTION), json=CS_BOOKS)
 
-    books = TextbookClient().get_textbooks_for_course(CourseInfo("CS", "0441", instructor="GARRISON III"))
+    books = TextbookClient(TERM).get_textbooks_for_course(CourseInfo("CS", "0441", instructor="GARRISON III"))
 
     assert len(books) == 1
     assert books[0].title == "Ia Canvas Content"
@@ -178,7 +221,7 @@ def test_get_textbooks_for_one_course():
 
 @responses.activate
 def test_get_textbooks_for_multiple_courses_and_cache_subject():
-    client = TextbookClient()
+    client = TextbookClient(TERM)
     client.headers = HEADERS
     client.subject_ids = {"CS": CS_ID, "MATH": MATH_ID}
     responses.add(responses.GET, courses_url(CS_ID), json=CS_COURSES)
@@ -199,7 +242,7 @@ def test_get_textbooks_for_multiple_courses_and_cache_subject():
 
 
 def test_get_textbooks_rejects_unknown_subject():
-    client = TextbookClient()
+    client = TextbookClient(TERM)
     client.subject_ids = {}
     with pytest.raises(LookupError, match="invalid textbook subject"):
         client.get_textbooks_for_courses([CourseInfo("FAKE", "0001")])
@@ -209,17 +252,30 @@ def test_get_textbooks_rejects_unknown_subject():
 def test_section_textbooks_initializes_headers_and_filters_empty_records():
     responses.add(responses.GET, BASE_URL, body=BASE_HTML)
     responses.add(responses.GET, BOOKS_URL.format(section_id=CS_SECTION), json=[{}, *CS_BOOKS])
-    books = TextbookClient().get_textbooks_for_section(CS_SECTION)
+    books = TextbookClient(TERM).get_textbooks_for_section(CS_SECTION)
     assert len(books) == 1
 
 
 @responses.activate
 def test_section_textbooks_requires_list():
     responses.add(responses.GET, BOOKS_URL.format(section_id=CS_SECTION), json={})
-    client = TextbookClient()
+    client = TextbookClient(TERM)
     client.headers = HEADERS
     with pytest.raises(ValueError, match="must contain a list"):
         client.get_textbooks_for_section(CS_SECTION)
+
+
+def test_textbook_requests_require_selected_term():
+    client = TextbookClient()
+    course = CourseInfo("CS", "0441")
+    with pytest.raises(ValueError, match="select a textbook term"):
+        client.initialize_subjects()
+    with pytest.raises(ValueError, match="select a textbook term"):
+        client.get_courses("CS")
+    with pytest.raises(ValueError, match="select a textbook term"):
+        client.get_textbooks_for_course(course)
+    with pytest.raises(ValueError, match="select a textbook term"):
+        client.get_textbooks_for_section("1")
 
 
 def test_find_section_variants():

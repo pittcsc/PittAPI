@@ -29,6 +29,7 @@ __all__ = [
     "Route",
     "ScheduledTime",
     "ShuttleClient",
+    "ShuttleConfiguration",
     "ShuttleStop",
     "StopArrival",
     "StopEstimate",
@@ -37,12 +38,24 @@ __all__ = [
     "VehicleStopEstimates",
 ]
 
-API_KEY = "8882812681"
-VEHICLE_POINTS_URL = "http://www.pittshuttle.com/Services/JSONPRelay.svc/GetMapVehiclePoints"
-ARRIVAL_TIMES_URL = "http://www.pittshuttle.com/Services/JSONPRelay.svc/GetRouteStopArrivals"
-STOP_ESTIMATES_URL = "http://www.pittshuttle.com/Services/JSONPRelay.svc/GetVehicleRouteStopEstimates"
-ROUTES_URL = "http://www.pittshuttle.com/Services/JSONPRelay.svc/GetRoutesForMap"
+CONFIGURATION_URL = "https://www.pittshuttle.com/Services/JSONPRelay.svc/GetMapConfig"
+VEHICLE_POINTS_URL = "https://www.pittshuttle.com/Services/JSONPRelay.svc/GetMapVehiclePoints"
+ARRIVAL_TIMES_URL = "https://www.pittshuttle.com/Services/JSONPRelay.svc/GetRouteStopArrivals"
+STOP_ESTIMATES_URL = "https://www.pittshuttle.com/Services/JSONPRelay.svc/GetVehicleRouteStopEstimates"
+ROUTES_URL = "https://www.pittshuttle.com/Services/JSONPRelay.svc/GetRoutesForMap"
 Model = TypeVar("Model")
+
+
+@dataclass(frozen=True, slots=True)
+class ShuttleConfiguration:
+    """Credentials and map defaults published by Pitt's shuttle service."""
+
+    api_key: str
+    title: str
+    map_latitude: float
+    map_longitude: float
+    map_zoom: int
+    time_format: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,11 +147,32 @@ class Route:
 class ShuttleClient(BaseClient):
     """Fetch typed data from Pitt's shuttle tracking service."""
 
-    def get_map_vehicle_points(self, api_key: str = API_KEY) -> tuple[VehiclePoint, ...]:
-        return self.fetch_models(VEHICLE_POINTS_URL, {"ApiKey": api_key}, parse_vehicle_point)
+    def get_configuration(self) -> ShuttleConfiguration:
+        """Discover the current API key and map defaults."""
+        data = self.request("GET", CONFIGURATION_URL).json()
+        try:
+            return ShuttleConfiguration(
+                api_key=str(data["ApiKey"]),
+                title=data["SiteTitle"],
+                map_latitude=data["StartLatitude"],
+                map_longitude=data["StartLongitude"],
+                map_zoom=data["StartZoom"],
+                time_format=data["TimeDisplayFormat"],
+            )
+        except (KeyError, TypeError) as error:
+            raise ValueError("shuttle configuration is missing required data") from error
 
-    def get_route_stop_arrivals(self, api_key: str = API_KEY, times_per_stop: int = 1) -> tuple[StopArrival, ...]:
-        params = {"ApiKey": api_key, "TimesPerStopString": str(times_per_stop)}
+    def get_map_vehicle_points(self, configuration: ShuttleConfiguration) -> tuple[VehiclePoint, ...]:
+        """Return active vehicles using a discovered configuration."""
+        return self.fetch_models(VEHICLE_POINTS_URL, {"ApiKey": configuration.api_key}, parse_vehicle_point)
+
+    def get_route_stop_arrivals(
+        self,
+        configuration: ShuttleConfiguration,
+        times_per_stop: int = 1,
+    ) -> tuple[StopArrival, ...]:
+        """Return scheduled and estimated arrivals for every route stop."""
+        params = {"ApiKey": configuration.api_key, "TimesPerStopString": str(times_per_stop)}
         return self.fetch_models(ARRIVAL_TIMES_URL, params, parse_stop_arrival)
 
     def get_vehicle_route_stop_estimates(
@@ -149,8 +183,9 @@ class ShuttleClient(BaseClient):
         params = {"vehicleIdStrings": vehicle_id, "quantity": str(quantity)}
         return self.fetch_models(STOP_ESTIMATES_URL, params, parse_vehicle_stop_estimates)
 
-    def get_routes(self, api_key: str = API_KEY) -> tuple[Route, ...]:
-        return self.fetch_models(ROUTES_URL, {"ApiKey": api_key}, parse_route)
+    def get_routes(self, configuration: ShuttleConfiguration) -> tuple[Route, ...]:
+        """Return routes and their stops using a discovered configuration."""
+        return self.fetch_models(ROUTES_URL, {"ApiKey": configuration.api_key}, parse_route)
 
     def fetch_models(
         self,

@@ -51,7 +51,7 @@ SUBJECT_COURSES_API = (
 COURSE_DETAIL_API = (
     "https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/"
     "WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_CatalogCourseDetails?institution=UPITT&course_id={id}"
-    "&effdt=2018-06-30&crse_offer_nbr=1&use_catalog_print=Y"
+    "&crse_offer_nbr=1&use_catalog_print=Y"
 )
 COURSE_SECTIONS_API = (
     "https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/"
