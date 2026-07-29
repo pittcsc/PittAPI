@@ -1,0 +1,30 @@
+name: Run live provider tests
+
+on:
+  pull_request:
+    branches: [ "dev" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  run-live-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Test live provider contracts
+        run: uv run pytest -m live live_tests/
