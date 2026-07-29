@@ -14,15 +14,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+from copy import deepcopy
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import patch
 
+import responses
 from pittapi import sports
 
 
 class LibraryTest(unittest.TestCase):
     def setUp(self):
-        mocked_basketball_data = {
+        self.mocked_basketball_data = {
             "team": {
                 "id": "221",
                 "record": {
@@ -80,7 +82,7 @@ class LibraryTest(unittest.TestCase):
                 "standingSummary": "12th in ACC",
             }
         }
-        mocked_football_data = {
+        self.mocked_football_data = {
             "team": {
                 "id": "221",
                 "name": "Pittsburgh",
@@ -141,15 +143,27 @@ class LibraryTest(unittest.TestCase):
                 "standingSummary": "1st in ACC - Coastal",
             }
         }
-        sports._get_mens_basketball_data = MagicMock(return_value=mocked_basketball_data)
-        sports._get_football_data = MagicMock(return_value=mocked_football_data)
+        basketball_patcher = patch.object(
+            sports,
+            "_get_mens_basketball_data",
+            return_value=self.mocked_basketball_data,
+        )
+        football_patcher = patch.object(
+            sports,
+            "_get_football_data",
+            return_value=self.mocked_football_data,
+        )
+        self.mock_get_basketball_data = basketball_patcher.start()
+        self.mock_get_football_data = football_patcher.start()
+        self.addCleanup(basketball_patcher.stop)
+        self.addCleanup(football_patcher.stop)
 
     def test_get_mens_basketball_record(self):
         self.assertEqual("11-21", sports.get_mens_basketball_record())
 
     def test_get_mens_basketball_record_offseason(self):
         offseason_data = {"team": {"id": "221", "record": {}}}
-        sports._get_mens_basketball_data = MagicMock(return_value=offseason_data)
+        self.mock_get_basketball_data.return_value = offseason_data
 
         self.assertEqual("There's no record right now.", sports.get_mens_basketball_record())
 
@@ -158,7 +172,7 @@ class LibraryTest(unittest.TestCase):
 
     def test_get_football_record_offseason(self):
         offseason_data = {"team": {"id": "221", "record": {}}}
-        sports._get_football_data = MagicMock(return_value=offseason_data)
+        self.mock_get_football_data.return_value = offseason_data
 
         self.assertEqual("There's no record right now.", sports.get_football_record())
 
@@ -170,15 +184,19 @@ class LibraryTest(unittest.TestCase):
 
     def test_get_next_mens_basketball_game(self):
         next_game_details = sports.get_next_mens_basketball_game()
-        self.assertNotEqual("NO_GAME_SCHEDULED", next_game_details.status)
+        self.assertEqual("GAME_COMPLETE", next_game_details.status)
+        self.assertEqual("103", next_game_details.opponent["id"])
+        self.assertEqual("home", next_game_details.home_away)
 
     def test_get_next_football_game(self):
         next_game_details = sports.get_next_football_game()
-        self.assertNotEqual("NO_GAME_SCHEDULED", next_game_details.status)
+        self.assertEqual("IN_PROGRESS", next_game_details.status)
+        self.assertEqual("103", next_game_details.opponent["id"])
+        self.assertEqual("away", next_game_details.home_away)
 
     def test_get_next_mens_basketball_game_offseason(self):
         offseason_data = {"team": {"nextEvent": []}}
-        sports._get_mens_basketball_data = MagicMock(return_value=offseason_data)
+        self.mock_get_basketball_data.return_value = offseason_data
 
         next_game_details = sports.get_next_mens_basketball_game()
         self.assertIsNone(next_game_details.timestamp)
@@ -189,7 +207,7 @@ class LibraryTest(unittest.TestCase):
 
     def test_get_next_football_game_offseason(self):
         offseason_data = {"team": {"nextEvent": []}}
-        sports._get_football_data = MagicMock(return_value=offseason_data)
+        self.mock_get_football_data.return_value = offseason_data
 
         next_game_details = sports.get_next_football_game()
         self.assertIsNone(next_game_details.timestamp)
@@ -197,3 +215,55 @@ class LibraryTest(unittest.TestCase):
         self.assertIsNone(next_game_details.home_away)
         self.assertIsNone(next_game_details.location)
         self.assertEqual("NO_GAME_SCHEDULED", next_game_details.status)
+
+    def test_basketball_in_progress_with_pitt_second(self):
+        basketball_data = deepcopy(self.mocked_basketball_data)
+        competition = basketball_data["team"]["nextEvent"][0]["competitions"][0]
+        competition["status"]["type"]["name"] = "STATUS_IN_PROGRESS"
+        competition["competitors"].reverse()
+        self.mock_get_basketball_data.return_value = basketball_data
+
+        game = sports.get_next_mens_basketball_game()
+
+        self.assertEqual(game.status, "IN_PROGRESS")
+        self.assertEqual(game.opponent["id"], "103")
+        self.assertEqual(game.home_away, "home")
+
+    def test_basketball_scheduled_game(self):
+        basketball_data = deepcopy(self.mocked_basketball_data)
+        basketball_data["team"]["nextEvent"][0]["competitions"][0]["status"]["type"]["name"] = "STATUS_SCHEDULED"
+        self.mock_get_basketball_data.return_value = basketball_data
+
+        self.assertIsNone(sports.get_next_mens_basketball_game().status)
+
+    def test_football_final_game(self):
+        football_data = deepcopy(self.mocked_football_data)
+        football_data["team"]["nextEvent"][0]["competitions"][0]["status"]["type"]["name"] = "STATUS_FINAL"
+        self.mock_get_football_data.return_value = football_data
+
+        self.assertEqual(sports.get_next_football_game().status, "GAME_COMPLETE")
+
+    def test_football_scheduled_with_pitt_second(self):
+        football_data = deepcopy(self.mocked_football_data)
+        competition = football_data["team"]["nextEvent"][0]["competitions"][0]
+        competition["status"]["type"]["name"] = "STATUS_SCHEDULED"
+        competition["competitors"].reverse()
+        self.mock_get_football_data.return_value = football_data
+
+        game = sports.get_next_football_game()
+
+        self.assertIsNone(game.status)
+        self.assertEqual(game.opponent["id"], "103")
+        self.assertEqual(game.home_away, "away")
+
+
+class SportsHttpHelperTest(unittest.TestCase):
+    @responses.activate
+    def test_sports_http_helpers(self):
+        basketball_data = {"team": {"id": "221"}}
+        football_data = {"team": {"id": "221"}}
+        responses.add(responses.GET, sports.MENS_BASKETBALL_URL, json=basketball_data, status=200)
+        responses.add(responses.GET, sports.FOOTBALL_URL, json=football_data, status=200)
+
+        self.assertEqual(sports._get_mens_basketball_data(), basketball_data)
+        self.assertEqual(sports._get_football_data(), football_data)

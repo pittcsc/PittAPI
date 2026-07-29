@@ -21,6 +21,7 @@ import json
 import unittest
 import responses
 import datetime
+from unittest.mock import patch
 
 from pathlib import Path
 
@@ -91,3 +92,80 @@ class DiningTest(unittest.TestCase):
         )
         locations = dining.get_location_menu("The Eatery", datetime.datetime(2024, 4, 12), "Breakfast")
         self.assertIsInstance(locations, dict)
+
+    def test_invalid_location_names(self):
+        with self.assertRaisesRegex(ValueError, "Invalid Dining Location"):
+            dining.get_location_hours("Not A Dining Location", datetime.datetime(2024, 4, 12))
+        with self.assertRaisesRegex(ValueError, "Invalid Dining Location"):
+            dining.get_location_menu("Not A Dining Location", datetime.datetime(2024, 4, 12))
+
+    @responses.activate
+    def test_get_all_location_hours_with_default_date(self):
+        responses.add(
+            responses.GET,
+            dining.HOURS_URL.format(date_str="2024-04-12"),
+            json=self.dining_schedule_data,
+            status=200,
+        )
+
+        with patch.object(dining, "datetime") as mock_datetime:
+            mock_datetime.now.return_value = datetime.datetime(2024, 4, 12)
+            hours = dining.get_location_hours()
+
+        self.assertIn("The Eatery", hours)
+
+    @responses.activate
+    def test_get_location_hours_errors_and_missing_location(self):
+        responses.add(
+            responses.GET,
+            dining.HOURS_URL.format(date_str="2024-04-12"),
+            status=502,
+        )
+        with self.assertRaisesRegex(ValueError, "Invalid Date"):
+            dining.get_location_hours("The Eatery", datetime.datetime(2024, 4, 12))
+
+        responses.add(
+            responses.GET,
+            dining.HOURS_URL.format(date_str="2024-04-13"),
+            json={"the_locations": []},
+            status=200,
+        )
+        self.assertEqual(dining.get_location_hours("The Eatery", datetime.datetime(2024, 4, 13)), {})
+
+    @responses.activate
+    def test_get_location_menu_with_default_date_and_period(self):
+        responses.add(responses.GET, dining.LOCATIONS_URL, json=self.dining_locations_data, status=200)
+        responses.add(
+            responses.GET,
+            dining.PERIODS_URL.format(location_id="610b1f78e82971147c9f8ba5", date_str="24-04-12"),
+            json=self.dining_menu_data,
+            status=200,
+        )
+        responses.add(
+            responses.GET,
+            dining.MENU_URL.format(
+                location_id="610b1f78e82971147c9f8ba5",
+                period_id="659daa4d351d53068df67835",
+                date_str="24-04-12",
+            ),
+            json=self.dining_menu_data,
+            status=200,
+        )
+
+        with patch.object(dining, "datetime") as mock_datetime:
+            mock_datetime.today.return_value = datetime.datetime(2024, 4, 12)
+            menu = dining.get_location_menu("The Eatery")
+
+        self.assertEqual(menu, self.dining_menu_data["menu"])
+
+    @responses.activate
+    def test_get_location_menu_invalid_date(self):
+        responses.add(responses.GET, dining.LOCATIONS_URL, json=self.dining_locations_data, status=200)
+        responses.add(
+            responses.GET,
+            dining.PERIODS_URL.format(location_id="610b1f78e82971147c9f8ba5", date_str="24-04-12"),
+            status=502,
+        )
+
+        with self.assertRaisesRegex(ValueError, "Invalid Date"):
+            dining.get_location_menu("The Eatery", datetime.datetime(2024, 4, 12))

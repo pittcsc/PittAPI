@@ -242,3 +242,31 @@ class NewsTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "missing its heading or description"):
             news.get_articles_by_topic("university-news")
+
+    @responses.activate
+    def test_get_articles_by_topic_rejects_card_without_url(self):
+        responses.add(
+            responses.GET,
+            "https://www.pitt.edu/pittwire/news/features-articles?field_topics_target_id=432&field_article_date_value=&title="
+            "&field_category_target_id=All",
+            body=(
+                "<html><body><div><main><div><section><div class='news-card'>"
+                "<h2 class='news-card-title'><a>Title</a></h2><p>Description</p>"
+                "</div></section></div></main></div></body></html>"
+            ),
+        )
+
+        with self.assertRaisesRegex(ValueError, "missing its URL"):
+            news.get_articles_by_topic("university-news")
+
+    @responses.activate
+    def test_get_articles_by_topic_rejects_page_without_main_content(self):
+        responses.add(
+            responses.GET,
+            "https://www.pitt.edu/pittwire/news/features-articles?field_topics_target_id=432&field_article_date_value=&title="
+            "&field_category_target_id=All",
+            body="<html><body></body></html>",
+        )
+
+        with self.assertRaisesRegex(ValueError, "missing its main content"):
+            news.get_articles_by_topic("university-news")

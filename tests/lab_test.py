@@ -251,3 +251,32 @@ class LabTest(unittest.TestCase):
             match="An unexpected error occurred while fetching lab data: Unauthorized",
         ):
             lab.get_one_lab_data("CATH_G27")
+
+    @responses.activate
+    def test_out_of_service_computer(self):
+        responses.add(
+            responses.GET,
+            create_test_url("BELLEFIELD"),
+            json={
+                "hours": {"Test Lab": {"closed": False}},
+                "state": {"computer": {"up": 3, "addr": "computer.example.edu"}},
+            },
+        )
+
+        result = lab.get_one_lab_data("BELLEFIELD")
+
+        self.assertEqual(result.out_of_service_computers, 1)
+
+    @responses.activate
+    def test_unknown_computer_state(self):
+        responses.add(
+            responses.GET,
+            create_test_url("BELLEFIELD"),
+            json={
+                "hours": {"Test Lab": {"closed": False}},
+                "state": {"computer": {"up": 99, "addr": "computer.example.edu"}},
+            },
+        )
+
+        with pytest.raises(lab.LabAPIError, match="Unknown 'up' value for computer.example.edu"):
+            lab.get_one_lab_data("BELLEFIELD")

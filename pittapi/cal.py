@@ -26,7 +26,7 @@ class Event(NamedTuple):
     date: str
     title: str
     content: str
-    meta: str
+    meta: list[str]
 
 
 ACADEMIC_CALENDAR_URL: str = "https://25livepub.collegenet.com/calendars/pitt-academic-calendar.json"

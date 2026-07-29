@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import unittest
 import responses
 import json
+from unittest.mock import patch
 
 from pathlib import Path
 
@@ -104,3 +105,34 @@ class LaundryTest(unittest.TestCase):
                 self.assertIsNone(machine.time_left)
             else:
                 self.fail(f"Invalid machine status detected for {machine=}")
+
+    def test_combo_machine_rejects_invalid_first_name(self):
+        with self.assertRaisesRegex(ValueError, "invalid machine name"):
+            laundry._parse_laundry_object_json({"type": "washNdry", "appliance_desc": "Washer without a number"})
+
+    def test_combo_machine_rejects_invalid_second_name(self):
+        machine = {
+            "type": "washNdry",
+            "appliance_desc": "Washer 2",
+            "appliance_desc_key": "washer-2",
+            "time_left_lite": "Available",
+            "time_remaining": 0,
+            "appliance_desc2": "Dryer without a number",
+        }
+
+        with self.assertRaisesRegex(ValueError, "invalid machine name"):
+            laundry._parse_laundry_object_json(machine)
+
+    def test_building_status_ignores_unknown_machine_type(self):
+        machine = laundry.LaundryMachine(
+            name="Card Reader",
+            id="reader",
+            status="Available",
+            type="other",
+            time_left=None,
+        )
+
+        with patch.object(laundry, "get_laundry_machine_statuses", return_value=[machine]):
+            status = laundry.get_building_status("TOWERS")
+
+        self.assertEqual(status, BuildingStatus("TOWERS", 0, 0, 0, 0))
