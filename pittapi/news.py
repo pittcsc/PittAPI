@@ -21,52 +21,30 @@ Articles published by Pittwire.
 
 from dataclasses import dataclass
 import math
-from typing import Literal
+from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
 
 from pittapi.base_client import BaseClient
 
-__all__ = ["Article", "NewsClient"]
+__all__ = ["Article", "NewsCategory", "NewsClient", "NewsTopic"]
 
 ARTICLES_PER_PAGE = 20
-NEWS_BY_CATEGORY_URL = (
-    "https://www.pitt.edu/pittwire/news/{category}?field_topics_target_id={topic_id}&field_article_date_value={year}"
-    "&title={query}&field_category_target_id=All&page={page}"
-)
-PITT_BASE_URL = "https://www.pitt.edu"
+PITTWIRE_BASE_URL = "https://www.pittwire.pitt.edu"
+DEFAULT_NEWS_CATEGORY = "features-articles"
+NEWS_BY_CATEGORY_URL = PITTWIRE_BASE_URL + "/pittwire/news/{category}"
 
-Category = Literal["features-articles", "accolades-honors", "ones-to-watch", "announcements-and-updates"]
-Topic = Literal[
-    "university-news",
-    "health-and-wellness",
-    "technology-and-science",
-    "arts-and-humanities",
-    "community-impact",
-    "innovation-and-research",
-    "global",
-    "diversity-equity-and-inclusion",
-    "our-city-our-campus",
-    "teaching-and-learning",
-    "space",
-    "ukraine",
-    "sustainability",
-]
-TOPIC_IDS: dict[Topic, int] = {
-    "university-news": 432,
-    "health-and-wellness": 2,
-    "technology-and-science": 391,
-    "arts-and-humanities": 4,
-    "community-impact": 6,
-    "innovation-and-research": 1,
-    "global": 9,
-    "diversity-equity-and-inclusion": 8,
-    "our-city-our-campus": 12,
-    "teaching-and-learning": 7,
-    "space": 440,
-    "ukraine": 441,
-    "sustainability": 470,
-}
+
+@dataclass(frozen=True, slots=True)
+class NewsTopic:
+    id: int
+    name: str
+
+
+@dataclass(frozen=True, slots=True)
+class NewsCategory:
+    slug: str
+    name: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,18 +58,76 @@ class Article:
 class NewsClient(BaseClient):
     """Search Pittwire articles."""
 
+    def get_topics(self) -> tuple[NewsTopic, ...]:
+        """Return the topics currently offered by Pittwire's search form."""
+        soup = self.get_filter_page()
+        topic_select = soup.select_one("select[name=field_topics_target_id]")
+        if not isinstance(topic_select, Tag):
+            raise ValueError("news page is missing its topic filter")
+
+        topics = []
+        for option in topic_select.find_all("option"):
+            topic_id = option.get("value")
+            if topic_id == "All":
+                continue
+            if not isinstance(topic_id, str) or not topic_id.isdigit():
+                raise ValueError("news page contains an invalid topic ID")
+            topics.append(NewsTopic(id=int(topic_id), name=option.get_text(strip=True)))
+        return tuple(topics)
+
+    def get_categories(self) -> tuple[NewsCategory, ...]:
+        """Return the article categories currently linked by Pittwire."""
+        soup = self.get_filter_page()
+        category_links = soup.select(".view-category-menu .view-content a")
+        if not category_links:
+            raise ValueError("news page is missing its category links")
+
+        categories = []
+        path_prefix = "/pittwire/news/"
+        for link in category_links:
+            href = link.get("href")
+            if not isinstance(href, str) or not href.startswith(path_prefix):
+                raise ValueError("news page contains an invalid category link")
+            categories.append(
+                NewsCategory(
+                    slug=href.removeprefix(path_prefix),
+                    name=link.get_text(strip=True),
+                )
+            )
+        return tuple(categories)
+
+    def get_years(self) -> tuple[int, ...]:
+        """Return the publication years currently offered by Pittwire."""
+        soup = self.get_filter_page()
+        year_select = soup.select_one("select[name=field_article_date_value]")
+        if not isinstance(year_select, Tag):
+            raise ValueError("news page is missing its year filter")
+
+        years = []
+        for option in year_select.find_all("option"):
+            year = option.get("value")
+            if year == "":
+                continue
+            if not isinstance(year, str) or not year.isdigit():
+                raise ValueError("news page contains an invalid publication year")
+            years.append(int(year))
+        return tuple(years)
+
+    def get_filter_page(self) -> BeautifulSoup:
+        """Fetch the default news page used to discover available filters."""
+        url = NEWS_BY_CATEGORY_URL.format(category=DEFAULT_NEWS_CATEGORY)
+        return BeautifulSoup(self.request("GET", url).text, "html.parser")
+
     def get_articles_by_topic(
         self,
-        topic: Topic,
-        category: Category = "features-articles",
+        topic: NewsTopic,
+        category: NewsCategory | None = None,
         query: str = "",
         year: int | None = None,
         max_num_results: int = ARTICLES_PER_PAGE,
     ) -> tuple[Article, ...]:
         if max_num_results < 0:
             raise ValueError("max_num_results cannot be negative")
-        if topic not in TOPIC_IDS:
-            raise ValueError(f"unknown news topic: {topic}")
 
         page_count = math.ceil(max_num_results / ARTICLES_PER_PAGE)
         articles = []
@@ -103,20 +139,22 @@ class NewsClient(BaseClient):
 
     def get_page_articles(
         self,
-        topic: Topic,
-        category: Category,
+        topic: NewsTopic,
+        category: NewsCategory | None,
         query: str,
         year: int | None,
         page: int,
     ) -> tuple[Article, ...]:
-        url = NEWS_BY_CATEGORY_URL.format(
-            category=category,
-            topic_id=TOPIC_IDS[topic],
-            year=year or "",
-            query=query,
-            page=page,
-        )
-        soup = BeautifulSoup(self.request("GET", url).text, "html.parser")
+        category_slug = category.slug if category else DEFAULT_NEWS_CATEGORY
+        url = NEWS_BY_CATEGORY_URL.format(category=category_slug)
+        parameters = {
+            "field_topics_target_id": topic.id,
+            "field_article_date_value": year or "",
+            "title": query,
+            "field_category_target_id": "All",
+            "page": page,
+        }
+        soup = BeautifulSoup(self.request("GET", url, params=parameters).text, "html.parser")
         main_content = soup.select_one("html > body > div > main > div > section")
         if not isinstance(main_content, Tag):
             raise ValueError("news page is missing its main content")
@@ -135,6 +173,6 @@ def parse_article(article_html: Tag) -> Article:
     return Article(
         title=heading.get_text(strip=True),
         description=description.get_text(strip=True),
-        url=PITT_BASE_URL + href,
+        url=urljoin(PITTWIRE_BASE_URL, href),
         tags=tags,
     )

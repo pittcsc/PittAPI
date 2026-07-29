@@ -53,7 +53,9 @@ with LibraryClient() as library:
     books = library.get_documents("computer science")
 
 with NewsClient() as news:
-    articles = news.get_articles_by_topic("technology-and-science", max_num_results=5)
+    topics = news.get_topics()
+    technology = next(topic for topic in topics if topic.name == "Technology & Science")
+    articles = news.get_articles_by_topic(technology, max_num_results=5)
 ```
 
 Network and HTTP failures remain standard `requests` exceptions. Invalid arguments or malformed provider responses
