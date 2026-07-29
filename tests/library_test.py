@@ -1,147 +1,79 @@
-"""
-The Pitt API, to access workable data of the University of Pittsburgh
-Copyright (C) 2015 Ritwik Gupta
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""
-
 import json
-import unittest
-from copy import deepcopy
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
+import pytest
 import responses
 
-from pittapi import library
+from pittapi.library import (
+    LIBRARY_PARAMS,
+    LIBRARY_URL,
+    STUDY_ROOM_PARAMS,
+    STUDY_ROOMS_URL,
+    Document,
+    LibraryClient,
+)
 
-SAMPLE_PATH = Path(__file__).parent / "samples"
-
-
-class LibraryTest(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
-        with (SAMPLE_PATH / "library_mock_response_water.json").open() as f:
-            self.library_query = json.load(f)
-
-    @responses.activate
-    def test_get_documents(self):
-        responses.add(
-            responses.GET,
-            library.LIBRARY_URL + library.QUERY_START + "water",
-            json=self.library_query,
-            status=200,
-        )
-        query_result = library.get_documents("water")
-        self.assertEqual(query_result.num_pages, 10)
-        self.assertEqual(len(query_result.docs), 10)
-
-    @responses.activate
-    def test_get_document_by_bookmark(self):
-        responses.add(
-            responses.GET,
-            library.LIBRARY_URL + "&bookMark=valid",
-            json=self.library_query,
-            status=200,
-        )
-
-        query_result = library.get_document_by_bookmark("valid")
-
-        self.assertEqual(query_result.num_pages, 10)
-        self.assertEqual(len(query_result.docs), 10)
-
-    @responses.activate
-    def test_get_document_by_bookmark_rejects_invalid_bookmark(self):
-        responses.add(
-            responses.GET,
-            library.LIBRARY_URL + "&bookMark=invalid",
-            json={"errors": [{"code": "invalid.bookmark.format"}]},
-            status=200,
-        )
-
-        with self.assertRaisesRegex(ValueError, "Invalid bookmark"):
-            library.get_document_by_bookmark("invalid")
-
-    @responses.activate
-    def test_get_document_by_bookmark_ignores_unrelated_errors(self):
-        response_data = deepcopy(self.library_query)
-        response_data["errors"] = [{"code": "unrelated.error"}]
-        responses.add(
-            responses.GET,
-            library.LIBRARY_URL + "&bookMark=other",
-            json=response_data,
-            status=200,
-        )
-
-        self.assertEqual(library.get_document_by_bookmark("other").num_pages, 10)
+SAMPLES = Path("tests/samples")
+QUERY_DATA = json.loads((SAMPLES / "library_mock_response_water.json").read_text())
+ROOM_DATA = json.loads((SAMPLES / "hillman_study_room_mock_response.json").read_text())
 
 
-class StudyRoomTest(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
-        with (SAMPLE_PATH / "hillman_study_room_mock_response.json").open() as f:
-            self.hillman_query = json.load(f)
+@responses.activate
+def test_get_documents():
+    responses.add(responses.GET, LIBRARY_URL, json=QUERY_DATA)
+    result = LibraryClient().get_documents("water cycle")
+    assert result.num_pages == 10
+    assert len(result.documents) == 10
+    assert isinstance(result.documents[0], Document)
+    assert isinstance(result.documents[0].title, tuple)
+    params = parse_qs(urlparse(responses.calls[0].request.url).query)
+    assert params["q"] == ["any,contains,water cycle"]
+    assert params["inst"] == [LIBRARY_PARAMS["inst"]]
 
-    @responses.activate
-    def test_hillman_total_reserved(self):
-        responses.add(
-            responses.GET,
-            library.STUDY_ROOMS_URL,
-            json=self.hillman_query,
-            status=200,
-        )
-        self.assertEqual(library.hillman_total_reserved(), 4)
 
-    @responses.activate
-    def test_reserved_hillman_times(self):
-        responses.add(
-            responses.GET,
-            library.STUDY_ROOMS_URL,
-            json=self.hillman_query,
-            status=200,
-        )
-        mock_answer = [
-            library.Reservation(
-                room="408 HL (Max. 5 persons) (Enclosed Room)",
-                reserved_from="2024-06-12 17:30:00",
-                reserved_until="2024-06-12 20:30:00",
-            ),
-            library.Reservation(
-                room="409 HL (Max. 5 persons) (Enclosed Room)",
-                reserved_from="2024-06-12 18:00:00",
-                reserved_until="2024-06-12 21:00:00",
-            ),
-            library.Reservation(
-                room="303 HL (Max. 5 persons) (Enclosed Room)",
-                reserved_from="2024-06-12 18:30:00",
-                reserved_until="2024-06-12 21:30:00",
-            ),
-            library.Reservation(
-                room="217 HL (Max. 10 persons) (Enclosed Room)",
-                reserved_from="2024-06-12 19:00:00",
-                reserved_until="2024-06-12 22:30:00",
-            ),
-        ]
-        self.assertEqual(mock_answer, library.reserved_hillman_times())
+@responses.activate
+def test_bookmark_success_unrelated_error_and_invalid():
+    responses.add(responses.GET, LIBRARY_URL, json=QUERY_DATA)
+    assert LibraryClient().get_document_by_bookmark("valid").num_pages == 10
 
-    @responses.activate
-    def test_reserved_hillman_times_with_no_data(self):
-        responses.add(
-            responses.GET,
-            library.STUDY_ROOMS_URL,
-            json={"data": None},
-            status=200,
-        )
+    unrelated = QUERY_DATA | {"errors": [{"code": "other"}]}
+    responses.add(responses.GET, LIBRARY_URL, json=unrelated)
+    assert LibraryClient().get_document_by_bookmark("other").num_pages == 10
 
-        self.assertEqual(library.reserved_hillman_times(), [])
+    responses.add(
+        responses.GET,
+        LIBRARY_URL,
+        json={"errors": [{"code": "invalid.bookmark.format"}]},
+    )
+    with pytest.raises(ValueError, match="invalid bookmark"):
+        LibraryClient().get_document_by_bookmark("bad")
+
+
+@responses.activate
+def test_room_reservations_and_empty_data():
+    responses.add(responses.GET, STUDY_ROOMS_URL, json=ROOM_DATA)
+    responses.add(responses.GET, STUDY_ROOMS_URL, json=ROOM_DATA)
+    responses.add(responses.GET, STUDY_ROOMS_URL, json={"data": None})
+    client = LibraryClient()
+    assert client.hillman_total_reserved() == 4
+    assert len(client.reserved_hillman_times()) == 4
+    assert client.reserved_hillman_times() == ()
+    params = parse_qs(urlparse(responses.calls[0].request.url).query)
+    assert params["lid"] == [STUDY_ROOM_PARAMS["lid"]]
+    assert "_" not in params
+
+
+@responses.activate
+def test_malformed_library_responses():
+    responses.add(responses.GET, LIBRARY_URL, json={})
+    with pytest.raises(ValueError, match="library response"):
+        LibraryClient().get_documents("bad")
+
+    responses.add(responses.GET, STUDY_ROOMS_URL, json={})
+    with pytest.raises(ValueError, match="missing its total"):
+        LibraryClient().hillman_total_reserved()
+
+    responses.add(responses.GET, STUDY_ROOMS_URL, json={})
+    with pytest.raises(ValueError, match="reservation response"):
+        LibraryClient().reserved_hillman_times()

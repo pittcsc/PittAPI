@@ -1,38 +1,16 @@
 > [Home](README.md) > People API
----
 
 # People API
 
-### **get_person(query, max_people)**
+`PeopleClient.get_person(query)` returns matching directory entries as immutable `Person` models:
 
-#### **Parameters**:
-  - `query`: Query to find people | Example: `smith` or `abc123`
-  - `max_people`: Max number of people to return | Example: `10` or `100`
-    - Default value is `10`
-
-#### **Returns**:
-Returns a dictionary with data of user profiles.
-
-#### **Example**:
-
-###### **Code**:
 ```python
-people.get_person('Jane')
+from pittapi import PeopleClient
+
+with PeopleClient() as people:
+    matches = people.get_person("Jane Doe")
 ```
 
-###### **Sample Output**:
-```python
-[
-  {
-    "name": "Jane Doe",
-    "email": "jdoe@pitt.edu",
-    "phone": "(999)999-999"
-  },
-  {
-    "name": "Janedo Smith",
-    "school": "School of Dental Medicine"
-    ]
-  },
-  ...
-]
-```
+Each person's `fields` tuple contains `PersonField` models. Field names are the non-empty labels published by Pitt;
+repeated labels are grouped into one field whose `values` are a tuple. This preserves new directory fields without a
+PittAPI release.

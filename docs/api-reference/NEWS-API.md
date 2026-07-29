@@ -1,15 +1,46 @@
 > [Home](README.md) > News API
+
 ---
 
 # News API
 
-### **get_news(feed, max_news_items)**
+`NewsClient` searches Pittwire and discovers its available filters from the
+current Pittwire page. Topic IDs, category paths, and publication years are
+not maintained as hardcoded lists in PittAPI.
 
-#### **Parameters**
-	-  `feed`: News feed - can be one of ("main_news", "cssd", "news_chronicle", "news_alerts"). Default is "main_news"
-	-  `max_news_items`: Maximum number of news items. Default is 10.
+## Discovering filters
 
-#### **Returns**:
-Returns a list of dictionaries with parameters 'title' and 'url' of each news article from each news feed category.
-News fetched from `feed`.
-Maximum length specified by `max_news_items`.
+```python
+from pittapi import NewsClient
+
+with NewsClient() as news:
+    topics = news.get_topics()
+    categories = news.get_categories()
+    years = news.get_years()
+```
+
+`get_topics()` returns `NewsTopic` models containing Pittwire's topic ID and
+display name. `get_categories()` returns `NewsCategory` models containing the
+category path and display name. `get_years()` returns integers.
+
+## Fetching articles
+
+```python
+from pittapi import NewsClient
+
+with NewsClient() as news:
+    topics = news.get_topics()
+    technology = next(
+        topic for topic in topics if topic.name == "Technology & Science"
+    )
+    articles = news.get_articles_by_topic(
+        technology,
+        query="robotics",
+        year=2026,
+        max_num_results=5,
+    )
+```
+
+`get_articles_by_topic()` returns an immutable tuple of `Article` models in
+Pittwire's page order. Pass a discovered `NewsCategory` with `category=` to
+search a category other than Features & Articles.
