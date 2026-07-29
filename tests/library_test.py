@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import json
 import unittest
+from copy import deepcopy
 from pathlib import Path
 
 import responses
@@ -45,6 +46,45 @@ class LibraryTest(unittest.TestCase):
         query_result = library.get_documents("water")
         self.assertEqual(query_result.num_pages, 10)
         self.assertEqual(len(query_result.docs), 10)
+
+    @responses.activate
+    def test_get_document_by_bookmark(self):
+        responses.add(
+            responses.GET,
+            library.LIBRARY_URL + "&bookMark=valid",
+            json=self.library_query,
+            status=200,
+        )
+
+        query_result = library.get_document_by_bookmark("valid")
+
+        self.assertEqual(query_result.num_pages, 10)
+        self.assertEqual(len(query_result.docs), 10)
+
+    @responses.activate
+    def test_get_document_by_bookmark_rejects_invalid_bookmark(self):
+        responses.add(
+            responses.GET,
+            library.LIBRARY_URL + "&bookMark=invalid",
+            json={"errors": [{"code": "invalid.bookmark.format"}]},
+            status=200,
+        )
+
+        with self.assertRaisesRegex(ValueError, "Invalid bookmark"):
+            library.get_document_by_bookmark("invalid")
+
+    @responses.activate
+    def test_get_document_by_bookmark_ignores_unrelated_errors(self):
+        response_data = deepcopy(self.library_query)
+        response_data["errors"] = [{"code": "unrelated.error"}]
+        responses.add(
+            responses.GET,
+            library.LIBRARY_URL + "&bookMark=other",
+            json=response_data,
+            status=200,
+        )
+
+        self.assertEqual(library.get_document_by_bookmark("other").num_pages, 10)
 
 
 class StudyRoomTest(unittest.TestCase):
@@ -94,3 +134,14 @@ class StudyRoomTest(unittest.TestCase):
             ),
         ]
         self.assertEqual(mock_answer, library.reserved_hillman_times())
+
+    @responses.activate
+    def test_reserved_hillman_times_with_no_data(self):
+        responses.add(
+            responses.GET,
+            library.STUDY_ROOMS_URL,
+            json={"data": None},
+            status=200,
+        )
+
+        self.assertEqual(library.reserved_hillman_times(), [])

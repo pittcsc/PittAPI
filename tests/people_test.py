@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import unittest
 import responses
+from bs4 import BeautifulSoup
 
 from pathlib import Path
 
@@ -59,3 +60,28 @@ class PeopleTest(unittest.TestCase):
         ans = people.get_person("Lebron Iverson James Jordan Kobe")
         self.assertIsInstance(ans, list)
         self.assertEqual(ans, [{"ERROR": "No one found."}])
+
+    def test_parse_segments_handles_empty_unknown_and_repeated_labels(self):
+        soup = BeautifulSoup(
+            """
+            <div>
+                <span class="row-label"></span>
+                <span>Ignored</span>
+                <span class="row-label">Unknown Label</span>
+                <span>Also ignored</span>
+                <span class="row-label">Email</span>
+                <span>first@example.edu</span>
+                <span>second@example.edu</span>
+                <span>third@example.edu</span>
+            </div>
+            """,
+            "html.parser",
+        )
+        person = {}
+
+        people._parse_segments(person, soup.select("span"))
+
+        self.assertEqual(
+            person,
+            {"email": ["first@example.edu", "second@example.edu", "third@example.edu"]},
+        )

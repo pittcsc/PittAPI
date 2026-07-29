@@ -30,4 +30,4 @@ jobs:
       - name: Format with black
         run: uv run black --line-length=127 --check --diff .
       - name: Run all tests with pytest
-        run: uv run pytest --cov=pittapi tests/
+        run: uv run pytest --cov=pittapi --cov-branch --cov-fail-under=100 tests/
