@@ -15,12 +15,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Library catalog search and Hillman study-room reservations.
 """
 
-from __future__ import annotations
+from dataclasses import dataclass
+from typing import Any
 
-import requests
-from typing import Any, NamedTuple
+from pittapi.base_client import BaseClient
+
+__all__ = ["Document", "LibraryClient", "QueryResult", "Reservation"]
 
 LIBRARY_URL = (
     "https://pitt.primo.exlibrisgroup.com/primaws/rest/pub/pnxs"
@@ -32,114 +36,109 @@ LIBRARY_URL = (
 )
 STUDY_ROOMS_URL = (
     "https://pitt.libcal.com/spaces/bookings/search"
-    "?lid=917&gid=1558&eid=0&seat=0&d=1&customDate=&q=&daily=0&draw=1&order%5B0%5D%5Bcolumn%5D=1&order%5B0%5D%5Bdir%5D=asc"
-    "&start=0&length=25&search%5Bvalue%5D=&_=1717907260661"
+    "?lid=917&gid=1558&eid=0&seat=0&d=1&customDate=&q=&daily=0&draw=1&order%5B0%5D%5Bcolumn%5D=1"
+    "&order%5B0%5D%5Bdir%5D=asc&start=0&length=25&search%5Bvalue%5D=&_=1717907260661"
+)
+QUERY_START = "&q=any,contains,"
+DOCUMENT_FIELDS = (
+    "title",
+    "language",
+    "subject",
+    "format",
+    "type",
+    "isbns",
+    "description",
+    "publisher",
+    "edition",
+    "genre",
+    "place",
+    "creator",
+    "version",
+    "creationdate",
 )
 
-QUERY_START = "&q=any,contains,"
 
-sess = requests.session()
-
-
-class Document(NamedTuple):
-    # Field names must exactly match key names in JSON data
-    title: list[str] | None = None
-    language: list[str] | None = None
-    subject: list[str] | None = None
-    format: list[str] | None = None
-    type: list[str] | None = None
-    isbns: list[str] | None = None
-    description: list[str] | None = None
-    publisher: list[str] | None = None
-    edition: list[str] | None = None
-    genre: list[str] | None = None
-    place: list[str] | None = None
-    creator: list[str] | None = None
-    version: list[str] | None = None
-    creationdate: list[str] | None = None
+@dataclass(frozen=True, slots=True)
+class Document:
+    title: tuple[str, ...] = ()
+    language: tuple[str, ...] = ()
+    subject: tuple[str, ...] = ()
+    format: tuple[str, ...] = ()
+    type: tuple[str, ...] = ()
+    isbns: tuple[str, ...] = ()
+    description: tuple[str, ...] = ()
+    publisher: tuple[str, ...] = ()
+    edition: tuple[str, ...] = ()
+    genre: tuple[str, ...] = ()
+    place: tuple[str, ...] = ()
+    creator: tuple[str, ...] = ()
+    version: tuple[str, ...] = ()
+    creationdate: tuple[str, ...] = ()
 
 
-class QueryResult(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class QueryResult:
     num_results: int
     num_pages: int
-    docs: list[Document]
+    documents: tuple[Document, ...]
 
 
-class Reservation(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class Reservation:
     room: str
     reserved_from: str
     reserved_until: str
 
 
-def get_documents(query: str) -> QueryResult:
-    """Return ten resource results from the specified page"""
-    parsed_query = query.replace(" ", "+")
-    full_query = LIBRARY_URL + QUERY_START + parsed_query
-    resp = sess.get(full_query)
-    resp_json = resp.json()
+class LibraryClient(BaseClient):
+    """Search Pitt's library catalog and study-room reservations."""
 
-    results = QueryResult(
-        num_results=resp_json["info"]["total"],
-        num_pages=resp_json["info"]["last"],
-        docs=_filter_documents(resp_json["docs"]),
-    )
-    return results
+    def get_documents(self, query: str) -> QueryResult:
+        url = LIBRARY_URL + QUERY_START + query.replace(" ", "+")
+        return parse_query_result(self.request("GET", url).json())
 
+    def get_document_by_bookmark(self, bookmark: str) -> QueryResult:
+        data = self.request("GET", LIBRARY_URL, params={"bookMark": bookmark}).json()
+        for error in data.get("errors", ()):
+            if error.get("code") == "invalid.bookmark.format":
+                raise ValueError("invalid bookmark")
+        return parse_query_result(data)
 
-def get_document_by_bookmark(bookmark: str) -> QueryResult:
-    """Return resource referenced by bookmark"""
-    payload = {"bookMark": bookmark}
-    resp = sess.get(LIBRARY_URL, params=payload)
-    resp_json = resp.json()
+    def hillman_total_reserved(self) -> int:
+        data = self.request("GET", STUDY_ROOMS_URL).json()
+        try:
+            return data["recordsTotal"]
+        except (KeyError, TypeError) as error:
+            raise ValueError("reservation response is missing its total") from error
 
-    if resp_json.get("errors"):
-        for error in resp_json.get("errors"):
-            if error["code"] == "invalid.bookmark.format":
-                raise ValueError("Invalid bookmark")
-    results = QueryResult(
-        num_results=resp_json["info"]["total"],
-        num_pages=resp_json["info"]["last"],
-        docs=_filter_documents(resp_json["docs"]),
-    )
-    return results
-
-
-def _filter_documents(documents: list[dict[str, Any]]) -> list[Document]:
-    new_docs: list[Document] = []
-
-    for doc in documents:
-        filtered_doc = {key: vals for key, vals in doc["pnx"]["display"].items() if key in Document._fields}
-        new_docs.append(Document(**filtered_doc))
-
-    return new_docs
+    def reserved_hillman_times(self) -> tuple[Reservation, ...]:
+        data = self.request("GET", STUDY_ROOMS_URL).json()
+        try:
+            reservations = data["data"] or ()
+            return tuple(
+                Reservation(
+                    room=item["itemName"],
+                    reserved_from=item["from"],
+                    reserved_until=item["to"],
+                )
+                for item in reservations
+            )
+        except (KeyError, TypeError) as error:
+            raise ValueError("reservation response is missing required data") from error
 
 
-def hillman_total_reserved() -> int:
-    """Returns a simple count dictionary of the total amount of reserved rooms appointments"""
-    resp = requests.get(STUDY_ROOMS_URL)
-    resp_json = resp.json()
-    total_records: int = resp_json["recordsTotal"]  # Total records is kept track of by default in the JSON
+def parse_query_result(data: dict[str, Any]) -> QueryResult:
+    try:
+        info = data["info"]
+        documents = tuple(parse_document(item) for item in data["docs"])
+        return QueryResult(num_results=info["total"], num_pages=info["last"], documents=documents)
+    except (KeyError, TypeError) as error:
+        raise ValueError("library response is missing required data") from error
 
-    # Note: this must align with the amount of entries in reserved times function; renamed for further clarification
-    return total_records
 
-
-def reserved_hillman_times() -> list[Reservation]:
-    """Returns a list of dictionaries of reserved rooms in Hillman with their respective times"""
-    resp = requests.get(STUDY_ROOMS_URL)
-    resp_json = resp.json()
-    data = resp_json["data"]
-
-    if data is None:
-        return []
-
-    # Note: there can be multiple reservations in the same room, so we must use a list of maps and not a singular map
-    bookings = [
-        Reservation(
-            room=reservation["itemName"],
-            reserved_from=reservation["from"],
-            reserved_until=reservation["to"],
-        )
-        for reservation in data
-    ]
-    return bookings
+def parse_document(data: dict[str, Any]) -> Document:
+    display = data["pnx"]["display"]
+    fields = {}
+    for name in DOCUMENT_FIELDS:
+        fields[name] = tuple(display.get(name, ()))
+    return Document(**fields)

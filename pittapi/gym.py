@@ -15,29 +15,28 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Current occupancy for Pitt recreation facilities.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from bs4 import BeautifulSoup
-import requests
-from typing import NamedTuple
+
+from pittapi.base_client import BaseClient
+
+__all__ = ["Gym", "GymClient"]
 
 GYM_URL = "https://connect2concepts.com/connect2/?type=bar&key=17c2cbcb-ec92-4178-a5f5-c4860330aea0"
-
-GYM_NAMES = [
-    "Baierl Rec Center",
-    "Bellefield Hall: Fitness Center & Weight Room",
-    "Bellefield Hall: Court & Dance Studio",
-    "Trees Hall: Fitness Center",
-    "Trees Hall: Courts",
-    "Trees Hall: Racquetball Courts & Multipurpose Room",
-    "William Pitt Union",
-    "Pitt Sports Dome",
-]
+REQUEST_HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"}
 
 
-class Gym(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class Gym:
+    """Occupancy information for one recreation facility."""
+
     name: str
     last_updated: str | None = None
     current_count: int | None = None
@@ -45,41 +44,34 @@ class Gym(NamedTuple):
 
     @classmethod
     def from_text(cls, text: str) -> Gym:
-        info = text.split("|")
-        name = info[0]
-        if len(info) < 4:
-            return cls(name=name)
-        count = int(info[2][12:])
-        date_time = info[3][9:]
+        fields = text.split("|")
+        if len(fields) < 4:
+            return cls(name=fields[0])
+
         try:
-            percentage = int(info[4].rstrip("%"))
-        except ValueError:
-            percentage = 0
+            percent_full = int(fields[4].removesuffix("%"))
+        except (IndexError, ValueError):
+            percent_full = 0
 
-        return cls(name=name, last_updated=date_time, current_count=count, percent_full=percentage)
-
-
-def get_all_gyms_info() -> list[Gym]:
-    """Fetches list of Gym named tuples with all gym information"""
-    # Was getting a Mod Security Error
-    # Fix: https://stackoverflow.com/questions/61968521/python-web-scraping-request-errormod-security
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0",
-    }
-
-    page = requests.get(GYM_URL, headers=headers)
-    soup = BeautifulSoup(page.text, "html.parser")
-    gym_info_list = soup.find_all("div", class_="barChart")
-
-    gyms = [Gym.from_text(gym.get_text("|", strip=True)) for gym in gym_info_list]
-    return gyms
+        return cls(
+            name=fields[0],
+            current_count=int(fields[2].removeprefix("Last Count: ")),
+            last_updated=fields[3].removeprefix("Updated: "),
+            percent_full=percent_full,
+        )
 
 
-def get_gym_info(gym_name: str) -> Gym | None:
-    """Fetches the information of a singular gym as a tuple"""
-    info = get_all_gyms_info()
-    if gym_name in GYM_NAMES:
-        for gym in info:
-            if gym.name == gym_name and gym.last_updated and gym.current_count and gym.percent_full:
+class GymClient(BaseClient):
+    """Fetch recreation facility occupancy."""
+
+    def get_all_gyms_info(self) -> tuple[Gym, ...]:
+        response = self.request("GET", GYM_URL, headers=REQUEST_HEADERS)
+        soup = BeautifulSoup(response.text, "html.parser")
+        gym_elements = soup.find_all("div", class_="barChart")
+        return tuple(Gym.from_text(element.get_text("|", strip=True)) for element in gym_elements)
+
+    def get_gym_info(self, gym_name: str) -> Gym:
+        for gym in self.get_all_gyms_info():
+            if gym.name == gym_name:
                 return gym
-    return None
+        raise LookupError(f"gym not found: {gym_name}")

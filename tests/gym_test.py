@@ -1,69 +1,42 @@
-import unittest
+import pytest
 import responses
-from pittapi import gym
+
+from pittapi.gym import GYM_URL, Gym, GymClient
 from tests.mocks.gym_mocks import mock_gym_html
 
 
-class GymTest(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
+@responses.activate
+def test_fetch_all_gyms():
+    responses.add(responses.GET, GYM_URL, body=mock_gym_html)
 
-    @responses.activate
-    def test_fetch_gym_info(self):
+    gyms = GymClient().get_all_gyms_info()
 
-        responses.add(responses.GET, gym.GYM_URL, body=mock_gym_html, status=200)
+    assert len(gyms) == 8
+    assert gyms[0] == Gym(
+        name="Baierl Rec Center",
+        last_updated="07/09/2024 09:05 AM",
+        current_count=100,
+        percent_full=50,
+    )
+    assert gyms[1].percent_full == 0
+    assert gyms[2] == Gym(name="Bellefield Hall: Court & Dance Studio")
 
-        gym_info = gym.get_all_gyms_info()
-        expected_info = [
-            gym.Gym(name="Baierl Rec Center", last_updated="07/09/2024 09:05 AM", current_count=100, percent_full=50),
-            gym.Gym(
-                name="Bellefield Hall: Fitness Center & Weight Room",
-                last_updated="07/09/2024 09:05 AM",
-                current_count=50,
-                percent_full=0,
-            ),
-            gym.Gym(name="Bellefield Hall: Court & Dance Studio"),
-            gym.Gym(name="Trees Hall: Fitness Center", last_updated="07/09/2024 09:05 AM", current_count=70, percent_full=58),
-            gym.Gym(name="Trees Hall: Courts", last_updated="07/09/2024 09:05 AM", current_count=20, percent_full=33),
-            gym.Gym(
-                name="Trees Hall: Racquetball Courts & Multipurpose Room",
-                last_updated="07/09/2024 09:05 AM",
-                current_count=10,
-                percent_full=25,
-            ),
-            gym.Gym(name="William Pitt Union", last_updated="07/09/2024 09:05 AM", current_count=25, percent_full=25),
-            gym.Gym(name="Pitt Sports Dome", last_updated="07/09/2024 09:05 AM", current_count=15, percent_full=20),
-        ]
 
-        self.assertEqual(gym_info, expected_info)
+@responses.activate
+def test_get_gym_including_zero_occupancy():
+    html = '<div class="barChart">Test Gym|x|Last Count: 0|Updated: now|0%</div>'
+    responses.add(responses.GET, GYM_URL, body=html)
 
-    @responses.activate
-    def test_get_gym_info(self):
-        responses.add(responses.GET, gym.GYM_URL, body=mock_gym_html, status=200)
+    assert GymClient().get_gym_info("Test Gym").current_count == 0
 
-        gym_info = gym.get_gym_info("Baierl Rec Center")
-        expected_info = gym.Gym(
-            name="Baierl Rec Center", last_updated="07/09/2024 09:05 AM", current_count=100, percent_full=50
-        )
-        self.assertEqual(gym_info, expected_info)
 
-    @responses.activate
-    def test_invalid_gym_name(self):
-        responses.add(responses.GET, gym.GYM_URL, body=mock_gym_html, status=200)
+@responses.activate
+def test_unknown_gym_raises_lookup_error():
+    responses.add(responses.GET, GYM_URL, body=mock_gym_html)
+    with pytest.raises(LookupError, match="gym not found"):
+        GymClient().get_gym_info("Missing Gym")
 
-        gym_info = gym.get_gym_info("Invalid Gym Name")
-        self.assertIsNone(gym_info)
 
-    @responses.activate
-    def test_valid_gym_name_not_all_info(self):
-        responses.add(responses.GET, gym.GYM_URL, body=mock_gym_html, status=200)
-
-        gym_info = gym.get_gym_info("Bellefield Hall: Court & Dance Studio")
-        self.assertIsNone(gym_info)
-
-    @responses.activate
-    def test_percentage_value_error(self):
-        responses.add(responses.GET, gym.GYM_URL, body=mock_gym_html, status=200)
-
-        gym_info = gym.get_gym_info("Bellefield Hall: Fitness Center & Weight Roomo")
-        self.assertIsNone(gym_info)
+def test_missing_percentage_defaults_to_zero():
+    gym = Gym.from_text("Test|unused|Last Count: 1|Updated: today")
+    assert gym.percent_full == 0

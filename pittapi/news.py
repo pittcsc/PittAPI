@@ -15,20 +15,24 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Articles published by Pittwire.
 """
 
-from __future__ import annotations
-
+from dataclasses import dataclass
 import math
-import requests
+from typing import Literal
+
 from bs4 import BeautifulSoup, Tag
-from typing import Literal, NamedTuple
 
-NUM_ARTICLES_PER_PAGE = 20
+from pittapi.base_client import BaseClient
 
+__all__ = ["Article", "NewsClient"]
+
+ARTICLES_PER_PAGE = 20
 NEWS_BY_CATEGORY_URL = (
     "https://www.pitt.edu/pittwire/news/{category}?field_topics_target_id={topic_id}&field_article_date_value={year}"
-    "&title={query}&field_category_target_id=All&page={page_num}"
+    "&title={query}&field_category_target_id=All&page={page}"
 )
 PITT_BASE_URL = "https://www.pitt.edu"
 
@@ -48,8 +52,7 @@ Topic = Literal[
     "ukraine",
     "sustainability",
 ]
-
-TOPIC_ID_MAP: dict[Topic, int] = {
+TOPIC_IDS: dict[Topic, int] = {
     "university-news": 432,
     "health-and-wellness": 2,
     "technology-and-science": 391,
@@ -65,69 +68,73 @@ TOPIC_ID_MAP: dict[Topic, int] = {
     "sustainability": 470,
 }
 
-sess = requests.Session()
 
-
-class Article(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class Article:
     title: str
     description: str
     url: str
-    tags: list[str]
-
-    @classmethod
-    def from_html(cls, article_html: Tag) -> Article:
-        article_heading = article_html.select_one("h2.news-card-title a")
-        article_subheading = article_html.find("p")
-        if not isinstance(article_heading, Tag) or not isinstance(article_subheading, Tag):
-            raise ValueError("News card is missing its heading or description")
-
-        article_title = article_heading.get_text(strip=True)
-        article_href = article_heading.get("href")
-        if not isinstance(article_href, str):
-            raise ValueError("News card heading is missing its URL")
-        article_url = PITT_BASE_URL + article_href
-        article_description = article_subheading.get_text(strip=True)
-        article_tags = [tag.get_text(strip=True) for tag in article_html.select("ul.news-card-tags li")]
-
-        return cls(title=article_title, description=article_description, url=article_url, tags=article_tags)
+    tags: tuple[str, ...]
 
 
-def _get_page_articles(
-    topic: Topic,
-    category: Category,
-    query: str,
-    year: int | None,
-    page_num: int,
-) -> list[Article]:
-    year_str = str(year) if year else ""
-    page_num_str = str(page_num) if page_num else ""
-    response = sess.get(
-        NEWS_BY_CATEGORY_URL.format(
-            category=category, topic_id=TOPIC_ID_MAP[topic], year=year_str, query=query, page_num=page_num_str
+class NewsClient(BaseClient):
+    """Search Pittwire articles."""
+
+    def get_articles_by_topic(
+        self,
+        topic: Topic,
+        category: Category = "features-articles",
+        query: str = "",
+        year: int | None = None,
+        max_num_results: int = ARTICLES_PER_PAGE,
+    ) -> tuple[Article, ...]:
+        if max_num_results < 0:
+            raise ValueError("max_num_results cannot be negative")
+        if topic not in TOPIC_IDS:
+            raise ValueError(f"unknown news topic: {topic}")
+
+        page_count = math.ceil(max_num_results / ARTICLES_PER_PAGE)
+        articles = []
+        for page in range(page_count):
+            page_articles = self.get_page_articles(topic, category, query, year, page)
+            remaining = max_num_results - len(articles)
+            articles.extend(page_articles[:remaining])
+        return tuple(articles)
+
+    def get_page_articles(
+        self,
+        topic: Topic,
+        category: Category,
+        query: str,
+        year: int | None,
+        page: int,
+    ) -> tuple[Article, ...]:
+        url = NEWS_BY_CATEGORY_URL.format(
+            category=category,
+            topic_id=TOPIC_IDS[topic],
+            year=year or "",
+            query=query,
+            page=page,
         )
+        soup = BeautifulSoup(self.request("GET", url).text, "html.parser")
+        main_content = soup.select_one("html > body > div > main > div > section")
+        if not isinstance(main_content, Tag):
+            raise ValueError("news page is missing its main content")
+        return tuple(parse_article(card) for card in main_content.select("div.news-card"))
+
+
+def parse_article(article_html: Tag) -> Article:
+    heading = article_html.select_one("h2.news-card-title a")
+    description = article_html.find("p")
+    if not isinstance(heading, Tag) or not isinstance(description, Tag):
+        raise ValueError("news card is missing its heading or description")
+    href = heading.get("href")
+    if not isinstance(href, str):
+        raise ValueError("news card heading is missing its URL")
+    tags = tuple(tag.get_text(strip=True) for tag in article_html.select("ul.news-card-tags li"))
+    return Article(
+        title=heading.get_text(strip=True),
+        description=description.get_text(strip=True),
+        url=PITT_BASE_URL + href,
+        tags=tags,
     )
-    soup = BeautifulSoup(response.text, "html.parser")
-    main_content = soup.select_one("html > body > div > main > div > section")
-    if not isinstance(main_content, Tag):
-        raise ValueError("News page is missing its main content")
-    news_cards = main_content.select("div.news-card")
-    page_articles = [Article.from_html(news_card) for news_card in news_cards]
-    return page_articles
-
-
-def get_articles_by_topic(
-    topic: Topic,
-    category: Category = "features-articles",
-    query: str = "",
-    year: int | None = None,
-    max_num_results: int = NUM_ARTICLES_PER_PAGE,
-) -> list[Article]:
-    num_pages = math.ceil(max_num_results / NUM_ARTICLES_PER_PAGE)
-
-    # Fetch pages sequentially so articles remain in page order.
-    results: list[Article] = []
-    for page_num in range(num_pages):  # Page numbers in url are 0-indexed
-        page_articles = _get_page_articles(topic, category, query, year, page_num)
-        num_articles_to_add = min(len(page_articles), max_num_results - len(results))
-        results.extend(page_articles[:num_articles_to_add])
-    return results

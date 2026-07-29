@@ -1,87 +1,48 @@
-"""
-The Pitt API, to access workable data of the University of Pittsburgh
-Copyright (C) 2015 Ritwik Gupta
+from pathlib import Path
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""
-
-import unittest
+import pytest
 import responses
 from bs4 import BeautifulSoup
 
-from pathlib import Path
+from pittapi.people import PEOPLE_SEARCH_URL, PeopleClient, Person, PersonField, parse_segments
 
-from pittapi import people
-
-
-SAMPLE_PATH = Path() / "tests" / "samples"
+SAMPLES = Path("tests/samples")
 
 
-class PeopleTest(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
-        with open(SAMPLE_PATH / "people_ramirez_mock_response.html") as f:
-            self.ramirez_test_data = f.read()
-        with open(SAMPLE_PATH / "people_too_many_mock_response.html") as f:
-            self.too_many_test_data = f.read()
-        with open(SAMPLE_PATH / "people_none_mock_response.html") as f:
-            self.none_found_test_data = f.read()
+@responses.activate
+def test_people_search_returns_models():
+    html = (SAMPLES / "people_ramirez_mock_response.html").read_text()
+    responses.add(responses.POST, PEOPLE_SEARCH_URL, body=html)
 
-    @responses.activate
-    def test_people_get_person(self):
-        responses.add(responses.POST, people.PEOPLE_SEARCH_URL, body=self.ramirez_test_data, status=200)
-        ans = people.get_person("John C Ramirez")
-        self.assertIsInstance(ans, list)
-        self.assertTrue(ans[0]["name"] == "Ramirez, John C")
-        self.assertTrue(ans[0]["office_phone"] == "(412) 624-8441")
+    people = PeopleClient().get_person("John C Ramirez")
 
-    @responses.activate
-    def test_people_get_person_too_many(self):
-        responses.add(responses.POST, people.PEOPLE_SEARCH_URL, body=self.too_many_test_data, status=200)
-        ans = people.get_person("Smith")
-        self.assertIsInstance(ans, list)
-        self.assertEqual(ans, [{"ERROR": "Too many people matched your criteria."}])
+    assert isinstance(people[0], Person)
+    assert people[0].name == "Ramirez, John C"
+    assert PersonField("office_phone", ("(412) 624-8441",)) in people[0].fields
 
-    @responses.activate
-    def test_people_get_person_none(self):
-        responses.add(responses.POST, people.PEOPLE_SEARCH_URL, body=self.none_found_test_data, status=200)
-        ans = people.get_person("Lebron Iverson James Jordan Kobe")
-        self.assertIsInstance(ans, list)
-        self.assertEqual(ans, [{"ERROR": "No one found."}])
 
-    def test_parse_segments_handles_empty_unknown_and_repeated_labels(self):
-        soup = BeautifulSoup(
-            """
-            <div>
-                <span class="row-label"></span>
-                <span>Ignored</span>
-                <span class="row-label">Unknown Label</span>
-                <span>Also ignored</span>
-                <span class="row-label">Email</span>
-                <span>first@example.edu</span>
-                <span>second@example.edu</span>
-                <span>third@example.edu</span>
-            </div>
-            """,
-            "html.parser",
-        )
-        person = {}
+@responses.activate
+def test_too_many_and_no_people():
+    too_many = (SAMPLES / "people_too_many_mock_response.html").read_text()
+    responses.add(responses.POST, PEOPLE_SEARCH_URL, body=too_many)
+    with pytest.raises(ValueError, match="too many people"):
+        PeopleClient().get_person("Smith")
 
-        people._parse_segments(person, soup.select("span"))
+    none = (SAMPLES / "people_none_mock_response.html").read_text()
+    responses.add(responses.POST, PEOPLE_SEARCH_URL, body=none)
+    assert PeopleClient().get_person("Nobody") == ()
 
-        self.assertEqual(
-            person,
-            {"email": ["first@example.edu", "second@example.edu", "third@example.edu"]},
-        )
+
+def test_segments_ignore_empty_unknown_and_collect_repeated_values():
+    soup = BeautifulSoup(
+        """
+        <div>
+          <span class="row-label"></span><span>Ignored</span>
+          <span class="row-label">Unknown</span><span>Ignored too</span>
+          <span class="row-label">Email</span>
+          <span>one@example.edu</span><span>two@example.edu</span>
+        </div>
+        """,
+        "html.parser",
+    )
+    assert parse_segments(soup.select("span")) == (PersonField("email", ("one@example.edu", "two@example.edu")),)

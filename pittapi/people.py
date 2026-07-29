@@ -15,18 +15,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Search Pitt's public people directory.
 """
 
-import requests
-from bs4 import BeautifulSoup, Tag
-from typing import Any
+from dataclasses import dataclass
 
-# Please note that find.pitt.edu will not accept more than 10 requests within a few minutes
-# It will time out if that happens
+from bs4 import BeautifulSoup, Tag
+
+from pittapi.base_client import BaseClient
+
+__all__ = ["Person", "PersonField", "PeopleClient"]
 
 PEOPLE_SEARCH_URL = "https://find.pitt.edu/Search"
-
-LABEL_CONVERSION = {
+LABEL_NAMES = {
     "Email": "email",
     "Nickname": "nickname",
     "Student Campus": "campus",
@@ -43,40 +45,42 @@ LABEL_CONVERSION = {
 }
 
 
-def _parse_segments(person: dict[str, Any], segments: list[Tag]) -> None:
-    label = None
+@dataclass(frozen=True, slots=True)
+class PersonField:
+    name: str
+    values: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class Person:
+    name: str
+    fields: tuple[PersonField, ...]
+
+
+class PeopleClient(BaseClient):
+    """Search public Pitt directory records."""
+
+    def get_person(self, query: str) -> tuple[Person, ...]:
+        response = self.request("POST", PEOPLE_SEARCH_URL, data={"search": query})
+        if "Too many people matched your criteria." in response.text:
+            raise ValueError("too many people matched the search")
+
+        soup = BeautifulSoup(response.text, "html.parser")
+        people = []
+        for entry in soup.select("#searchResults > section"):
+            name, *segments = entry.find_all("span")
+            people.append(Person(name=name.get_text(strip=True), fields=parse_segments(segments)))
+        return tuple(people)
+
+
+def parse_segments(segments: list[Tag]) -> tuple[PersonField, ...]:
+    values_by_name: dict[str, list[str]] = {}
+    current_name = None
     for segment in segments:
-        segment_text = segment.get_text(strip=True)
-        if "row-label" in segment.get("class", []):
-            if segment_text in LABEL_CONVERSION:
-                label = LABEL_CONVERSION[segment_text]
-            elif segment_text == "":
-                continue
-            else:
-                label = None
-        elif label:
-            if label in person:
-                if not isinstance(person[label], list):
-                    person[label] = [person[label]]
-                person[label].append(segment_text)
-            else:
-                person[label] = segment_text
+        text = segment.get_text(strip=True)
+        if "row-label" in segment.get("class", ()):
+            current_name = LABEL_NAMES.get(text)
+        elif current_name is not None:
+            values_by_name.setdefault(current_name, []).append(text)
 
-
-def get_person(query: str) -> list[dict[str, Any]]:
-    payload = {"search": query}
-    session = requests.Session()
-    resp = session.post(PEOPLE_SEARCH_URL, data=payload)
-    if "Too many people matched your criteria." in resp.text:
-        return [{"ERROR": "Too many people matched your criteria."}]
-    soup = BeautifulSoup(resp.text, "html.parser")
-    elements = soup.select("#searchResults > section")
-    result = []
-    for entry in elements:
-        name, *segments = entry.find_all("span")
-        person = {"name": name.get_text(strip=True)}
-        _parse_segments(person, segments)
-        result.append(person)
-    if not result:
-        return [{"ERROR": "No one found."}]
-    return result
+    return tuple(PersonField(name=name, values=tuple(values)) for name, values in values_by_name.items())

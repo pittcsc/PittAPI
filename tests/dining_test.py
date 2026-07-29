@@ -1,171 +1,154 @@
-"""
-The Pitt API, to access workable data of the University of Pittsburgh
-Copyright (C) 2015 Ritwik Gupta
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""
-
 import json
-import unittest
-import responses
-import datetime
+from datetime import datetime
+from pathlib import Path
 from unittest.mock import patch
 
-from pathlib import Path
+import pytest
+import responses
 
-from pittapi import dining
+from pittapi.dining import (
+    HOURS_URL,
+    LOCATIONS_URL,
+    MENU_URL,
+    PERIODS_URL,
+    DiningClient,
+    DiningLocation,
+    LocationHours,
+    Menu,
+    parse_menu,
+    select_period,
+)
 
-SAMPLE_PATH = Path() / "tests" / "samples"
+SAMPLES = Path("tests/samples")
+LOCATIONS_DATA = json.loads((SAMPLES / "dining_locations.json").read_text())
+SCHEDULE_DATA = json.loads((SAMPLES / "dining_schedule.json").read_text())
+MENU_DATA = json.loads((SAMPLES / "dining_menu.json").read_text())
+DATE = datetime(2024, 4, 12)
+LOCATION_ID = "610b1f78e82971147c9f8ba5"
+PERIOD_ID = "659daa4d351d53068df67835"
 
 
-class DiningTest(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
-        with (SAMPLE_PATH / "dining_schedule.json").open() as f:
-            self.dining_schedule_data = json.load(f)
+@responses.activate
+def test_get_locations_returns_models():
+    responses.add(responses.GET, LOCATIONS_URL, json=LOCATIONS_DATA)
+    locations = DiningClient().get_locations()
+    assert isinstance(locations[0], DiningLocation)
+    assert locations[0].status.label == "closed"
 
-        with (SAMPLE_PATH / "dining_locations.json").open() as f:
-            self.dining_locations_data = json.load(f)
 
-        with (SAMPLE_PATH / "dining_menu.json").open() as f:
-            self.dining_menu_data = json.load(f)
+@responses.activate
+def test_get_locations_rejects_malformed_response():
+    responses.add(responses.GET, LOCATIONS_URL, json={})
+    with pytest.raises(ValueError, match="location response"):
+        DiningClient().get_locations()
 
-    @responses.activate
-    def test_get_locations(self):
-        responses.add(
-            responses.GET,
-            dining.LOCATIONS_URL,
-            json=self.dining_locations_data,
-            status=200,
-        )
-        self.assertIsInstance(dining.get_locations(), dict)
 
-    @responses.activate
-    def test_get_location_hours(self):
-        responses.add(
-            responses.GET,
-            dining.HOURS_URL.format(date_str="2024-04-12"),
-            json=self.dining_schedule_data,
-            status=200,
-        )
+@responses.activate
+def test_get_all_and_selected_location_hours():
+    url = HOURS_URL.format(date="2024-04-12")
+    responses.add(responses.GET, url, json=SCHEDULE_DATA)
+    responses.add(responses.GET, url, json=SCHEDULE_DATA)
 
-        self.assertIsInstance(
-            dining.get_location_hours("The Eatery", datetime.datetime(2024, 4, 12)),
-            dict,
-        )
+    all_hours = DiningClient().get_location_hours(date=DATE)
+    selected = DiningClient().get_location_hours("The Eatery", DATE)
 
-    @responses.activate
-    def test_get_location_menu(self):
-        responses.add(
-            responses.GET,
-            dining.LOCATIONS_URL,
-            json=self.dining_locations_data,
-            status=200,
-        )
-        responses.add(
-            responses.GET,
-            dining.PERIODS_URL.format(location_id="610b1f78e82971147c9f8ba5", date_str="24-04-12"),
-            json=self.dining_menu_data,
-            status=200,
-        )
-        responses.add(
-            responses.GET,
-            dining.MENU_URL.format(
-                location_id="610b1f78e82971147c9f8ba5",
-                period_id="659daa4d351d53068df67835",
-                date_str="24-04-12",
-            ),
-            json=self.dining_menu_data,
-            status=200,
-        )
-        locations = dining.get_location_menu("The Eatery", datetime.datetime(2024, 4, 12), "Breakfast")
-        self.assertIsInstance(locations, dict)
+    assert all(isinstance(item, LocationHours) for item in all_hours)
+    assert selected[0].name == "The Eatery"
+    assert selected[0].hours[0].start_hour == 7
 
-    def test_invalid_location_names(self):
-        with self.assertRaisesRegex(ValueError, "Invalid Dining Location"):
-            dining.get_location_hours("Not A Dining Location", datetime.datetime(2024, 4, 12))
-        with self.assertRaisesRegex(ValueError, "Invalid Dining Location"):
-            dining.get_location_menu("Not A Dining Location", datetime.datetime(2024, 4, 12))
 
-    @responses.activate
-    def test_get_all_location_hours_with_default_date(self):
-        responses.add(
-            responses.GET,
-            dining.HOURS_URL.format(date_str="2024-04-12"),
-            json=self.dining_schedule_data,
-            status=200,
-        )
+@responses.activate
+def test_hours_default_date_and_missing_location():
+    url = HOURS_URL.format(date="2024-04-12")
+    responses.add(responses.GET, url, json={"the_locations": []})
+    with patch("pittapi.dining.datetime") as clock:
+        clock.now.return_value = DATE
+        with pytest.raises(LookupError, match="not found"):
+            DiningClient().get_location_hours("Missing")
 
-        with patch.object(dining, "datetime") as mock_datetime:
-            mock_datetime.now.return_value = datetime.datetime(2024, 4, 12)
-            hours = dining.get_location_hours()
 
-        self.assertIn("The Eatery", hours)
+@responses.activate
+def test_hours_reject_malformed_response():
+    responses.add(responses.GET, HOURS_URL.format(date="2024-04-12"), json={})
+    with pytest.raises(ValueError, match="hours response"):
+        DiningClient().get_location_hours(date=DATE)
 
-    @responses.activate
-    def test_get_location_hours_errors_and_missing_location(self):
-        responses.add(
-            responses.GET,
-            dining.HOURS_URL.format(date_str="2024-04-12"),
-            status=502,
-        )
-        with self.assertRaisesRegex(ValueError, "Invalid Date"):
-            dining.get_location_hours("The Eatery", datetime.datetime(2024, 4, 12))
 
-        responses.add(
-            responses.GET,
-            dining.HOURS_URL.format(date_str="2024-04-13"),
-            json={"the_locations": []},
-            status=200,
-        )
-        self.assertEqual(dining.get_location_hours("The Eatery", datetime.datetime(2024, 4, 13)), {})
+@responses.activate
+def test_get_menu_with_named_period():
+    responses.add(responses.GET, LOCATIONS_URL, json=LOCATIONS_DATA)
+    responses.add(
+        responses.GET,
+        PERIODS_URL.format(location_id=LOCATION_ID, date="24-04-12"),
+        json=MENU_DATA,
+    )
+    responses.add(
+        responses.GET,
+        MENU_URL.format(location_id=LOCATION_ID, period_id=PERIOD_ID, date="24-04-12"),
+        json=MENU_DATA,
+    )
 
-    @responses.activate
-    def test_get_location_menu_with_default_date_and_period(self):
-        responses.add(responses.GET, dining.LOCATIONS_URL, json=self.dining_locations_data, status=200)
-        responses.add(
-            responses.GET,
-            dining.PERIODS_URL.format(location_id="610b1f78e82971147c9f8ba5", date_str="24-04-12"),
-            json=self.dining_menu_data,
-            status=200,
-        )
-        responses.add(
-            responses.GET,
-            dining.MENU_URL.format(
-                location_id="610b1f78e82971147c9f8ba5",
-                period_id="659daa4d351d53068df67835",
-                date_str="24-04-12",
-            ),
-            json=self.dining_menu_data,
-            status=200,
-        )
+    menu = DiningClient().get_location_menu("the eatery", DATE, "breakfast")
 
-        with patch.object(dining, "datetime") as mock_datetime:
-            mock_datetime.today.return_value = datetime.datetime(2024, 4, 12)
-            menu = dining.get_location_menu("The Eatery")
+    assert isinstance(menu, Menu)
+    assert menu.period.name == "Breakfast"
+    assert menu.period.categories[0].items[0].nutrients
+    assert menu.period.categories[0].items[0].filters
 
-        self.assertEqual(menu, self.dining_menu_data["menu"])
 
-    @responses.activate
-    def test_get_location_menu_invalid_date(self):
-        responses.add(responses.GET, dining.LOCATIONS_URL, json=self.dining_locations_data, status=200)
-        responses.add(
-            responses.GET,
-            dining.PERIODS_URL.format(location_id="610b1f78e82971147c9f8ba5", date_str="24-04-12"),
-            status=502,
-        )
+@responses.activate
+def test_get_menu_uses_default_date_and_period():
+    responses.add(responses.GET, LOCATIONS_URL, json=LOCATIONS_DATA)
+    responses.add(
+        responses.GET,
+        PERIODS_URL.format(location_id=LOCATION_ID, date="24-04-12"),
+        json=MENU_DATA,
+    )
+    responses.add(
+        responses.GET,
+        MENU_URL.format(location_id=LOCATION_ID, period_id=PERIOD_ID, date="24-04-12"),
+        json=MENU_DATA,
+    )
+    with patch("pittapi.dining.datetime") as clock:
+        clock.today.return_value = DATE
+        assert DiningClient().get_location_menu("The Eatery").period.id == PERIOD_ID
 
-        with self.assertRaisesRegex(ValueError, "Invalid Date"):
-            dining.get_location_menu("The Eatery", datetime.datetime(2024, 4, 12))
+
+@responses.activate
+def test_menu_rejects_missing_location_and_malformed_payloads():
+    responses.add(responses.GET, LOCATIONS_URL, json={"locations": []})
+    with pytest.raises(LookupError, match="location not found"):
+        DiningClient().get_location_menu("Missing", DATE)
+
+    responses.add(responses.GET, LOCATIONS_URL, json=LOCATIONS_DATA)
+    responses.add(responses.GET, PERIODS_URL.format(location_id=LOCATION_ID, date="24-04-12"), json={})
+    with pytest.raises(ValueError, match="periods response"):
+        DiningClient().get_location_menu("The Eatery", DATE)
+
+    responses.add(responses.GET, LOCATIONS_URL, json=LOCATIONS_DATA)
+    responses.add(
+        responses.GET,
+        PERIODS_URL.format(location_id=LOCATION_ID, date="24-04-12"),
+        json=MENU_DATA,
+    )
+    responses.add(
+        responses.GET,
+        MENU_URL.format(location_id=LOCATION_ID, period_id=PERIOD_ID, date="24-04-12"),
+        json={},
+    )
+    with pytest.raises(ValueError, match="menu response"):
+        DiningClient().get_location_menu("The Eatery", DATE)
+
+
+def test_period_selection_errors_and_single_period():
+    period = {"id": "1", "name": "Only"}
+    assert select_period([period], "ignored") is period
+    with pytest.raises(LookupError, match="no dining periods"):
+        select_period([], None)
+    with pytest.raises(LookupError, match="period not found"):
+        select_period([period, {"id": "2", "name": "Other"}], "Dinner")
+
+
+def test_parse_menu_ignores_unknown_fields():
+    menu_data = MENU_DATA["menu"] | {"new_provider_field": True}
+    assert parse_menu(menu_data).date == "2024-04-12"

@@ -15,4 +15,36 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Readable, typed clients for public University of Pittsburgh services.
 """
+
+from pittapi.cal import CalendarClient
+from pittapi.course import CourseClient
+from pittapi.dining import DiningClient
+from pittapi.gym import GymClient
+from pittapi.lab import LabClient
+from pittapi.laundry import LaundryClient
+from pittapi.library import LibraryClient
+from pittapi.news import NewsClient
+from pittapi.people import PeopleClient
+from pittapi.shuttle import ShuttleClient
+from pittapi.sports import SportsClient
+from pittapi.status import StatusClient
+from pittapi.textbook import TextbookClient
+
+__all__ = [
+    "CalendarClient",
+    "CourseClient",
+    "DiningClient",
+    "GymClient",
+    "LabClient",
+    "LaundryClient",
+    "LibraryClient",
+    "NewsClient",
+    "PeopleClient",
+    "ShuttleClient",
+    "SportsClient",
+    "StatusClient",
+    "TextbookClient",
+]

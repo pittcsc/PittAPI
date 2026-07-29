@@ -15,146 +15,132 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Pitt football and men's basketball information from ESPN.
 """
 
-from __future__ import annotations
+from dataclasses import dataclass
+from typing import Any
 
-import requests
+from pittapi.base_client import BaseClient
 
-from typing import Any, NamedTuple
-
-JSON = dict[str, Any]
+__all__ = ["Address", "GameInfo", "SportsClient", "Team", "Venue"]
 
 FOOTBALL_URL = "http://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/pitt"
 MENS_BASKETBALL_URL = "http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/pittsburgh"
+PITT_TEAM_ID = "221"
+NO_RECORD = "There's no record right now."
 
 
-class GameInfo(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class Team:
+    id: str
+    school: str
+    name: str
+
+
+@dataclass(frozen=True, slots=True)
+class Address:
+    city: str
+    state: str
+
+
+@dataclass(frozen=True, slots=True)
+class Venue:
+    full_name: str
+    address: Address
+
+
+@dataclass(frozen=True, slots=True)
+class GameInfo:
     timestamp: str | None = None
-    opponent: dict[str, str] | None = None
+    opponent: Team | None = None
     home_away: str | None = None
-    location: dict[str, str] | None = None
-    status: str | None = None
+    location: Venue | None = None
+    status: str = "SCHEDULED"
 
 
-def get_mens_basketball_record() -> str:
-    """returns the current record of the men's basketball team"""
-    basketball_data = _get_mens_basketball_data()
+class SportsClient(BaseClient):
+    """Fetch Pitt football and men's basketball summaries."""
 
+    def get_mens_basketball_record(self) -> str:
+        return parse_record(self.get_team_data(MENS_BASKETBALL_URL))
+
+    def get_next_mens_basketball_game(self) -> GameInfo:
+        return parse_next_game(self.get_team_data(MENS_BASKETBALL_URL))
+
+    def get_mens_basketball_standings(self) -> str:
+        return parse_standings(self.get_team_data(MENS_BASKETBALL_URL))
+
+    def get_football_record(self) -> str:
+        return parse_record(self.get_team_data(FOOTBALL_URL))
+
+    def get_next_football_game(self) -> GameInfo:
+        return parse_next_game(self.get_team_data(FOOTBALL_URL))
+
+    def get_football_standings(self) -> str:
+        return parse_standings(self.get_team_data(FOOTBALL_URL))
+
+    def get_team_data(self, url: str) -> dict[str, Any]:
+        data = self.request("GET", url).json()
+        if not isinstance(data, dict):
+            raise ValueError("sports response must be an object")
+        return data
+
+
+def parse_record(data: dict[str, Any]) -> str:
     try:
-        record_summary: str = basketball_data["team"]["record"]["items"][0]["summary"]
-    except KeyError:
-        record_summary = "There's no record right now."
-
-    return record_summary
+        return data["team"]["record"]["items"][0]["summary"]
+    except (KeyError, IndexError, TypeError):
+        return NO_RECORD
 
 
-def get_next_mens_basketball_game() -> GameInfo:
-    """returns a dict containing details of the next scheduled men's basketball game."""
-    basketball_data = _get_mens_basketball_data()
-    next_game = None
+def parse_standings(data: dict[str, Any]) -> str:
     try:
-        next_game = basketball_data["team"]["nextEvent"][0]
-        opponent = None
-        homeaway = None
-        status = None
-        if next_game["competitions"][0]["status"]["type"]["name"] == "STATUS_FINAL":
-            status = "GAME_COMPLETE"
-        elif next_game["competitions"][0]["status"]["type"]["name"] == "STATUS_IN_PROGRESS":
-            status = "IN_PROGRESS"
-        if str(next_game["competitions"][0]["competitors"][0]["id"]) == "221":
-            opponent = next_game["competitions"][0]["competitors"][1]
-            homeaway = next_game["competitions"][0]["competitors"][0]["homeAway"]
-        else:
-            opponent = next_game["competitions"][0]["competitors"][0]
-            homeaway = next_game["competitions"][0]["competitors"][1]["homeAway"]
+        return data["team"]["standingSummary"]
+    except (KeyError, TypeError) as error:
+        raise ValueError("sports response is missing standings") from error
+
+
+def parse_next_game(data: dict[str, Any]) -> GameInfo:
+    try:
+        events = data["team"]["nextEvent"]
+        if not events:
+            return GameInfo(status="NO_GAME_SCHEDULED")
+        event = events[0]
+        competition = event["competitions"][0]
+        pitt, opponent = find_competitors(competition["competitors"])
+        opponent_team = opponent["team"]
+        venue = competition["venue"]
+        status_name = competition["status"]["type"]["name"]
+        statuses = {
+            "STATUS_FINAL": "GAME_COMPLETE",
+            "STATUS_IN_PROGRESS": "IN_PROGRESS",
+        }
         return GameInfo(
-            timestamp=next_game["date"],
-            opponent={
-                "id": opponent["team"]["id"],
-                "school": opponent["team"]["nickname"],
-                "name": opponent["team"]["displayName"],
-            },
-            home_away=homeaway,
-            location={
-                "full_name": next_game["competitions"][0]["venue"]["fullName"],
-                "address": next_game["competitions"][0]["venue"]["address"],
-            },
-            status=status,
+            timestamp=event["date"],
+            opponent=Team(
+                id=str(opponent_team["id"]),
+                school=opponent_team["nickname"],
+                name=opponent_team["displayName"],
+            ),
+            home_away=pitt["homeAway"],
+            location=Venue(
+                full_name=venue["fullName"],
+                address=Address(city=venue["address"]["city"], state=venue["address"]["state"]),
+            ),
+            status=statuses.get(status_name, "SCHEDULED"),
         )
-    except IndexError:
-        # IndexError occurs when a next game on the schedule is not present
-        return GameInfo(status="NO_GAME_SCHEDULED")
+    except (KeyError, IndexError, TypeError) as error:
+        raise ValueError("sports response is missing game data") from error
 
 
-def get_mens_basketball_standings() -> str:
-    """returns a string describing the placement of the men's basketball team. eg: '14th in ACC'"""
-    basketball_data = _get_mens_basketball_data()
-    return_value: str = basketball_data["team"]["standingSummary"]
-    return return_value
-
-
-def get_football_record() -> str:
-    """returns the current record of the men's football team"""
-    football_data = _get_football_data()
-
-    try:
-        record_summary: str = football_data["team"]["record"]["items"][0]["summary"]
-    except KeyError:
-        record_summary = "There's no record right now."
-
-    return record_summary
-
-
-def get_next_football_game() -> GameInfo:
-    football_data = _get_football_data()
-    next_game = None
-    try:
-        next_game = football_data["team"]["nextEvent"][0]
-        opponent = None
-        homeaway = None
-        status = None
-        if next_game["competitions"][0]["status"]["type"]["name"] == "STATUS_FINAL":
-            status = "GAME_COMPLETE"
-        elif next_game["competitions"][0]["status"]["type"]["name"] == "STATUS_IN_PROGRESS":
-            status = "IN_PROGRESS"
-        if str(next_game["competitions"][0]["competitors"][0]["id"]) == "221":
-            opponent = next_game["competitions"][0]["competitors"][1]
-            homeaway = next_game["competitions"][0]["competitors"][0]["homeAway"]
-        else:
-            opponent = next_game["competitions"][0]["competitors"][0]
-            homeaway = next_game["competitions"][0]["competitors"][1]["homeAway"]
-        return GameInfo(
-            timestamp=next_game["date"],
-            opponent={
-                "id": opponent["team"]["id"],
-                "school": opponent["team"]["nickname"],
-                "name": opponent["team"]["displayName"],
-            },
-            home_away=homeaway,
-            location={
-                "full_name": next_game["competitions"][0]["venue"]["fullName"],
-                "address": next_game["competitions"][0]["venue"]["address"],
-            },
-            status=status,
-        )
-    except IndexError:
-        # IndexError occurs when a next game on the schedule is not present
-        return GameInfo(status="NO_GAME_SCHEDULED")
-
-
-def get_football_standings() -> str:
-    """returns a string describing the placement of the football team. eg: '14th in ACC'"""
-    football_data = _get_football_data()
-    return_value: str = football_data["team"]["standingSummary"]
-    return return_value
-
-
-def _get_mens_basketball_data() -> JSON:
-    json_data: JSON = requests.get(MENS_BASKETBALL_URL).json()
-    return json_data
-
-
-def _get_football_data() -> JSON:
-    json_data: JSON = requests.get(FOOTBALL_URL).json()
-    return json_data
+def find_competitors(competitors: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
+    if len(competitors) != 2:
+        raise ValueError("a sports competition must contain two teams")
+    first, second = competitors
+    if str(first["id"]) == PITT_TEAM_ID:
+        return first, second
+    if str(second["id"]) == PITT_TEAM_ID:
+        return second, first
+    raise ValueError("Pitt is not present in the competition")

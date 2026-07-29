@@ -1,499 +1,254 @@
-"""
-The Pitt API, to access workable data of the University of Pittsburgh
-Copyright (C) 2015 Ritwik Gupta
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""
-
-from pittapi import textbook
-
-import responses
 import json
-import unittest
-
 from pathlib import Path
-from pytest import mark
-from requests import ConnectionError, HTTPError
-from typing import Any
-
-SAMPLE_PATH = Path() / "tests" / "samples"
-CSRF_TOKEN = "1MTtTVOcQCCXDjKNKTqkfiwp0lmLWz1RvFy2ed65XeyGO4on-8zWsQpEAt4cjiH0glx9CIyjhAOKpXhIqDK_vg"
-CS_SUBJECT_ID = "22457"
-MATH_SUBJECT_ID = "22528"
-CS_0441_GARRISON_SECTION_ID = "4558031"
-MATH_0430_PAN_SECTION_ID = "4631097"
-
-
-class TextbookTest(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
-        with (SAMPLE_PATH / "textbook_base_page.html").open() as f:
-            self.html_text = f.read()
-        with (SAMPLE_PATH / "textbook_subjects.json").open() as f:
-            self.subjects_data = json.load(f)
-        with (SAMPLE_PATH / "textbook_courses_CS.json").open() as f:
-            self.cs_data = json.load(f)
-        with (SAMPLE_PATH / "textbook_courses_MATH.json").open() as f:
-            self.math_data = json.load(f)
-        with (SAMPLE_PATH / "textbook_textbooks_CS_0441_garrison.json").open() as f:
-            self.cs_0441_textbook_data: list[dict[str, Any]] = json.load(f)
-        with (SAMPLE_PATH / "textbook_textbooks_MATH_0430_pan.json").open() as f:
-            self.math_0430_textbook_data: list[dict[str, Any]] = json.load(f)
-
-    def setUp(self):
-        textbook.request_headers = None
-        textbook.subject_map = None
-        responses.start()
-
-    def tearDown(self):
-        responses.stop()
-        responses.reset()
-
-    def mock_base_site_success(self):
-        responses.add(responses.GET, "https://pitt.verbacompare.com/", body=self.html_text)
-
-    def mock_base_site_failure(self):
-        responses.add(responses.GET, "https://pitt.verbacompare.com/", status=400)
-
-    def mock_subject_map_success(self):
-        responses.add(
-            responses.GET,
-            f"https://pitt.verbacompare.com/compare/departments/?term={textbook.CURRENT_TERM_ID}",
-            json=self.subjects_data,
-        )
-
-    def mock_subject_map_failure(self):
-        responses.add(
-            responses.GET, f"https://pitt.verbacompare.com/compare/departments/?term={textbook.CURRENT_TERM_ID}", status=400
-        )
-
-    def mock_cs_courses_success(self):
-        responses.add(
-            responses.GET,
-            f"https://pitt.verbacompare.com/compare/courses/?id={CS_SUBJECT_ID}&term_id={textbook.CURRENT_TERM_ID}",
-            json=self.cs_data,
-        )
-
-    def mock_cs_courses_failure(self):
-        responses.add(
-            responses.GET,
-            f"https://pitt.verbacompare.com/compare/courses/?id={CS_SUBJECT_ID}&term_id={textbook.CURRENT_TERM_ID}",
-            status=400,
-        )
-
-    def mock_cs_0441_garrison_books_success(self):
-        responses.add(
-            responses.GET,
-            f"https://pitt.verbacompare.com/compare/books?id={CS_0441_GARRISON_SECTION_ID}",
-            json=self.cs_0441_textbook_data,
-        )
-
-    def mock_cs_0441_garrison_books_none(self):
-        responses.add(responses.GET, f"https://pitt.verbacompare.com/compare/books?id={CS_0441_GARRISON_SECTION_ID}", json=[])
-
-    def mock_math_courses_success(self):
-        responses.add(
-            responses.GET,
-            f"https://pitt.verbacompare.com/compare/courses/?id={MATH_SUBJECT_ID}&term_id={textbook.CURRENT_TERM_ID}",
-            json=self.math_data,
-        )
-
-    def mock_math_courses_failure(self):
-        responses.add(
-            responses.GET,
-            f"https://pitt.verbacompare.com/compare/courses/?id={MATH_SUBJECT_ID}&term_id={textbook.CURRENT_TERM_ID}",
-            status=400,
-        )
-
-    def mock_math_0430_pan_books_success(self):
-        responses.add(
-            responses.GET,
-            f"https://pitt.verbacompare.com/compare/books?id={MATH_0430_PAN_SECTION_ID}",
-            json=self.math_0430_textbook_data,
-        )
-
-    def test_course_info(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        subject, course_num, instructor, section_num = "CS", "0441", "GARRISON III", "1245"
 
-        course = textbook.CourseInfo(subject, course_num, instructor, section_num)
-
-        self.assertEqual(course.subject, subject)
-        self.assertEqual(course.course_num, course_num)
-        self.assertEqual(course.instructor, instructor)
-        self.assertEqual(course.section_num, section_num)
-
-    def test_course_info_convert_input(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        subject, course_num, instructor, section_num = "cs", "441", "garrison iii", "1245"
-
-        course = textbook.CourseInfo(subject, course_num, instructor, section_num)
-
-        self.assertEqual(course.subject, "CS")
-        self.assertEqual(course.course_num, "0441")
-        self.assertEqual(course.instructor, "GARRISON III")
-        self.assertEqual(course.section_num, section_num)
-
-    def test_course_info_missing_instructor_and_section_num(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        subject, course_num = "cs", "0441"
-
-        course = textbook.CourseInfo(subject, course_num)
-
-        self.assertEqual(course.subject, "CS")
-        self.assertEqual(course.course_num, "0441")
-        self.assertIsNone(course.instructor)
-        self.assertIsNone(course.section_num)
-
-    def test_course_info_invalid_subject(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        subject, course_num, instructor, section_num = "fake_subject", "0441", "GARRISON III", "1245"
-
-        self.assertRaises(LookupError, textbook.CourseInfo, subject, course_num, instructor, section_num)
-
-    def test_course_info_invalid_course_num(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        subject, course_num, instructor, section_num = "cs", "abc", "GARRISON III", "1245"
-
-        self.assertRaises(ValueError, textbook.CourseInfo, subject, course_num, instructor, section_num)
-
-        course_num = "44111"
-
-        self.assertRaises(ValueError, textbook.CourseInfo, subject, course_num, instructor, section_num)
-
-    def test_course_info_invalid_section_num(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        subject, course_num, instructor, section_num = "cs", "0441", "GARRISON III", "12456"
-
-        self.assertRaises(ValueError, textbook.CourseInfo, subject, course_num, instructor, section_num)
-
-    @mark.filterwarnings("ignore:Attempt")
-    @responses.activate
-    def test_course_info_failing_header_requests(self):
-        self.mock_base_site_failure()
-
-        self.assertRaises(ConnectionError, textbook.CourseInfo, "CS", "0441", instructor="GARRISON III")
-
-    @responses.activate
-    def test_course_info_no_headers(self):
-        responses.add(responses.GET, "https://pitt.verbacompare.com/", body="<!DOCTYPE html><html lang='en-US'></html>")
-
-        self.assertRaises(ConnectionError, textbook.CourseInfo, "CS", "0441", instructor="GARRISON III")
-
-    @responses.activate
-    def test_update_headers_rejects_csrf_meta_without_content(self):
-        responses.add(
-            responses.GET,
-            "https://pitt.verbacompare.com/",
-            body="<html><head><meta name='csrf-token'></head></html>",
-        )
-
-        with self.assertRaises(ConnectionError):
-            textbook._update_headers()
-
-    @mark.filterwarnings("ignore:Attempt")
-    @responses.activate
-    def test_course_info_failing_subject_map_requests(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_failure()
-
-        self.assertRaises(ConnectionError, textbook.CourseInfo, "CS", "0441", instructor="GARRISON III")
-
-    @responses.activate
-    def test_update_subject_map_with_existing_headers(self):
-        textbook.request_headers = {"X-CSRF-Token": CSRF_TOKEN}
-        self.mock_subject_map_success()
-
-        textbook._update_subject_map()
-
-        self.assertEqual(textbook.subject_map["CS"], CS_SUBJECT_ID)
-
-    def test_textbook_from_json(self):
-        self.assertEqual(len(self.cs_0441_textbook_data), 1)
-
-        textbook_info = textbook.Textbook.from_json(self.cs_0441_textbook_data[0])
-
-        self.assertIsNotNone(textbook_info)
-        self.assertEqual(textbook_info.title, "Ia Canvas Content")
-        self.assertEqual(textbook_info.author, "Redshelf Ia")
-        self.assertIsNone(textbook_info.edition)
-        self.assertEqual(textbook_info.isbn, "BSZWEWZWMZYJ")
-        self.assertEqual(textbook_info.citation, "<em>Ia Canvas Content</em> by Redshelf Ia. (ISBN: BSZWEWZWMZYJ).")
-
-    def test_textbook_from_json_all_empty(self):
-        emptied_data: dict[str, Any] = self.cs_0441_textbook_data[0].copy()
-        emptied_data.pop("title")
-        emptied_data.pop("author")
-        emptied_data.pop("edition")
-        emptied_data.pop("isbn")
-        emptied_data.pop("citation")
-
-        textbook_info = textbook.Textbook.from_json(emptied_data)
-
-        self.assertIsNone(textbook_info)
-
-    @responses.activate
-    def test_get_textbooks_for_course_section_num(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        self.mock_cs_courses_success()
-        self.mock_cs_0441_garrison_books_success()
-        course = textbook.CourseInfo("CS", "0441", section_num="1245")
-
-        textbooks = textbook.get_textbooks_for_course(course)
-
-        self.assertEqual(textbook.request_headers, {"X-CSRF-Token": CSRF_TOKEN})
-        self.assertEqual(len(textbook.subject_map), 168)
-        self.assertEqual(textbook.subject_map["CS"], CS_SUBJECT_ID)
-        self.assertEqual(len(textbooks), 1)
-        self.assertEqual(textbooks[0].title, "Ia Canvas Content")
-        self.assertEqual(textbooks[0].author, "Redshelf Ia")
-        self.assertIsNone(textbooks[0].edition)
-        self.assertEqual(textbooks[0].isbn, "BSZWEWZWMZYJ")
-        self.assertEqual(textbooks[0].citation, "<em>Ia Canvas Content</em> by Redshelf Ia. (ISBN: BSZWEWZWMZYJ).")
-
-    @responses.activate
-    def test_get_textbooks_for_course_invalid_section_num(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        self.mock_cs_courses_success()
-        self.mock_cs_0441_garrison_books_success()
-        course = textbook.CourseInfo("CS", "0441", section_num="0000")
-
-        self.assertRaises(LookupError, textbook.get_textbooks_for_course, course)
-
-    @responses.activate
-    def test_get_textbooks_for_course_instructor(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        self.mock_cs_courses_success()
-        self.mock_cs_0441_garrison_books_success()
-        course = textbook.CourseInfo("CS", "0441", instructor="GARRISON III")
-
-        textbooks = textbook.get_textbooks_for_course(course)
-
-        self.assertEqual(textbook.request_headers, {"X-CSRF-Token": CSRF_TOKEN})
-        self.assertEqual(len(textbook.subject_map), 168)
-        self.assertEqual(textbook.subject_map["CS"], CS_SUBJECT_ID)
-        self.assertEqual(len(textbooks), 1)
-        self.assertEqual(textbooks[0].title, "Ia Canvas Content")
-        self.assertEqual(textbooks[0].author, "Redshelf Ia")
-        self.assertIsNone(textbooks[0].edition)
-        self.assertEqual(textbooks[0].isbn, "BSZWEWZWMZYJ")
-        self.assertEqual(textbooks[0].citation, "<em>Ia Canvas Content</em> by Redshelf Ia. (ISBN: BSZWEWZWMZYJ).")
-
-    @responses.activate
-    def test_get_textbooks_for_course_invalid_instructor(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        self.mock_cs_courses_success()
-        self.mock_cs_0441_garrison_books_success()
-        course = textbook.CourseInfo("CS", "0441", instructor="RAMIREZ")
-
-        self.assertRaises(LookupError, textbook.get_textbooks_for_course, course)
-
-    @responses.activate
-    def test_get_textbooks_for_course_invalid_course(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        self.mock_cs_courses_success()
-        course = textbook.CourseInfo("CS", "0000")
-
-        self.assertRaises(LookupError, textbook.get_textbooks_for_course, course)
-
-    @responses.activate
-    def test_get_textbooks_for_course_deduce_section(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        self.mock_math_courses_success()
-        self.mock_math_0430_pan_books_success()
-        course = textbook.CourseInfo("MATH", "0430")
-
-        textbooks = textbook.get_textbooks_for_course(course)
-
-        self.assertEqual(len(textbooks), 1)
-        self.assertEqual(textbooks[0].title, "First Course In Abstract Algebra")
-        self.assertEqual(textbooks[0].author, "Fraleigh")
-        self.assertEqual(textbooks[0].edition, "7")
-        self.assertEqual(textbooks[0].isbn, "9780201763904")
-        self.assertEqual(
-            textbooks[0].citation,
-            "\u003cem\u003eFirst Course In Abstract Algebra\u003c/em\u003e by Fraleigh. "
-            "Pearson Education, 7th Edition, 2002. (ISBN: 9780201763904).",
-        )
-
-    @responses.activate
-    def test_get_textbooks_for_course_not_enough_info(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        self.mock_cs_courses_success()
-        course = textbook.CourseInfo("CS", "0441")
-
-        self.assertRaises(LookupError, textbook.get_textbooks_for_course, course)
-
-    @mark.filterwarnings("ignore:Attempt")
-    @responses.activate
-    def test_get_textbooks_for_course_failing_courses_requests(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        self.mock_cs_courses_failure()
-        course = textbook.CourseInfo("CS", "0441", instructor="GARRISON III")
-
-        self.assertRaises(ConnectionError, textbook.get_textbooks_for_course, course)
-
-    @responses.activate
-    def test_get_textbooks_for_course_no_textbook(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        self.mock_cs_courses_success()
-        self.mock_cs_0441_garrison_books_none()
-        course = textbook.CourseInfo("CS", "0441", instructor="GARRISON III")
-
-        textbooks = textbook.get_textbooks_for_course(course)
-
-        self.assertEqual(len(textbooks), 0)
-
-    @mark.filterwarnings("ignore:No textbook info found")
-    @responses.activate
-    def test_get_textbooks_for_course_textbook_no_info(self):
-        emptied_data: dict[str, Any] = self.cs_0441_textbook_data[0].copy()
-        emptied_data.pop("title")
-        emptied_data.pop("author")
-        emptied_data.pop("edition")
-        emptied_data.pop("isbn")
-        emptied_data.pop("citation")
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        self.mock_cs_courses_success()
-        responses.add(
-            responses.GET, f"https://pitt.verbacompare.com/compare/books?id={CS_0441_GARRISON_SECTION_ID}", json=[emptied_data]
-        )
-        course = textbook.CourseInfo("CS", "0441", instructor="GARRISON III")
-
-        textbook_info = textbook.get_textbooks_for_course(course)
-
-        self.assertEqual(len(textbook_info), 0)
-
-    @responses.activate
-    def test_get_textbooks_for_courses(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        self.mock_cs_courses_success()
-        self.mock_math_courses_success()
-        self.mock_cs_0441_garrison_books_success()
-        self.mock_math_0430_pan_books_success()
-        courses = [
-            textbook.CourseInfo("CS", "0441", instructor="GARRISON III"),
-            textbook.CourseInfo("MATH", "0430", instructor="PAN"),
-        ]
-
-        textbooks = textbook.get_textbooks_for_courses(courses)
-
-        self.assertEqual(len(textbooks), 2)
-        self.assertEqual(textbooks[0].title, "Ia Canvas Content")
-        self.assertEqual(textbooks[0].author, "Redshelf Ia")
-        self.assertIsNone(textbooks[0].edition)
-        self.assertEqual(textbooks[0].isbn, "BSZWEWZWMZYJ")
-        self.assertEqual(textbooks[0].citation, "<em>Ia Canvas Content</em> by Redshelf Ia. (ISBN: BSZWEWZWMZYJ).")
-
-        self.assertEqual(textbooks[1].title, "First Course In Abstract Algebra")
-        self.assertEqual(textbooks[1].author, "Fraleigh")
-        self.assertEqual(textbooks[1].edition, "7")
-        self.assertEqual(textbooks[1].isbn, "9780201763904")
-        self.assertEqual(
-            textbooks[1].citation,
-            "\u003cem\u003eFirst Course In Abstract Algebra\u003c/em\u003e by Fraleigh. "
-            "Pearson Education, 7th Edition, 2002. (ISBN: 9780201763904).",
-        )
-
-    @responses.activate
-    def test_get_textbooks_for_ids_propagates_request_failure(self):
-        textbook.request_headers = {"X-CSRF-Token": CSRF_TOKEN}
-        responses.add(
-            responses.GET,
-            f"https://pitt.verbacompare.com/compare/books?id={CS_0441_GARRISON_SECTION_ID}",
-            status=503,
-        )
-
-        with self.assertRaises(HTTPError):
-            textbook._get_textbooks_for_ids([CS_0441_GARRISON_SECTION_ID])
-
-    @responses.activate
-    def test_get_textbooks_for_ids_initializes_headers(self):
-        self.mock_base_site_success()
-        self.mock_cs_0441_garrison_books_success()
-
-        books = textbook._get_textbooks_for_ids([CS_0441_GARRISON_SECTION_ID])
-
-        self.assertEqual(len(books), 1)
-        self.assertEqual(textbook.request_headers, {"X-CSRF-Token": CSRF_TOKEN})
-
-    @responses.activate
-    def test_get_textbooks_for_course_initializes_headers(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        course_info = textbook.CourseInfo("CS", "0441", instructor="GARRISON III")
-        textbook.request_headers = None
-        self.mock_base_site_success()
-        self.mock_cs_courses_success()
-        self.mock_cs_0441_garrison_books_success()
-
-        self.assertEqual(len(textbook.get_textbooks_for_course(course_info)), 1)
-
-    @responses.activate
-    def test_get_textbooks_for_course_initializes_subject_map(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        course_info = textbook.CourseInfo("CS", "0441", instructor="GARRISON III")
-        textbook.subject_map = None
-        self.mock_subject_map_success()
-        self.mock_cs_courses_success()
-        self.mock_cs_0441_garrison_books_success()
-
-        self.assertEqual(len(textbook.get_textbooks_for_course(course_info)), 1)
-
-    @responses.activate
-    def test_get_textbooks_for_courses_initializes_global_state(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        course_info = textbook.CourseInfo("CS", "0441", instructor="GARRISON III")
-        textbook.request_headers = None
-        textbook.subject_map = None
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        self.mock_cs_courses_success()
-        self.mock_cs_0441_garrison_books_success()
-
-        self.assertEqual(len(textbook.get_textbooks_for_courses([course_info])), 1)
-
-    @mark.filterwarnings("ignore:Attempt")
-    @responses.activate
-    def test_get_textbooks_for_courses_failing_courses_requests(self):
-        self.mock_base_site_success()
-        self.mock_subject_map_success()
-        self.mock_cs_courses_failure()
-        self.mock_math_courses_failure()
-        courses = [
-            textbook.CourseInfo("CS", "0441", instructor="GARRISON III"),
-            textbook.CourseInfo("MATH", "0430", instructor="PAN"),
-        ]
-
-        self.assertRaises(ConnectionError, textbook.get_textbooks_for_courses, courses)
+import pytest
+import requests
+import responses
+
+from pittapi.textbook import (
+    BASE_URL,
+    BOOKS_URL,
+    COURSES_URL,
+    CURRENT_TERM_ID,
+    MAX_REQUEST_ATTEMPTS,
+    SUBJECTS_URL,
+    CourseInfo,
+    Textbook,
+    TextbookClient,
+    find_section,
+    find_section_id,
+    parse_textbook,
+)
+
+SAMPLES = Path("tests/samples")
+BASE_HTML = (SAMPLES / "textbook_base_page.html").read_text()
+SUBJECTS = json.loads((SAMPLES / "textbook_subjects.json").read_text())
+CS_COURSES = json.loads((SAMPLES / "textbook_courses_CS.json").read_text())
+MATH_COURSES = json.loads((SAMPLES / "textbook_courses_MATH.json").read_text())
+CS_BOOKS = json.loads((SAMPLES / "textbook_textbooks_CS_0441_garrison.json").read_text())
+MATH_BOOKS = json.loads((SAMPLES / "textbook_textbooks_MATH_0430_pan.json").read_text())
+CS_ID = "22457"
+MATH_ID = "22528"
+CS_SECTION = "4558031"
+MATH_SECTION = "4631097"
+HEADERS = {"X-CSRF-Token": "token"}
+
+
+def subjects_url(term=CURRENT_TERM_ID):
+    return SUBJECTS_URL.format(term_id=term)
+
+
+def courses_url(subject_id, term=CURRENT_TERM_ID):
+    return COURSES_URL.format(department_id=subject_id, term_id=term)
+
+
+@pytest.mark.parametrize(
+    ("course", "expected"),
+    [
+        (CourseInfo("cs", "441", "garrison iii", "1245"), CourseInfo("CS", "0441", "GARRISON III", "1245")),
+        (CourseInfo("MATH", "0430"), CourseInfo("MATH", "0430")),
+    ],
+)
+def test_course_info_normalization(course, expected):
+    assert course == expected
+
+
+@pytest.mark.parametrize("number", ["abc", "12345", ""])
+def test_invalid_course_number(number):
+    with pytest.raises(ValueError, match="invalid course number"):
+        CourseInfo("CS", number)
+
+
+@pytest.mark.parametrize("section", ["123", "abcd"])
+def test_invalid_section_number(section):
+    with pytest.raises(ValueError, match="invalid section number"):
+        CourseInfo("CS", "0441", section_num=section)
+
+
+@responses.activate
+def test_initialize_headers():
+    responses.add(responses.GET, BASE_URL, body=BASE_HTML)
+    client = TextbookClient()
+    client.initialize_headers()
+    assert client.headers
+
+
+@pytest.mark.parametrize(
+    "html",
+    [
+        "<html></html>",
+        "<html><head><meta name='csrf-token'></head></html>",
+    ],
+)
+@responses.activate
+def test_initialize_headers_requires_token(html):
+    responses.add(responses.GET, BASE_URL, body=html)
+    with pytest.raises(requests.ConnectionError, match="credentials"):
+        TextbookClient().initialize_headers()
+
+
+@responses.activate
+def test_initialize_headers_retries_then_fails():
+    responses.add(responses.GET, BASE_URL, status=400)
+    with pytest.raises(requests.ConnectionError, match=str(MAX_REQUEST_ATTEMPTS)):
+        TextbookClient().initialize_headers()
+    assert len(responses.calls) == MAX_REQUEST_ATTEMPTS
+
+
+@responses.activate
+def test_initialize_subjects_with_existing_and_missing_headers():
+    responses.add(responses.GET, subjects_url(), json=SUBJECTS)
+    client = TextbookClient()
+    client.headers = HEADERS
+    client.initialize_subjects()
+    assert client.subject_ids["CS"] == CS_ID
+
+    responses.add(responses.GET, BASE_URL, body=BASE_HTML)
+    responses.add(responses.GET, subjects_url(), json=SUBJECTS)
+    fresh_client = TextbookClient()
+    fresh_client.initialize_subjects()
+    assert fresh_client.headers
+
+
+@responses.activate
+def test_initialize_subjects_rejects_malformed_data():
+    responses.add(responses.GET, subjects_url(), json=[{}])
+    client = TextbookClient()
+    client.headers = HEADERS
+    with pytest.raises(ValueError, match="subject response"):
+        client.initialize_subjects()
+
+
+@responses.activate
+def test_initialize_subjects_refreshes_and_eventually_fails():
+    responses.add(responses.GET, subjects_url(), status=400)
+    responses.add(responses.GET, BASE_URL, body=BASE_HTML)
+    client = TextbookClient()
+    client.headers = HEADERS
+    with pytest.raises(requests.ConnectionError, match="retrieve subjects"):
+        client.initialize_subjects()
+
+
+@responses.activate
+def test_get_courses_success_and_validation():
+    responses.add(responses.GET, courses_url(CS_ID), json=CS_COURSES)
+    client = TextbookClient()
+    client.headers = HEADERS
+    client.subject_ids = {"CS": CS_ID}
+    assert client.get_courses("CS") == CS_COURSES
+
+    client.subject_ids = None
+    with pytest.raises(LookupError, match="invalid textbook subject"):
+        client.get_courses("CS")
+
+
+@responses.activate
+def test_get_courses_initializes_headers_and_rejects_nonlist():
+    responses.add(responses.GET, BASE_URL, body=BASE_HTML)
+    responses.add(responses.GET, courses_url(CS_ID), json={})
+    client = TextbookClient()
+    client.subject_ids = {"CS": CS_ID}
+    with pytest.raises(ValueError, match="must contain a list"):
+        client.get_courses("CS")
+
+
+@responses.activate
+def test_get_courses_refreshes_and_fails():
+    responses.add(responses.GET, courses_url(CS_ID), status=400)
+    responses.add(responses.GET, BASE_URL, body=BASE_HTML)
+    client = TextbookClient()
+    client.headers = HEADERS
+    client.subject_ids = {"CS": CS_ID}
+    with pytest.raises(requests.ConnectionError, match="retrieve CS courses"):
+        client.get_courses("CS")
+
+
+@responses.activate
+def test_get_textbooks_for_one_course():
+    responses.add(responses.GET, BASE_URL, body=BASE_HTML)
+    responses.add(responses.GET, subjects_url(), json=SUBJECTS)
+    responses.add(responses.GET, courses_url(CS_ID), json=CS_COURSES)
+    responses.add(responses.GET, BOOKS_URL.format(section_id=CS_SECTION), json=CS_BOOKS)
+
+    books = TextbookClient().get_textbooks_for_course(CourseInfo("CS", "0441", instructor="GARRISON III"))
+
+    assert len(books) == 1
+    assert books[0].title == "Ia Canvas Content"
+
+
+@responses.activate
+def test_get_textbooks_for_multiple_courses_and_cache_subject():
+    client = TextbookClient()
+    client.headers = HEADERS
+    client.subject_ids = {"CS": CS_ID, "MATH": MATH_ID}
+    responses.add(responses.GET, courses_url(CS_ID), json=CS_COURSES)
+    responses.add(responses.GET, courses_url(MATH_ID), json=MATH_COURSES)
+    responses.add(responses.GET, BOOKS_URL.format(section_id=CS_SECTION), json=CS_BOOKS)
+    responses.add(responses.GET, BOOKS_URL.format(section_id=CS_SECTION), json=CS_BOOKS)
+    responses.add(responses.GET, BOOKS_URL.format(section_id=MATH_SECTION), json=MATH_BOOKS)
+    courses = [
+        CourseInfo("CS", "0441", instructor="GARRISON III"),
+        CourseInfo("CS", "0441", section_num="1245"),
+        CourseInfo("MATH", "0430", instructor="PAN"),
+    ]
+
+    books = client.get_textbooks_for_courses(courses)
+
+    assert len(books) == 3
+    assert sum(call.request.url == courses_url(CS_ID) for call in responses.calls) == 1
+
+
+def test_get_textbooks_rejects_unknown_subject():
+    client = TextbookClient()
+    client.subject_ids = {}
+    with pytest.raises(LookupError, match="invalid textbook subject"):
+        client.get_textbooks_for_courses([CourseInfo("FAKE", "0001")])
+
+
+@responses.activate
+def test_section_textbooks_initializes_headers_and_filters_empty_records():
+    responses.add(responses.GET, BASE_URL, body=BASE_HTML)
+    responses.add(responses.GET, BOOKS_URL.format(section_id=CS_SECTION), json=[{}, *CS_BOOKS])
+    books = TextbookClient().get_textbooks_for_section(CS_SECTION)
+    assert len(books) == 1
+
+
+@responses.activate
+def test_section_textbooks_requires_list():
+    responses.add(responses.GET, BOOKS_URL.format(section_id=CS_SECTION), json={})
+    client = TextbookClient()
+    client.headers = HEADERS
+    with pytest.raises(ValueError, match="must contain a list"):
+        client.get_textbooks_for_section(CS_SECTION)
+
+
+def test_find_section_variants():
+    sections = [
+        {"name": "0001", "instructor": "SAME", "id": "1"},
+        {"name": "0002", "instructor": "SAME", "id": "2"},
+    ]
+    assert find_section(sections, None, "0002") == "2"
+    assert find_section(sections, "SAME", None) == "1"
+    assert find_section(sections, None, None) == "1"
+    assert find_section([sections[0]], None, None) == "1"
+
+    with pytest.raises(LookupError, match="section not found"):
+        find_section(sections, None, "9999")
+    with pytest.raises(LookupError, match="instructor not found"):
+        find_section(sections, "OTHER", None)
+
+    ambiguous = [sections[0], sections[1] | {"instructor": "OTHER"}]
+    with pytest.raises(LookupError, match="provide an instructor"):
+        find_section(ambiguous, None, None)
+
+
+def test_find_section_id_and_invalid_course():
+    course = CourseInfo("CS", "0441", section_num="1245")
+    assert find_section_id(CS_COURSES, course) == CS_SECTION
+    with pytest.raises(LookupError, match="invalid textbook course"):
+        find_section_id(CS_COURSES, CourseInfo("CS", "0001"))
+
+
+def test_parse_textbook():
+    assert isinstance(parse_textbook(CS_BOOKS[0]), Textbook)
+    assert parse_textbook({}) is None

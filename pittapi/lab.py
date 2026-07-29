@@ -15,28 +15,35 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Availability data for Pitt computing labs.
 """
 
-from typing import NamedTuple
-import requests
+from dataclasses import dataclass
+from typing import Any
+
+from pittapi.base_client import BaseClient
+
+__all__ = ["Lab", "LabClient"]
 
 PITT_BASE_URL = "https://pitt-keyserve-prod.univ.pitt.edu/maps/std/"
-
-# Manually pulled from https://pitt-keyserve-prod.univ.pitt.edu/maps/std/avail.json
-# Will need to change to pull these dynamically in the future if these IDs change
-AVAIL_LAB_ID_MAP = {
-    "BELLEFIELD": "bba4a8796295ff6a8df116524b40e178",
+AVAILABLE_LAB_IDS = {
+    "THAW": "bba4a8796295ff6a8df116524b40e178",
     "LAWRENCE": "98a4759fc02ca3655d56cd58abed4e90",
+    "CATH_LMC": "8b2a1c62ea8a23745101b998439310d2",
     "SUTH": "8adaaeb974aa38b2283c73532c095ca7",
     "CATH_G27": "6fd5a4e0dd0a32e3ccb441e25a1a2d78",
+    "HILLMAN": "6638c1e72b9a56e5119ff9848b2bdc98",
     "CATH_G62": "04853e8d1453c90a910a0b803529a3a0",
-    "BENEDUM": "25d1bfa80cafb622994b7d06c63011f2",
 }
 
 
-class Lab(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class Lab:
+    """Computer availability for one lab."""
+
     name: str
-    status: bool
+    is_closed: bool
     available_computers: int
     off_computers: int
     in_use_computers: int
@@ -44,87 +51,48 @@ class Lab(NamedTuple):
     total_computers: int
 
 
-class LabAPIError(Exception):
-    """Raised when an error occurs while accessing the Lab API."""
+class LabClient(BaseClient):
+    """Fetch computing-lab availability."""
 
-    def __init__(self, message: str):
-        super().__init__(message)
+    def get_one_lab_data(self, lab_name: str) -> Lab:
+        if lab_name not in AVAILABLE_LAB_IDS:
+            choices = ", ".join(AVAILABLE_LAB_IDS)
+            raise ValueError(f"invalid lab name: {lab_name}. Valid options: {choices}")
+
+        lab_id = AVAILABLE_LAB_IDS[lab_name]
+        url = f"{PITT_BASE_URL}{lab_id}/status.json?noredir=1"
+        data = self.request("GET", url).json()
+        return parse_lab(data)
+
+    def get_all_labs_data(self) -> tuple[Lab, ...]:
+        return tuple(self.get_one_lab_data(lab_name) for lab_name in AVAILABLE_LAB_IDS)
 
 
-def get_one_lab_data(lab_name: str) -> Lab:
-    """Fetches text of status/machines of a single lab.
+def parse_lab(data: dict[str, Any]) -> Lab:
+    """Convert one lab response into availability counts."""
+    try:
+        name = next(iter(data["hours"]))
+        is_closed = data["hours"][name]["closed"]
+        computers = data["state"].values()
+    except (KeyError, StopIteration, TypeError) as error:
+        raise ValueError("lab response is missing required data") from error
 
-    Args:
-        name (str): The name of the lab to fetch data for.
-        Valid options: "BELLEFIELD", "LAWRENCE", "SUTH", "CATH_G27", "CATH_G62", "BENEDUM"
-
-    Raises:
-        ValueError: If an invalid `id` is provided.
-
-    Returns:
-        Lab: A Lab object with the data.
-    """
-
-    if lab_name not in AVAIL_LAB_ID_MAP.keys():
-        # Dicts are guaranteed to preserve insertion order as of Python 3.7,
-        # so the list of valid options will always be printed in the same order
-        raise ValueError(f"Invalid lab name: {lab_name}. Valid options: {', '.join(AVAIL_LAB_ID_MAP.keys())}")
-
-    req = requests.get(PITT_BASE_URL + AVAIL_LAB_ID_MAP[lab_name] + "/status.json?noredir=1")
-
-    if req.status_code == 404:
-        raise LabAPIError("The Lab ID was invalid. Please open a GitHub issue so we can resolve this.")
-    elif req.status_code != 200:
-        raise LabAPIError(f"An unexpected error occurred while fetching lab data: {req.text}")
-    else:
-        lab_data = req.json()
-
-    # Ugly way to retrieve name, but it doesn't use another network request
-    name = list(lab_data["hours"].keys())[0]
-    status = lab_data["hours"][name]["closed"]
-    total_computers = len(lab_data["state"])
-    off_computers = 0
-    in_use_computers = 0
-    available_computers = 0
-    out_of_service_computers = 0
-
-    # Computer States: Off, Available, In Use, Out of Service
-    # Off: 0
-    # Available: 1
-    # In Use: 2
-    # Out of Service: 3
-    # https://github.com/pittcsc/PittAPI/issues/192#issuecomment-2323735463
-    for computer_info in lab_data["state"].values():
-        up = computer_info["up"]
-        if up == 0:
-            off_computers += 1
-        elif up == 1:
-            available_computers += 1
-        elif up == 2:
-            in_use_computers += 1
-        elif up == 3:
-            out_of_service_computers += 1
-        else:
-            raise LabAPIError(f"Unknown 'up' value for {computer_info['addr']} in {name}: {up}")
+    counts = {0: 0, 1: 0, 2: 0, 3: 0}
+    total_computers = 0
+    for computer in computers:
+        state = computer.get("up")
+        if state not in counts:
+            address = computer.get("addr", "unknown computer")
+            raise ValueError(f"unknown computer state for {address}: {state}")
+        counts[state] += 1
+        total_computers += 1
 
     return Lab(
-        name,
-        status,
-        available_computers,
-        off_computers,
-        in_use_computers,
-        out_of_service_computers,
-        total_computers,
+        name=name,
+        is_closed=is_closed,
+        available_computers=counts[1],
+        off_computers=counts[0],
+        in_use_computers=counts[2],
+        out_of_service_computers=counts[3],
+        total_computers=total_computers,
     )
-
-
-def get_all_labs_data() -> list[Lab]:
-    """Returns a list with status and amount of OS machines for all labs.
-
-    Returns:
-        list[Lab]: A list of Labs.
-    """
-
-    all_lab_data = [get_one_lab_data(lab_name) for lab_name in AVAIL_LAB_ID_MAP.keys()]
-
-    return all_lab_data
