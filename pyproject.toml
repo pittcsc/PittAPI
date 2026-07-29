@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pittapi"
+version = "1.0.0"
+description = "An API to get data from Pitt and Pitt-related applications."
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+license = "GPL-2.0-only"
+license-files = ["LICENSE"]
+authors = [
+    { name = "University of Pittsburgh Computer Science Club", email = "pittcsc@gmail.com" },
+]
+keywords = ["api", "open-data", "university-of-pittsburgh", "pittsburgh", "pitt"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "beautifulsoup4>=4.12",
+    "requests>=2.32",
+]
+
+[project.urls]
+Homepage = "https://github.com/Pitt-CSC/PittAPI"
+Repository = "https://github.com/Pitt-CSC/PittAPI"
+
+[dependency-groups]
+dev = [
+    "black==24.10.0",
+    "flake8>=7.1",
+    "pre-commit>=4.0",
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "responses>=0.25",
+    "sphinx>=8.1",
+]
+
+[tool.black]
+line-length = 127
+target-version = ["py313"]
+
+[tool.setuptools.packages.find]
+exclude = ["docs*", "tests*"]
+namespaces = false

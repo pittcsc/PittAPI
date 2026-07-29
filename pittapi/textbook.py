@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-# grequests must be imported before all other libraries, especially requests,
-# because grequests uses gevent, which in turn uses monkey-patching to implement concurrency
-import grequests
 import warnings
 
+from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+import requests
 from requests import ConnectionError
-from requests_html import HTMLResponse, HTMLSession
 from typing import Any, NamedTuple
 
 BASE_URL = "https://pitt.verbacompare.com/"
@@ -19,7 +18,7 @@ BOOKS_URL = BASE_URL + "compare/books?id={section_id}"
 CURRENT_TERM_ID = 78104  # Term ID for fall 2024, TODO: figure out how this ID is generated
 MAX_REQUEST_ATTEMPTS = 3
 
-sess = HTMLSession()
+sess = requests.Session()
 request_headers: dict[str, str] | None = None
 subject_map: dict[str, str] | None = None
 
@@ -70,18 +69,18 @@ class Textbook(NamedTuple):
 
 def _update_headers() -> None:
     for i in range(MAX_REQUEST_ATTEMPTS):
-        base_response: HTMLResponse = sess.get(BASE_URL)
+        base_response = sess.get(BASE_URL)
         if base_response.status_code == 200:
             break
         warnings.warn(f"Attempt {i + 1} to connect to textbook site failed, trying again")
     if base_response.status_code != 200:  # Request failed too many times
         raise ConnectionError(f"Failed to connect to textbook site after {MAX_REQUEST_ATTEMPTS} attempts")
 
-    elements = base_response.html.find("meta")
-    assert isinstance(elements, list)
-    for element in elements:
-        if element.attrs.get("name") == "csrf-token":
-            csrf_token: str = element.attrs["content"]
+    soup = BeautifulSoup(base_response.text, "html.parser")
+    csrf_element = soup.find("meta", attrs={"name": "csrf-token"})
+    if csrf_element:
+        csrf_token = csrf_element.get("content")
+        if isinstance(csrf_token, str):
             global request_headers
             request_headers = {"X-CSRF-Token": csrf_token}
             return
@@ -137,7 +136,14 @@ def _get_textbooks_for_ids(ids: list[str]) -> list[Textbook]:
     if not request_headers:
         _update_headers()
 
-    responses = grequests.imap(grequests.get(BOOKS_URL.format(section_id=id), headers=request_headers) for id in ids)
+    def fetch(section_id: str) -> requests.Response:
+        response = requests.get(BOOKS_URL.format(section_id=section_id), headers=request_headers)
+        response.raise_for_status()
+        return response
+
+    with ThreadPoolExecutor() as executor:
+        responses = executor.map(fetch, ids)
+
     books = []
     for response in responses:
         for book_json in response.json():
@@ -149,14 +155,20 @@ def _get_textbooks_for_ids(ids: list[str]) -> list[Textbook]:
     return [book for book in books if book]  # Drop all None values
 
 
+def _find_section_id_from_json(
+    course_json: list[dict[str, Any]], subject: str, course_num: str, instructor: str | None, section_num: str | None
+) -> str:
+    for course in course_json:
+        if course["id"] == subject + course_num:
+            return _find_section_from_json(course["sections"], instructor, section_num)
+    raise LookupError(f"{subject} {course_num} is not a valid course")
+
+
 def _get_textbooks_from_json(
     course_json: list[dict[str, Any]], subject: str, course_num: str, instructor: str | None, section_num: str | None
 ) -> list[Textbook]:
-    for course in course_json:
-        if course["id"] == subject + course_num:
-            section_id = _find_section_from_json(course["sections"], instructor, section_num)
-            return _get_textbooks_for_ids([section_id])
-    raise LookupError(f"{subject} {course_num} is not a valid course")
+    section_id = _find_section_id_from_json(course_json, subject, course_num, instructor, section_num)
+    return _get_textbooks_for_ids([section_id])
 
 
 def get_textbooks_for_course(course: CourseInfo) -> list[Textbook]:
@@ -210,16 +222,14 @@ def get_textbooks_for_courses(courses_info: list[CourseInfo]) -> list[Textbook]:
 
         courses_for_subjects[subject] = course_response.json()
 
-    textbooks = []
-    for course_info in courses_info:
-        course_json = courses_for_subjects[course_info.subject]
-        textbooks.extend(
-            _get_textbooks_from_json(
-                course_json=course_json,
-                subject=course_info.subject,
-                course_num=course_info.course_num,
-                instructor=course_info.instructor,
-                section_num=course_info.section_num,
-            )
+    section_ids = [
+        _find_section_id_from_json(
+            course_json=courses_for_subjects[course_info.subject],
+            subject=course_info.subject,
+            course_num=course_info.course_num,
+            instructor=course_info.instructor,
+            section_num=course_info.section_num,
         )
-    return textbooks
+        for course_info in courses_info
+    ]
+    return _get_textbooks_for_ids(section_ids)

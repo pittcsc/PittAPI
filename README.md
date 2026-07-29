@@ -2,18 +2,27 @@
 
 ![Build Status](https://img.shields.io/github/actions/workflow/status/pittcsc/PittAPI/autotest.yml?branch=dev)
 ![License](https://img.shields.io/badge/license-GPLv2-blue.svg)
-![Python Version](https://img.shields.io/badge/python-%3E%3D%203.10-green.svg)
+![Python Version](https://img.shields.io/badge/python-3.13-green.svg)
 [![Pypi Version](https://img.shields.io/pypi/v/pittapi.svg)](https://pypi.org/project/PittAPI/)
 
 The Pitt API is an unofficial Python API made by Ritwik Gupta at the University of Pittsburgh in an effort to get more open data from Pitt.
 
 ## Installation
 
-The Pitt API can be installed using the Python package manager `pip`. To make your development easier, you can run the pip commands in a virtual environment. 
+PittAPI requires Python 3.13. Add the published package to a uv-managed project with:
 
-1. Install ``pipenv`` using the [instructions](https://pipenv.pypa.io/en/latest/installation.html) for your operating system, pipenv is a tool which manages your python virtual environments for you. 
-2. Run the commands ``pipenv sync --dev`` and ``pipenv shell`` to create and setup the virtual environment.
-3. Install the PittAPI in the new virtual environment ``pip install PittAPI``, see the usage guide below for further information.
+```sh
+uv add pittapi
+```
+
+To work on PittAPI itself, install [uv](https://docs.astral.sh/uv/getting-started/installation/), clone this repository,
+and create the locked development environment:
+
+```sh
+uv sync --locked
+```
+
+Run Python and project tools inside that environment with `uv run`, for example `uv run python`.
 
 ## Usage examples
 

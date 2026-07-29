@@ -227,3 +227,18 @@ class NewsTest(unittest.TestCase):
                 ],
             ),
         )
+
+    @responses.activate
+    def test_get_articles_by_topic_rejects_malformed_card(self):
+        responses.add(
+            responses.GET,
+            "https://www.pitt.edu/pittwire/news/features-articles?field_topics_target_id=432&field_article_date_value=&title="
+            "&field_category_target_id=All",
+            body=(
+                "<html><body><div><main><div><section><div class='news-card'></div>"
+                "</section></div></main></div></body></html>"
+            ),
+        )
+
+        with self.assertRaisesRegex(ValueError, "missing its heading or description"):
+            news.get_articles_by_topic("university-news")

@@ -20,11 +20,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 from typing import NamedTuple
 import requests
 
-# Suppress ssl warning
-import urllib3
-
-urllib3.disable_warnings()
-
 PITT_BASE_URL = "https://pitt-keyserve-prod.univ.pitt.edu/maps/std/"
 
 # Manually pulled from https://pitt-keyserve-prod.univ.pitt.edu/maps/std/avail.json
@@ -75,10 +70,7 @@ def get_one_lab_data(lab_name: str) -> Lab:
         # so the list of valid options will always be printed in the same order
         raise ValueError(f"Invalid lab name: {lab_name}. Valid options: {', '.join(AVAIL_LAB_ID_MAP.keys())}")
 
-    req = requests.get(
-        PITT_BASE_URL + AVAIL_LAB_ID_MAP[lab_name] + "/status.json?noredir=1",
-        verify=False,
-    )
+    req = requests.get(PITT_BASE_URL + AVAIL_LAB_ID_MAP[lab_name] + "/status.json?noredir=1")
 
     if req.status_code == 404:
         raise LabAPIError("The Lab ID was invalid. Please open a GitHub issue so we can resolve this.")

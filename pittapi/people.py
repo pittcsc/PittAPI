@@ -17,7 +17,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from requests_html import HTMLSession, Element
+import requests
+from bs4 import BeautifulSoup, Tag
 from typing import Any
 
 # Please note that find.pitt.edu will not accept more than 10 requests within a few minutes
@@ -42,13 +43,14 @@ LABEL_CONVERSION = {
 }
 
 
-def _parse_segments(person: dict[str, Any], segments: list[Element]) -> None:
+def _parse_segments(person: dict[str, Any], segments: list[Tag]) -> None:
     label = None
     for segment in segments:
-        if "class" in segment.attrs and "row-label" in segment.attrs["class"]:
-            if segment.text in LABEL_CONVERSION:
-                label = LABEL_CONVERSION[segment.text]
-            elif segment.text == "":
+        segment_text = segment.get_text(strip=True)
+        if "row-label" in segment.get("class", []):
+            if segment_text in LABEL_CONVERSION:
+                label = LABEL_CONVERSION[segment_text]
+            elif segment_text == "":
                 continue
             else:
                 label = None
@@ -56,22 +58,23 @@ def _parse_segments(person: dict[str, Any], segments: list[Element]) -> None:
             if label in person:
                 if not isinstance(person[label], list):
                     person[label] = [person[label]]
-                person[label].append(segment.text)
+                person[label].append(segment_text)
             else:
-                person[label] = segment.text
+                person[label] = segment_text
 
 
 def get_person(query: str) -> list[dict[str, Any]]:
     payload = {"search": query}
-    session = HTMLSession()
+    session = requests.Session()
     resp = session.post(PEOPLE_SEARCH_URL, data=payload)
     if "Too many people matched your criteria." in resp.text:
         return [{"ERROR": "Too many people matched your criteria."}]
-    elements = resp.html.xpath("/html/div/section")
+    soup = BeautifulSoup(resp.text, "html.parser")
+    elements = soup.select("#searchResults > section")
     result = []
     for entry in elements:
-        name, *segments = entry.find("span")
-        person = {"name": name.text}
+        name, *segments = entry.find_all("span")
+        person = {"name": name.get_text(strip=True)}
         _parse_segments(person, segments)
         result.append(person)
     if not result:
