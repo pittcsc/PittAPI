@@ -32,7 +32,7 @@ Repository = "https://github.com/Pitt-CSC/PittAPI"
 
 [dependency-groups]
 dev = [
-    "black==24.10.0",
+    "black==26.3.1",
     "flake8>=7.1",
     "pre-commit>=4.0",
     "pytest>=8.3",
