@@ -20,7 +20,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 from __future__ import annotations
 
 import math
-from requests_html import Element, HTMLResponse, HTMLSession
+import requests
+from bs4 import BeautifulSoup, Tag
 from typing import Literal, NamedTuple
 
 NUM_ARTICLES_PER_PAGE = 20
@@ -64,7 +65,7 @@ TOPIC_ID_MAP: dict[Topic, int] = {
     "sustainability": 470,
 }
 
-sess = HTMLSession()
+sess = requests.Session()
 
 
 class Article(NamedTuple):
@@ -74,15 +75,19 @@ class Article(NamedTuple):
     tags: list[str]
 
     @classmethod
-    def from_html(cls, article_html: Element) -> Article:
-        article_heading: Element = article_html.find("h2.news-card-title a", first=True)
-        article_subheading: Element = article_html.find("p", first=True)
-        article_tags_list: list[Element] = article_html.find("ul.news-card-tags li")
+    def from_html(cls, article_html: Tag) -> Article:
+        article_heading = article_html.select_one("h2.news-card-title a")
+        article_subheading = article_html.find("p")
+        if not isinstance(article_heading, Tag) or not isinstance(article_subheading, Tag):
+            raise ValueError("News card is missing its heading or description")
 
-        article_title = article_heading.text.strip()
-        article_url = PITT_BASE_URL + article_heading.attrs["href"]
-        article_description = article_subheading.text.strip()
-        article_tags = [tag.text.strip() for tag in article_tags_list]
+        article_title = article_heading.get_text(strip=True)
+        article_href = article_heading.get("href")
+        if not isinstance(article_href, str):
+            raise ValueError("News card heading is missing its URL")
+        article_url = PITT_BASE_URL + article_href
+        article_description = article_subheading.get_text(strip=True)
+        article_tags = [tag.get_text(strip=True) for tag in article_html.select("ul.news-card-tags li")]
 
         return cls(title=article_title, description=article_description, url=article_url, tags=article_tags)
 
@@ -96,13 +101,16 @@ def _get_page_articles(
 ) -> list[Article]:
     year_str = str(year) if year else ""
     page_num_str = str(page_num) if page_num else ""
-    response: HTMLResponse = sess.get(
+    response = sess.get(
         NEWS_BY_CATEGORY_URL.format(
             category=category, topic_id=TOPIC_ID_MAP[topic], year=year_str, query=query, page_num=page_num_str
         )
     )
-    main_content: Element = response.html.xpath("/html/body/div/main/div/section", first=True)
-    news_cards: list[Element] = main_content.find("div.news-card")
+    soup = BeautifulSoup(response.text, "html.parser")
+    main_content = soup.select_one("html > body > div > main > div > section")
+    if not isinstance(main_content, Tag):
+        raise ValueError("News page is missing its main content")
+    news_cards = main_content.select("div.news-card")
     page_articles = [Article.from_html(news_card) for news_card in news_cards]
     return page_articles
 
@@ -116,7 +124,7 @@ def get_articles_by_topic(
 ) -> list[Article]:
     num_pages = math.ceil(max_num_results / NUM_ARTICLES_PER_PAGE)
 
-    # Get articles sequentially and synchronously (i.e., not using grequests) because the news pages must stay in order
+    # Fetch pages sequentially so articles remain in page order.
     results: list[Article] = []
     for page_num in range(num_pages):  # Page numbers in url are 0-indexed
         page_articles = _get_page_articles(topic, category, query, year, page_num)

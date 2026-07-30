@@ -25,7 +25,7 @@ import unittest
 
 from pathlib import Path
 from pytest import mark
-from requests import ConnectionError
+from requests import ConnectionError, HTTPError
 from typing import Any
 
 SAMPLE_PATH = Path() / "tests" / "samples"
@@ -388,24 +388,33 @@ class TextbookTest(unittest.TestCase):
         textbooks = textbook.get_textbooks_for_courses(courses)
 
         self.assertEqual(len(textbooks), 2)
-        # Sort to guarantee output order, since the textbook requests are async
-        textbooks.sort(key=lambda x: x.author if x.author else "")
+        self.assertEqual(textbooks[0].title, "Ia Canvas Content")
+        self.assertEqual(textbooks[0].author, "Redshelf Ia")
+        self.assertIsNone(textbooks[0].edition)
+        self.assertEqual(textbooks[0].isbn, "BSZWEWZWMZYJ")
+        self.assertEqual(textbooks[0].citation, "<em>Ia Canvas Content</em> by Redshelf Ia. (ISBN: BSZWEWZWMZYJ).")
 
-        self.assertEqual(textbooks[0].title, "First Course In Abstract Algebra")
-        self.assertEqual(textbooks[0].author, "Fraleigh")
-        self.assertEqual(textbooks[0].edition, "7")
-        self.assertEqual(textbooks[0].isbn, "9780201763904")
+        self.assertEqual(textbooks[1].title, "First Course In Abstract Algebra")
+        self.assertEqual(textbooks[1].author, "Fraleigh")
+        self.assertEqual(textbooks[1].edition, "7")
+        self.assertEqual(textbooks[1].isbn, "9780201763904")
         self.assertEqual(
-            textbooks[0].citation,
+            textbooks[1].citation,
             "\u003cem\u003eFirst Course In Abstract Algebra\u003c/em\u003e by Fraleigh. "
             "Pearson Education, 7th Edition, 2002. (ISBN: 9780201763904).",
         )
 
-        self.assertEqual(textbooks[1].title, "Ia Canvas Content")
-        self.assertEqual(textbooks[1].author, "Redshelf Ia")
-        self.assertIsNone(textbooks[1].edition)
-        self.assertEqual(textbooks[1].isbn, "BSZWEWZWMZYJ")
-        self.assertEqual(textbooks[1].citation, "<em>Ia Canvas Content</em> by Redshelf Ia. (ISBN: BSZWEWZWMZYJ).")
+    @responses.activate
+    def test_get_textbooks_for_ids_propagates_request_failure(self):
+        textbook.request_headers = {"X-CSRF-Token": CSRF_TOKEN}
+        responses.add(
+            responses.GET,
+            f"https://pitt.verbacompare.com/compare/books?id={CS_0441_GARRISON_SECTION_ID}",
+            status=503,
+        )
+
+        with self.assertRaises(HTTPError):
+            textbook._get_textbooks_for_ids([CS_0441_GARRISON_SECTION_ID])
 
     @mark.filterwarnings("ignore:Attempt")
     @responses.activate
