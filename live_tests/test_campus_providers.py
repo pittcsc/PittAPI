@@ -1,4 +1,5 @@
 import pytest
+import requests
 
 from pittapi.dining import DiningClient
 from pittapi.gym import GymClient
@@ -10,8 +11,13 @@ pytestmark = pytest.mark.live
 
 
 def test_dining_locations():
-    with DiningClient() as dining:
-        locations = dining.get_locations()
+    try:
+        with DiningClient() as dining:
+            locations = dining.get_locations()
+    except requests.HTTPError as error:
+        if error.response is not None and error.response.status_code == 403:
+            pytest.xfail("DineOnCampus blocks requests from some CI environments")
+        raise
 
     assert locations
     assert all(location.id and location.name for location in locations)
