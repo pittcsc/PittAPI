@@ -25,7 +25,6 @@ from pathlib import Path
 
 from pittapi import people
 
-
 SAMPLE_PATH = Path() / "tests" / "samples"
 
 
