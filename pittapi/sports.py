@@ -62,11 +62,11 @@ def get_next_mens_basketball_game() -> GameInfo:
             status = "GAME_COMPLETE"
         elif next_game["competitions"][0]["status"]["type"]["name"] == "STATUS_IN_PROGRESS":
             status = "IN_PROGRESS"
-        if next_game["competitions"][0]["competitors"][0]["id"] == 221:
-            opponent = next_game["competitions"][0]["competitors"][0]
+        if str(next_game["competitions"][0]["competitors"][0]["id"]) == "221":
+            opponent = next_game["competitions"][0]["competitors"][1]
             homeaway = next_game["competitions"][0]["competitors"][0]["homeAway"]
         else:
-            opponent = next_game["competitions"][0]["competitors"][1]
+            opponent = next_game["competitions"][0]["competitors"][0]
             homeaway = next_game["competitions"][0]["competitors"][1]["homeAway"]
         return GameInfo(
             timestamp=next_game["date"],
@@ -118,7 +118,7 @@ def get_next_football_game() -> GameInfo:
             status = "GAME_COMPLETE"
         elif next_game["competitions"][0]["status"]["type"]["name"] == "STATUS_IN_PROGRESS":
             status = "IN_PROGRESS"
-        if next_game["competitions"][0]["competitors"][0]["id"] == 221:
+        if str(next_game["competitions"][0]["competitors"][0]["id"]) == "221":
             opponent = next_game["competitions"][0]["competitors"][1]
             homeaway = next_game["competitions"][0]["competitors"][0]["homeAway"]
         else:

@@ -20,7 +20,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import requests
 from typing import Any
 
-
 JSON = dict[str, Any]
 
 API_KEY = "8882812681"

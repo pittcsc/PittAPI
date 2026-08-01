@@ -198,6 +198,17 @@ class TextbookTest(unittest.TestCase):
 
         self.assertRaises(ConnectionError, textbook.CourseInfo, "CS", "0441", instructor="GARRISON III")
 
+    @responses.activate
+    def test_update_headers_rejects_csrf_meta_without_content(self):
+        responses.add(
+            responses.GET,
+            "https://pitt.verbacompare.com/",
+            body="<html><head><meta name='csrf-token'></head></html>",
+        )
+
+        with self.assertRaises(ConnectionError):
+            textbook._update_headers()
+
     @mark.filterwarnings("ignore:Attempt")
     @responses.activate
     def test_course_info_failing_subject_map_requests(self):
@@ -205,6 +216,15 @@ class TextbookTest(unittest.TestCase):
         self.mock_subject_map_failure()
 
         self.assertRaises(ConnectionError, textbook.CourseInfo, "CS", "0441", instructor="GARRISON III")
+
+    @responses.activate
+    def test_update_subject_map_with_existing_headers(self):
+        textbook.request_headers = {"X-CSRF-Token": CSRF_TOKEN}
+        self.mock_subject_map_success()
+
+        textbook._update_subject_map()
+
+        self.assertEqual(textbook.subject_map["CS"], CS_SUBJECT_ID)
 
     def test_textbook_from_json(self):
         self.assertEqual(len(self.cs_0441_textbook_data), 1)
@@ -415,6 +435,54 @@ class TextbookTest(unittest.TestCase):
 
         with self.assertRaises(HTTPError):
             textbook._get_textbooks_for_ids([CS_0441_GARRISON_SECTION_ID])
+
+    @responses.activate
+    def test_get_textbooks_for_ids_initializes_headers(self):
+        self.mock_base_site_success()
+        self.mock_cs_0441_garrison_books_success()
+
+        books = textbook._get_textbooks_for_ids([CS_0441_GARRISON_SECTION_ID])
+
+        self.assertEqual(len(books), 1)
+        self.assertEqual(textbook.request_headers, {"X-CSRF-Token": CSRF_TOKEN})
+
+    @responses.activate
+    def test_get_textbooks_for_course_initializes_headers(self):
+        self.mock_base_site_success()
+        self.mock_subject_map_success()
+        course_info = textbook.CourseInfo("CS", "0441", instructor="GARRISON III")
+        textbook.request_headers = None
+        self.mock_base_site_success()
+        self.mock_cs_courses_success()
+        self.mock_cs_0441_garrison_books_success()
+
+        self.assertEqual(len(textbook.get_textbooks_for_course(course_info)), 1)
+
+    @responses.activate
+    def test_get_textbooks_for_course_initializes_subject_map(self):
+        self.mock_base_site_success()
+        self.mock_subject_map_success()
+        course_info = textbook.CourseInfo("CS", "0441", instructor="GARRISON III")
+        textbook.subject_map = None
+        self.mock_subject_map_success()
+        self.mock_cs_courses_success()
+        self.mock_cs_0441_garrison_books_success()
+
+        self.assertEqual(len(textbook.get_textbooks_for_course(course_info)), 1)
+
+    @responses.activate
+    def test_get_textbooks_for_courses_initializes_global_state(self):
+        self.mock_base_site_success()
+        self.mock_subject_map_success()
+        course_info = textbook.CourseInfo("CS", "0441", instructor="GARRISON III")
+        textbook.request_headers = None
+        textbook.subject_map = None
+        self.mock_base_site_success()
+        self.mock_subject_map_success()
+        self.mock_cs_courses_success()
+        self.mock_cs_0441_garrison_books_success()
+
+        self.assertEqual(len(textbook.get_textbooks_for_courses([course_info])), 1)
 
     @mark.filterwarnings("ignore:Attempt")
     @responses.activate
