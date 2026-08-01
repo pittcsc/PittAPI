@@ -46,9 +46,9 @@ This includes making sure that your code compiles, passes all unit tests, and ad
 ### Unit Testing
 
 PittAPI uses `pytest` for unit testing.
-To run all unit tests, run
+The suite requires 100% statement and branch coverage. To run it:
 ```sh
-uv run pytest --cov=pittapi tests/
+uv run pytest --cov=pittapi --cov-branch --cov-fail-under=100 tests/
 ```
 
 ### Code Quality
@@ -63,10 +63,13 @@ uv run flake8 --max-line-length=127 .
 uv run black --line-length=127 .
 ```
 
-Apart from general code styling, you should also document and comment your code based on general best practices.
-This means that most if not all functions should have docstrings explaining their purpose, inputs, and outputs.
-This also means that comments should primarily be written to clarify code whose function isn't immediately obvious to the average reader.
-We may ask you to make changes to your documentation and comments during PR reviews.
+PittAPI should remain understandable to developers who are still learning Python. Prefer explicit control flow,
+descriptive intermediate variables, and early returns over dense expressions. Add a helper only when it names a
+meaningful domain operation, removes real duplication, or substantially reduces nesting. Do not add pass-through
+wrappers or speculative defensive checks.
+
+Ordinary helper functions, methods, and classes do not begin with `_`; modules use `__all__` to document their
+supported exports. Comments should explain non-obvious provider behavior rather than narrating ordinary Python.
 
 In terms of writing style, we expect you to write in a professional manner and follow proper commenting etiquette—pretend that this is a work environment and your comments are being reviewed by your manager and coworkers.
 
