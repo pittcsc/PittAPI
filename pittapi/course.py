@@ -15,17 +15,31 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Course catalog and section information from Pitt PeopleSoft.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import re
-import requests
-from typing import NamedTuple, Any
+from typing import Any
 
-JSON = dict[str, Any]
+from pittapi.base_client import BaseClient
 
-# https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_CLASS_SEARCH.FieldFormula.IScript_ClassSearch?institution=UPITT&term=2244&date_from=&date_thru=&subject=CS&subject_like=&catalog_nbr=&time_range=&days=&campus=PIT&location=&x_acad_career=UGRD&acad_group=&rqmnt_designtn=&instruction_mode=&keyword=&class_nbr=&acad_org=&enrl_stat=O&crse_attr=&crse_attr_value=&instructor_name=&instr_first_name=&session_code=&units=&trigger_search=&page=1
+__all__ = [
+    "Attribute",
+    "Component",
+    "Course",
+    "CourseClient",
+    "CourseDetails",
+    "Instructor",
+    "Meeting",
+    "Section",
+    "SectionDetails",
+    "Subject",
+]
+
 SUBJECTS_API = (
     "https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/"
     "WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_CatalogSubjects?institution=UPITT"
@@ -37,380 +51,325 @@ SUBJECT_COURSES_API = (
 COURSE_DETAIL_API = (
     "https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/"
     "WEBLIB_HCX_CM.H_COURSE_CATALOG.FieldFormula.IScript_CatalogCourseDetails?institution=UPITT&course_id={id}"
-    "&effdt=2018-06-30&crse_offer_nbr=1&use_catalog_print=Y"
+    "&crse_offer_nbr=1&use_catalog_print=Y"
 )
 COURSE_SECTIONS_API = (
     "https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/"
-    "WEBLIB_HCX_CM.H_BROWSE_CLASSES.FieldFormula.IScript_BrowseSections?institution=UPITT&campus=&location=&course_id={id}"
-    "&institution=UPITT&term={term}&crse_offer_nbr=1"
+    "WEBLIB_HCX_CM.H_BROWSE_CLASSES.FieldFormula.IScript_BrowseSections?institution=UPITT&campus=&location="
+    "&course_id={id}&institution=UPITT&term={term}&crse_offer_nbr=1"
 )
 SECTION_DETAILS_API = (
     "https://pitcsprd.csps.pitt.edu/psc/pitcsprd/EMPLOYEE/SA/s/"
     "WEBLIB_HCX_CM.H_CLASS_SEARCH.FieldFormula.IScript_ClassDetails?institution=UPITT&term={term}&class_nbr={id}"
 )
-# id -> unique course ID, not to be confused with course code (for instance, CS 0007 has code 105611)
-# career -> for example, UGRD (undergraduate)
-
-TERM_REGEX = r"2\d\d[147]"
-VALID_TERMS = re.compile(TERM_REGEX)
+VALID_TERM = re.compile(r"2\d\d[147]\Z")
 
 
-class Instructor(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class Instructor:
     name: str
     email: str | None = None
 
 
-class Meeting(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class Meeting:
     days: str
     start_time: str
     end_time: str
     start_date: str
     end_date: str
-    instructors: list[Instructor] | None = None
+    instructors: tuple[Instructor, ...] = ()
 
 
-class Attribute(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class Attribute:
     attribute: str
     attribute_description: str
     value: str
     value_description: str
 
 
-class Component(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class Component:
     component: str
     required: bool
 
 
-class SectionDetails(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class SectionDetails:
     units: str
-
     class_capacity: str
     enrollment_total: str
     enrollment_available: str
     wait_list_capacity: str
     wait_list_total: str
     valid_to_enroll: str
+    combined_section_numbers: tuple[str, ...] = ()
 
-    combined_section_numbers: list[str] | None = None
 
-
-class Section(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class Section:
     term: str
     session: str
     section_number: str
     class_number: str
     section_type: str
     status: str
-    instructors: list[Instructor] | None = None
-    meetings: list[Meeting] | None = None
+    instructors: tuple[Instructor, ...] = ()
+    meetings: tuple[Meeting, ...] = ()
     details: SectionDetails | None = None
 
 
-class Course(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class Course:
     subject_code: str
     course_number: str
     course_id: str
     course_title: str
 
 
-class CourseDetails(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class CourseDetails:
     course: Course
     course_description: str | None = None
     credit_range: tuple[int, int] | None = None
     requisites: str | None = None
-    components: list[Component] | None = None
-    attributes: list[Attribute] | None = None
-    sections: list[Section] | None = None
+    components: tuple[Component, ...] = ()
+    attributes: tuple[Attribute, ...] = ()
+    sections: tuple[Section, ...] = ()
 
 
-class Subject(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class Subject:
     subject_code: str
-    courses: dict[str, Course]
+    courses: tuple[Course, ...]
 
 
-def get_subject_courses(subject: str) -> Subject:
-    subject = _validate_subject(subject)
+class CourseClient(BaseClient):
+    """Fetch courses and sections from Pitt's PeopleSoft catalog."""
 
-    json_response = _get_subject_courses(subject)
+    def get_subject_courses(self, subject: str) -> Subject:
+        normalized_subject = self.validate_subject(subject)
+        data = self.get_subject_course_data(normalized_subject)
+        try:
+            courses = tuple(parse_course(item, normalized_subject) for item in data["courses"])
+        except (KeyError, TypeError) as error:
+            raise ValueError("subject course response is missing required data") from error
+        return Subject(subject_code=normalized_subject, courses=courses)
 
-    courses = {}
-    for course in json_response["courses"]:
-        course_number = course["catalog_nbr"]
-        course_id = course["crse_id"]
-        course_title = course["descr"]
+    def get_course_details(self, term: str | int, subject: str, course: str | int) -> CourseDetails:
+        normalized_term = validate_term(term)
+        normalized_subject = self.validate_subject(subject)
+        normalized_course = validate_course_number(course)
+        course_id = self.find_course_id(normalized_subject, normalized_course)
 
-        course_obj = Course(
-            subject_code=subject,
-            course_number=course_number,
-            course_id=course_id,
-            course_title=course_title,
+        catalog_data = self.get_course_data(course_id)
+        section_data = self.get_course_section_data(course_id, normalized_term)
+        try:
+            return parse_course_details(
+                catalog_data["course_details"],
+                section_data["sections"],
+                normalized_term,
+                normalized_subject,
+                normalized_course,
+                course_id,
+            )
+        except (KeyError, IndexError, TypeError) as error:
+            raise ValueError("course response is missing required data") from error
+
+    def get_section_details(self, term: str | int, class_number: str | int) -> Section:
+        normalized_term = validate_term(term)
+        data = self.get_section_data(normalized_term, class_number)
+        try:
+            return parse_section_details(data["section_info"], normalized_term, str(class_number))
+        except (KeyError, IndexError, TypeError, ValueError) as error:
+            raise ValueError("section response is missing required data") from error
+
+    def validate_subject(self, subject: str) -> str:
+        normalized_subject = subject.upper()
+        data = self.request("GET", SUBJECTS_API).json()
+        try:
+            subject_codes = {item["subject"] for item in data["subjects"]}
+        except (KeyError, TypeError) as error:
+            raise ValueError("subject response is missing required data") from error
+        if normalized_subject not in subject_codes:
+            raise ValueError(f"invalid subject code: {subject}")
+        return normalized_subject
+
+    def find_course_id(self, subject: str, course_number: str) -> str:
+        data = self.get_subject_course_data(subject)
+        try:
+            for course in data["courses"]:
+                if course["catalog_nbr"] == course_number:
+                    return course["crse_id"]
+        except (KeyError, TypeError) as error:
+            raise ValueError("subject course response is missing required data") from error
+        raise LookupError(f"course not found: {subject} {course_number}")
+
+    def get_subject_course_data(self, subject: str) -> dict[str, Any]:
+        return self.request("GET", SUBJECT_COURSES_API.format(subject=subject)).json()
+
+    def get_course_data(self, course_id: str) -> dict[str, Any]:
+        data = self.request("GET", COURSE_DETAIL_API.format(id=course_id)).json()
+        if not data.get("course_details"):
+            raise LookupError(f"course ID not found: {course_id}")
+        return data
+
+    def get_course_section_data(self, course_id: str, term: str) -> dict[str, Any]:
+        data = self.request("GET", COURSE_SECTIONS_API.format(id=course_id, term=term)).json()
+        if not data.get("sections"):
+            raise LookupError(f"no sections found for course ID {course_id} in term {term}")
+        return data
+
+    def get_section_data(self, term: str, class_number: str | int) -> dict[str, Any]:
+        data = self.request("GET", SECTION_DETAILS_API.format(term=term, id=class_number)).json()
+        if "error" in data:
+            raise LookupError(f"section not found: {class_number}")
+        return data
+
+
+def validate_term(term: str | int) -> str:
+    term_text = str(term)
+    if not VALID_TERM.fullmatch(term_text):
+        raise ValueError("term must be a four-digit Pitt term ending in 1, 4, or 7")
+    return term_text
+
+
+def validate_course_number(course: str | int) -> str:
+    course_text = str(course)
+    if not course_text.isdigit() or int(course_text) <= 0:
+        raise ValueError("course number must be a positive number")
+    if len(course_text) > 4:
+        raise ValueError("course number cannot exceed four digits")
+    return course_text.zfill(4)
+
+
+def parse_course(data: dict[str, Any], subject: str) -> Course:
+    return Course(
+        subject_code=subject,
+        course_number=data["catalog_nbr"],
+        course_id=data["crse_id"],
+        course_title=data["descr"],
+    )
+
+
+def parse_course_details(
+    catalog: dict[str, Any],
+    sections: list[dict[str, Any]],
+    term: str,
+    subject: str,
+    course_number: str,
+    course_id: str,
+) -> CourseDetails:
+    course = Course(
+        subject_code=subject,
+        course_number=course_number,
+        course_id=course_id,
+        course_title=sections[0]["descr"],
+    )
+    offerings = catalog.get("offerings", ())
+    requisites = offerings[0].get("req_group") if offerings else None
+    components = tuple(
+        Component(component=item["descr"], required=item["optional"] == "N") for item in catalog.get("components", ())
+    )
+    attributes = tuple(
+        Attribute(
+            attribute=item["crse_attribute"],
+            attribute_description=item["crse_attribute_descr"],
+            value=item["crse_attribute_value"],
+            value_description=item["crse_attribute_value_descr"],
         )
-
-        courses[course_number] = course_obj
-
-    return Subject(subject_code=subject, courses=courses)
-
-
-def get_course_details(term: str | int, subject: str, course: str | int) -> CourseDetails:
-    term = _validate_term(term)
-    subject = _validate_subject(subject)
-    course = _validate_course(course)
-
-    internal_course_id = _get_course_id(subject, course)
-    json_response = _get_course_info(internal_course_id)["course_details"]
-    json_response_details = _get_course_sections(internal_course_id, term)
-
-    course_title = json_response_details["sections"][0]["descr"]
-    course_description = json_response["descrlong"]
-    credit_range = (json_response["units_minimum"], json_response["units_maximum"])
-
-    requisites = None
-    if "offerings" in json_response and len(json_response["offerings"]) != 0 and "req_group" in json_response["offerings"][0]:
-        requisites = json_response["offerings"][0]["req_group"]
-
-    components = None
-    if "components" in json_response and len(json_response["components"]) != 0:
-        components = [
-            Component(
-                component=component["descr"],
-                required=True if component["optional"] == "N" else False,
-            )
-            for component in json_response["components"]
-        ]
-
-    attributes = None
-    if "attributes" in json_response and len(json_response["attributes"]) != 0:
-        attributes = [
-            Attribute(
-                attribute=attribute["crse_attribute"],
-                attribute_description=attribute["crse_attribute_descr"],
-                value=attribute["crse_attribute_value"],
-                value_description=attribute["crse_attribute_value_descr"],
-            )
-            for attribute in json_response["attributes"]
-        ]
-
-    sections = []
-    for section in json_response_details["sections"]:
-        session = section["session"]
-        section_number = section["class_section"]
-        class_number = str(section["class_nbr"])
-        section_type = section["section_type"]
-        status = section["enrl_stat_descr"]
-
-        instructors = None
-        if len(section["instructors"]) != 0 and section["instructors"][0] != "To be Announced":
-            instructors = [
-                Instructor(name=instructor["name"], email=instructor["email"]) for instructor in section["instructors"]
-            ]
-
-        meetings = None
-        if len(section["meetings"]) != 0:
-            meetings = [
-                Meeting(
-                    days=meeting["days"],
-                    start_time=meeting["start_time"],
-                    end_time=meeting["end_time"],
-                    start_date=meeting["start_dt"],
-                    end_date=meeting["end_dt"],
-                    instructors=[Instructor(name=meeting["instructor"])],
-                )
-                for meeting in section["meetings"]
-            ]
-
-        sections.append(
-            Section(
-                term=term,
-                session=session,
-                section_number=section_number,
-                class_number=class_number,
-                section_type=section_type,
-                status=status,
-                instructors=instructors,
-                meetings=meetings,
-            )
-        )
-
+        for item in catalog.get("attributes", ())
+    )
+    parsed_sections = tuple(parse_catalog_section(item, term) for item in sections)
     return CourseDetails(
-        course=Course(
-            subject_code=subject,
-            course_number=course,
-            course_id=internal_course_id,
-            course_title=course_title,
-        ),
-        course_description=course_description,
-        credit_range=credit_range,
+        course=course,
+        course_description=catalog.get("descrlong"),
+        credit_range=(catalog["units_minimum"], catalog["units_maximum"]),
         requisites=requisites,
         components=components,
         attributes=attributes,
-        sections=sections,
+        sections=parsed_sections,
     )
 
 
-def get_section_details(term: str | int, class_number: str | int) -> Section:
-    term = _validate_term(term)
-
-    json_response = _get_section_details(term, class_number)
-    details = json_response["section_info"]["class_details"]
-    meetings = json_response["section_info"]["meetings"]
-    enrollment = json_response["section_info"]["class_availability"]
-
-    session = details["session"]
-    section_num = details["class_section"]
-    section_type = details["component"]
-    status = details["status"]
-
-    meeting_objs = None
-    if len(meetings) != 0:
-        meeting_objs = []
-        for meeting in meetings:
-            days = meeting["days"]
-            start_time = meeting["meeting_time_start"]
-            end_time = meeting["meeting_time_end"]
-            # start_date = meeting["start_date"]
-            # end_date = meeting["end_date"]
-            date_range = meeting["date_range"].split(" - ")
-
-            instructors = None
-            if len(meeting["instructors"]) != 0 and meeting["instructors"][0]["name"] not in ["To be Announced", "-"]:
-                instructors = []
-                for instructor in meeting["instructors"]:
-                    name = instructor["name"]
-                    email = instructor["email"]
-
-                    instructors.append(Instructor(name=name, email=email))
-
-            meeting_objs.append(
-                Meeting(
-                    days=days,
-                    start_time=start_time,
-                    end_time=end_time,
-                    start_date=date_range[0],
-                    end_date=date_range[1],
-                    instructors=instructors,
-                )
+def parse_catalog_section(data: dict[str, Any], term: str) -> Section:
+    instructors = parse_instructors(data.get("instructors", ()))
+    meetings = []
+    for item in data.get("meetings", ()):
+        meeting_instructors = ()
+        if item.get("instructor"):
+            meeting_instructors = (Instructor(name=item["instructor"]),)
+        meetings.append(
+            Meeting(
+                days=item["days"],
+                start_time=item["start_time"],
+                end_time=item["end_time"],
+                start_date=item["start_dt"],
+                end_date=item["end_dt"],
+                instructors=meeting_instructors,
             )
-
-    units = details["units"]
-    class_capacity = enrollment["class_capacity"]
-    enrollment_total = enrollment["enrollment_total"]
-    enrollment_available = str(enrollment["enrollment_available"])
-    wait_list_capacity = enrollment["wait_list_capacity"]
-    wait_list_total = enrollment["wait_list_total"]
-    valid_to_enroll = json_response["section_info"]["valid_to_enroll"]
-    combined_section_numbers = None
-    if json_response["section_info"]["is_combined"]:
-        combined_section_numbers = []
-        for section in json_response["section_info"]["combined_sections"]:
-            combined_section_numbers.append(section["class_nbr"])
-
-    details = SectionDetails(
-        units=units,
-        class_capacity=class_capacity,
-        enrollment_total=enrollment_total,
-        enrollment_available=enrollment_available,
-        wait_list_capacity=wait_list_capacity,
-        wait_list_total=wait_list_total,
-        valid_to_enroll=valid_to_enroll,
-        combined_section_numbers=combined_section_numbers,
-    )
-
+        )
     return Section(
         term=term,
-        session=session,
-        section_number=section_num,
-        class_number=str(class_number),
-        section_type=section_type,
-        status=status,
-        instructors=None,
-        meetings=meeting_objs,
+        session=data["session"],
+        section_number=data["class_section"],
+        class_number=str(data["class_nbr"]),
+        section_type=data["section_type"],
+        status=data["enrl_stat_descr"],
+        instructors=instructors,
+        meetings=tuple(meetings),
+    )
+
+
+def parse_section_details(section_info: dict[str, Any], term: str, class_number: str) -> Section:
+    details_data = section_info["class_details"]
+    enrollment = section_info["class_availability"]
+    combined_numbers = ()
+    if section_info["is_combined"]:
+        combined_numbers = tuple(str(item["class_nbr"]) for item in section_info["combined_sections"])
+
+    details = SectionDetails(
+        units=details_data["units"],
+        class_capacity=enrollment["class_capacity"],
+        enrollment_total=enrollment["enrollment_total"],
+        enrollment_available=str(enrollment["enrollment_available"]),
+        wait_list_capacity=enrollment["wait_list_capacity"],
+        wait_list_total=enrollment["wait_list_total"],
+        valid_to_enroll=section_info["valid_to_enroll"],
+        combined_section_numbers=combined_numbers,
+    )
+    meetings = tuple(parse_detailed_meeting(item) for item in section_info["meetings"])
+    return Section(
+        term=term,
+        session=details_data["session"],
+        section_number=details_data["class_section"],
+        class_number=class_number,
+        section_type=details_data["component"],
+        status=details_data["status"],
+        meetings=meetings,
         details=details,
     )
 
 
-# validation for method inputs
-def _validate_term(term: str | int) -> str:
-    """Validates that the term entered follows the pattern that Pitt does for term codes."""
-    if VALID_TERMS.match(str(term)):
-        return str(term)
-    raise ValueError("Term entered isn't a valid Pitt term, must match regex " + TERM_REGEX)
+def parse_detailed_meeting(data: dict[str, Any]) -> Meeting:
+    start_date, end_date = data["date_range"].split(" - ")
+    return Meeting(
+        days=data["days"],
+        start_time=data["meeting_time_start"],
+        end_time=data["meeting_time_end"],
+        start_date=start_date,
+        end_date=end_date,
+        instructors=parse_instructors(data["instructors"]),
+    )
 
 
-def _validate_subject(subject: str) -> str:
-    """Validates that the subject code entered is present in the API request."""
-    if subject in _get_subject_codes():
-        return subject
-    raise ValueError("Subject code entered isn't a valid Pitt subject code.")
-
-
-def _validate_course(course: str | int) -> str:
-    """Validates that the course name entered is 4 characters long and in string form."""
-    if course == "":
-        raise ValueError("Invalid course number, please enter a non-empty string.")
-    if (type(course) is str) and (not course.isdigit()):
-        raise ValueError("Invalid course number, must be a number")
-    if (type(course) is int) and (course <= 0):
-        raise ValueError("Invalid course number, must be positive")
-    course_length = len(str(course))
-    if course_length < 4:
-        return ("0" * (4 - course_length)) + str(course)
-    elif course_length > 4:
-        raise ValueError("Invalid course number, must be 4 characters long")
-    return str(course)
-
-
-# peoplesoft api calls
-def _get_subjects() -> JSON:
-    response: JSON = requests.get(SUBJECTS_API).json()
-    return response
-
-
-def _get_subject_courses(subject: str) -> JSON:
-    response: JSON = requests.get(SUBJECT_COURSES_API.format(subject=subject)).json()
-    return response
-
-
-def _get_course_info(course_id: str) -> JSON:
-    response: JSON = requests.get(COURSE_DETAIL_API.format(id=course_id)).json()
-    if response["course_details"] == {}:
-        raise ValueError("Invalid course ID; course with that ID does not exist")
-    return response
-
-
-def _get_course_sections(course_id: str, term: str) -> JSON:
-    response: JSON = requests.get(COURSE_SECTIONS_API.format(id=course_id, term=term)).json()
-    if len(response["sections"]) == 0:
-        raise ValueError("Invalid course ID; course with that ID does not exist")
-    return response
-
-
-def _get_section_details(term: str | int, section_id: str | int) -> JSON:
-    response: JSON = requests.get(SECTION_DETAILS_API.format(term=term, id=section_id)).json()
-    if "error" in response:
-        raise ValueError("Invalid section ID; section with that ID does not exist")
-    return response
-
-
-# operations from api calls
-def _get_subject_codes() -> list[str]:
-    response = _get_subjects()
-    codes = []
-    for subject in response["subjects"]:
-        codes.append(subject["subject"])
-    return codes
-
-
-def _get_internal_id_dict(subject: str) -> dict[str, str]:
-    response = _get_subject_courses(subject)
-    internal_id_dict = {}
-    for course in response["courses"]:
-        if course["catalog_nbr"] not in internal_id_dict:
-            internal_id_dict[course["catalog_nbr"]] = course["crse_id"]
-    return internal_id_dict
-
-
-def _get_course_id(subject: str, course: str) -> str:
-    subject_dict = _get_internal_id_dict(subject)
-    if str(course) not in subject_dict:
-        raise ValueError("No course with that number within listed subject")
-    return subject_dict[str(course)]
+def parse_instructors(instructors: list[dict[str, Any]] | tuple[Any, ...]) -> tuple[Instructor, ...]:
+    if not instructors or instructors[0] == "To be Announced":
+        return ()
+    parsed = []
+    for instructor in instructors:
+        if instructor["name"] in ("To be Announced", "-"):
+            continue
+        parsed.append(Instructor(name=instructor["name"], email=instructor.get("email")))
+    return tuple(parsed)

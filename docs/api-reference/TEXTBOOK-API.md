@@ -1,104 +1,25 @@
 > [Home](README.md) > Textbook API
----
 
 # Textbook API
 
-### **get_textbook(term, department, course, instructor, section)**
+Textbook terms are discovered from the bookstore instead of being embedded in PittAPI. Select a term before looking
+up a course:
 
-#### **Parameters**:
-  - `term`: Term number | Example: `2671`
-  - `department`: Department code | Example: `CS`
-  - `course`: Course number | Example: `0401`, `411`
-  - `instructor`: Instructor name | Example: `GARRISON III`, `YANG`, `HOFFMAN`
-  - `section`: Section number | Example: `1030`, `1060`
-
-#### **Returns**:
-Returns a list of dictionaries containing Author, ISBN, Edition, Title, and Citation
-
-#### **Example**:
-
-###### **Code**:
 ```python
-get_textbook(
-            term='2671,
-            department='CS',
-            course='445',
-            instructor='GARRISON III'
-)
+from pittapi import TextbookClient
+from pittapi.textbook import CourseInfo
 
-get_textbook(
-            term='2671',
-            department='CS',
-            course='401',
-            section='1010'
-)
+with TextbookClient() as textbooks:
+    terms = textbooks.get_terms()
+    fall = next(term for term in terms if term.name == "Fall 26")
+    textbooks.select_term(fall)
+    books = textbooks.get_textbooks_for_course(
+        CourseInfo("CS", "0441", instructor="GARRISON III")
+    )
 ```
 
-###### **Sample Output**:
-```python
-    [
-        {
-            'author': 'Carrano',
-            'citation': '<em>Data Struct.+Abstract.W/Java-W/Access</em> by Carrano. '
-            'Pearson Education, 4th Edition, 2014. (ISBN: 9780133744057).',
-            'edition': '4',
-            'isbn': '9780133744057',
-            'title': 'Data Struct.+Abstract.W/Java-W/Access'
-        }
-    ]
+A term can also be supplied to `TextbookClient(term=...)`. Changing it with `select_term()` clears cached
+term-specific subjects. `get_textbooks_for_courses()` accepts a list or tuple and preserves course order.
 
-    [
-        {
-            'author': 'Gaddis',
-            'citation': '<em>Starting Out W/Java:From..-W/Access</em> by Gaddis. Pearson '
-            'Education, 6th Edition, 2015. (ISBN: 9780133957051).',
-            'edition': '6',
-            'isbn': '9780133957051',
-            'title': 'Starting Out W/Java:From...-W/Access'
-        }
-    ]
-```
-
-### **get_textbooks(term, courses)**
-
-#### **Parameters**:
-  - `term`: Term number | Example: `2671`
-  - `courses`: List of dictionaries of class info | Example: `[{'department': 'CS', 'course': '0401', 'instructor': 'HOFFMAN'}]`
-
-#### **Returns**:
-Returns a list of dictionaries containing Author, ISBN, Edition, Title, and Citation
-
-#### **Example**:
-
-###### **Code**:
-```python
-get_textbooks(
-    term='2671',
-    courses=[
-    {'department': 'CS', 'course': '445', 'section': '1010'},
-    {'department': 'STAT', 'course': '1000', 'instructor': 'REGISTER'}
-    ]
-)
-```
-
-###### **Sample Output**:
-```python
-    [
-        {
-            'author': 'Moore',
-            'citation': '<em>Intro.To Practice Of Stat.-W/Access</em> by Moore. Freeman
-                        & Company, W. H., 8th Edition, 2014. (ISBN: 9781464158933).',
-            'edition': '8',
-            'isbn': '9781464158933',
-            'title': 'Intro.To Practice Of Stat.-W/Access'
-        },
-        {
-            'author': 'Carrano',
-            'citation': '<em>Data Struct.+Abstract.W/Java-W/Access</em> by Carrano.
-                        Pearson Education, 4th Edition, 2014. (ISBN: 9780133744057).',
-            'edition': '4',
-            'isbn': '9780133744057',
-            'title': 'Data Struct.+Abstract.W/Java-W/Access'
-        }
-    ]
-```
+`CourseInfo` normalizes the subject and instructor to uppercase and pads course numbers to four digits. Specify an
+instructor or four-digit section number when a course has multiple distinguishable sections.
