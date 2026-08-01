@@ -15,34 +15,44 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Availability and machine status for Pitt residence-hall laundries.
 """
 
-from __future__ import annotations
-
+from dataclasses import dataclass
+from enum import IntEnum
 import re
-import requests
-from typing import Any, NamedTuple
+from typing import Any, Literal
 
-JSON = dict[str, Any]
+from pittapi.base_client import BaseClient
 
+__all__ = [
+    "BuildingStatus",
+    "LaundryClient",
+    "LaundryLocation",
+    "LaundryMachine",
+    "MachineStatus",
+]
 
-BASE_URL = "https://www.laundryview.com/api/currentRoomData?school_desc_key=197&location={location}"
-
-LOCATION_LOOKUP = {
-    "TOWERS": "2430136",
-    "BRACKENRIDGE": "2430119",
-    "HOLLAND": "2430137",
-    "LOTHROP": "2430151",
-    "MCCORMICK": "2430120",
-    "SUTH_EAST": "2430135",
-    "SUTH_WEST": "2430134",
-    "FORBES_CRAIG": "2430142",
-}
-
-NUMBER_REGEX = re.compile(r"\d+")
+SCHOOL_ID = "197"
+LOCATIONS_URL = "https://www.laundryview.com/api/c_room"
+CURRENT_ROOM_URL = "https://www.laundryview.com/api/currentRoomData"
+NUMBER_PATTERN = re.compile(r"\d+")
+MachineType = Literal["washer", "dryer"]
 
 
-class BuildingStatus(NamedTuple):
+class MachineStatus(IntEnum):
+    """LaundryView's documented machine states."""
+
+    AVAILABLE = 0
+    IDLE = 1
+    RUNNING = 2
+    OUT_OF_SERVICE = 3
+    OFFLINE = 4
+
+
+@dataclass(frozen=True, slots=True)
+class BuildingStatus:
     building: str
     free_washers: int
     total_washers: int
@@ -50,149 +60,150 @@ class BuildingStatus(NamedTuple):
     total_dryers: int
 
 
-class LaundryMachine(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class LaundryLocation:
+    """A laundry room published for Pitt's LaundryView account."""
+
+    id: str
+    name: str
+    campus: str
+
+
+@dataclass(frozen=True, slots=True)
+class LaundryMachine:
     name: str
     id: str
-    status: str
-    type: str
-    time_left: int | None
+    type: MachineType
+    status: MachineStatus
+    status_message: str
+    minutes_remaining: int | None
+    cycle_progress_percent: float | None
+    model_number: str | None
+    average_cycle_minutes: int
+    is_combo: bool
+    is_stacked: bool
+
+    @property
+    def is_available(self) -> bool:
+        return self.status is MachineStatus.AVAILABLE
 
 
-def _get_laundry_info(building_name: str) -> JSON:
-    """Returns JSON object of laundry view webpage"""
-    building_name = building_name.upper()
-    url = BASE_URL.format(location=LOCATION_LOOKUP[building_name])
-    response = requests.get(url)
-    info: dict[str, Any] = response.json()
-    return info
+class LaundryClient(BaseClient):
+    """Fetch laundry information for Pitt residence halls."""
 
-
-def _parse_laundry_object_json(json: JSON) -> list[LaundryMachine]:
-    """
-    Parse the given JSON object into a list of laundry machines.
-    Returns a list because a single machine may have multiple components
-    (one washer and one dryer, two washers, or two dryers).
-
-    Implementation detail: the machine type is determined by checking the "type" JSON field.
-    While it'd be more straightforward to check the "combo" boolean field, this field won't exist if the JSON object doesn't
-    represent a laundry machine (e.g., a card reader).
-
-    Possible machine statuses:
-    status_toggle = 0: "Available"
-    status_toggle = 1: "Idle" (finished running)
-    status_toggle = 2: either "N min remaining" or "Ext. Cycle" (currently running)
-    status_toggle = 3: "Out of service"
-    status_toggle = 4: "Offline"
-    """
-    if json["type"] == "washNdry":  # Combo machine, add washer and dryer separately
-        # Only Towers and Lothrop have combo machines, and for those buildings,
-        # washers are named with even numbers while dryers are named with odd numbers
-        machine1_name = json["appliance_desc"]
-        machine1_num_match = NUMBER_REGEX.search(machine1_name)
-        if not machine1_num_match:
-            raise ValueError(f"Found a combo machine with an invalid machine name: {machine1_name}")
-        machine1_num = int(machine1_num_match.group(0))
-        machine1_type = "washer" if machine1_num % 2 == 0 else "dryer"
-        machine1_id = json["appliance_desc_key"]
-        machine1_status = json["time_left_lite"]
-        unavailable1 = machine1_status in ("Out of service", "Offline")
-        time_left1 = None if unavailable1 else json["time_remaining"]
-
-        machine2_name = json["appliance_desc2"]
-        machine2_num_match = NUMBER_REGEX.search(machine2_name)
-        if not machine2_num_match:
-            raise ValueError(f"Found a combo machine with an invalid machine name: {machine2_name}")
-        machine2_num = int(machine2_num_match.group(0))
-        machine2_type = "washer" if machine2_num % 2 == 0 else "dryer"
-        machine2_id = json["appliance_desc_key2"]
-        machine2_status = json["time_left_lite2"]
-        unavailable2 = machine2_status in ("Out of service", "Offline")
-        time_left2 = None if unavailable2 else json["time_remaining2"]
-
-        return [
-            LaundryMachine(
-                name=machine1_name, id=machine1_id, status=machine1_status, type=machine1_type, time_left=time_left1
-            ),
-            LaundryMachine(
-                name=machine2_name, id=machine2_id, status=machine2_status, type=machine2_type, time_left=time_left2
-            ),
-        ]
-    elif json["type"] in ("washFL", "dry"):  # Only washers/only dryers
-        machine_type = "washer" if json["type"] == "washFL" else "dryer"
-        machine_name = json["appliance_desc"]
-        machine_id = json["appliance_desc_key"]
-        machine_status = json["time_left_lite"]
-        unavailable = machine_status in ("Out of service", "Offline")
-        time_left = None if unavailable else json["time_remaining"]
-        machines = [
-            LaundryMachine(name=machine_name, id=machine_id, status=machine_status, type=machine_type, time_left=time_left)
-        ]
-
-        if "type2" in json:  # Double machine (two washers/two dryers), add second component separately
-            machine_type = "washer" if json["type2"] == "washFL" else "dryer"
-            machine_name = json["appliance_desc2"]
-            machine_id = json["appliance_desc_key2"]
-            machine_status = json["time_left_lite2"]
-            unavailable = machine_status in ("Out of service", "Offline")
-            time_left = None if unavailable else json["time_remaining2"]
-            machines.append(
-                LaundryMachine(name=machine_name, id=machine_id, status=machine_status, type=machine_type, time_left=time_left)
+    def get_locations(self) -> tuple[LaundryLocation, ...]:
+        """Return the laundry rooms currently published for Pitt."""
+        data = self.request("GET", LOCATIONS_URL, params={"cui": "1", "loc": SCHOOL_ID}).json()
+        try:
+            return tuple(
+                LaundryLocation(
+                    id=str(item["laundry_room_location"]),
+                    name=item["laundry_room_name"],
+                    campus=item["campus_name"],
+                )
+                for item in data["room_data"]
             )
+        except (KeyError, TypeError) as error:
+            raise ValueError("laundry discovery response is missing required data") from error
 
-        return machines
-    return []  # Not a laundry machine (card reader, table, etc.)
+    def get_building_status(self, location: LaundryLocation) -> BuildingStatus:
+        """Summarize washer and dryer availability for a discovered room."""
+        machines = self.get_machine_statuses(location)
+        free_washers = sum(machine.type == "washer" and machine.is_available for machine in machines)
+        free_dryers = sum(machine.type == "dryer" and machine.is_available for machine in machines)
+        total_washers = sum(machine.type == "washer" for machine in machines)
+        total_dryers = sum(machine.type == "dryer" for machine in machines)
+        return BuildingStatus(
+            building=location.name,
+            free_washers=free_washers,
+            total_washers=total_washers,
+            free_dryers=free_dryers,
+            total_dryers=total_dryers,
+        )
+
+    def get_machine_statuses(self, location: LaundryLocation) -> tuple[LaundryMachine, ...]:
+        """Return individual machines for a discovered laundry room."""
+        params = {"school_desc_key": SCHOOL_ID, "location": location.id}
+        data = self.request("GET", CURRENT_ROOM_URL, params=params).json()
+        try:
+            machines = []
+            for item in data["objects"]:
+                machines.extend(parse_laundry_object(item))
+            return tuple(machines)
+        except (KeyError, TypeError) as error:
+            raise ValueError("laundry response is missing required data") from error
 
 
-def get_building_status(building_name: str) -> BuildingStatus:
-    """
-    :returns: a BuildingStatus object with free washers and dryers as well as total washers and dryers for given building
+def parse_laundry_object(data: dict[str, Any]) -> tuple[LaundryMachine, ...]:
+    object_type = data["type"]
+    is_combo = object_type == "washNdry"
+    is_stacked = bool(data.get("stacked") or data.get("manualStack"))
 
-    :param: loc: Building name, case doesn't matter
-        -> TOWERS
-        -> BRACKENRIDGE
-        -> HOLLAND
-        -> LOTHROP
-        -> MCCORMICK
-        -> SUTH_EAST
-        -> SUTH_WEST
-    """
-    machines = get_laundry_machine_statuses(building_name)
-    free_washers, free_dryers, total_washers, total_dryers = 0, 0, 0, 0
-    for machine in machines:
-        if machine.type == "washer":
-            total_washers += 1
-            if machine.status == "Available":
-                free_washers += 1
-        elif machine.type == "dryer":
-            total_dryers += 1
-            if machine.status == "Available":
-                free_dryers += 1
-    return BuildingStatus(
-        building=building_name,
-        free_washers=free_washers,
-        total_washers=total_washers,
-        free_dryers=free_dryers,
-        total_dryers=total_dryers,
+    if is_combo:
+        first_type = infer_combo_type(data["appliance_desc"])
+    elif object_type == "washFL":
+        first_type = "washer"
+    elif object_type in ("dry", "dblDry"):
+        first_type = "dryer"
+    else:
+        return ()
+
+    machines = [parse_machine(data, first_type, is_combo=is_combo, is_stacked=is_stacked)]
+    if "appliance_desc_key2" in data:
+        if is_combo:
+            second_type = infer_combo_type(data["appliance_desc2"])
+        else:
+            second_type = "washer" if data.get("type2") == "washFL" else "dryer"
+        machines.append(
+            parse_machine(
+                data,
+                second_type,
+                suffix="2",
+                is_combo=is_combo,
+                is_stacked=is_stacked,
+            )
+        )
+    return tuple(machines)
+
+
+def infer_combo_type(machine_name: str) -> MachineType:
+    number = NUMBER_PATTERN.search(machine_name)
+    if number is None:
+        raise ValueError(f"combo machine has an invalid name: {machine_name}")
+    return "washer" if int(number.group()) % 2 == 0 else "dryer"
+
+
+def parse_machine(
+    data: dict[str, Any],
+    machine_type: MachineType,
+    suffix: str = "",
+    is_combo: bool = False,
+    is_stacked: bool = False,
+) -> LaundryMachine:
+    status_code = data[f"status_toggle{suffix}"]
+    try:
+        status = MachineStatus(status_code)
+    except ValueError as error:
+        raise ValueError(f"unknown laundry status code: {status_code}") from error
+
+    minutes_remaining = None
+    cycle_progress = None
+    if status is MachineStatus.RUNNING:
+        minutes_remaining = data[f"time_remaining{suffix}"]
+        progress = data[f"percentage{suffix}"]
+        if 0 <= progress <= 100:
+            cycle_progress = progress
+
+    return LaundryMachine(
+        name=data[f"appliance_desc{suffix}"],
+        id=data[f"appliance_desc_key{suffix}"],
+        type=machine_type,
+        status=status,
+        status_message=data[f"time_left_lite{suffix}"],
+        minutes_remaining=minutes_remaining,
+        cycle_progress_percent=cycle_progress,
+        model_number=data.get(f"model_number{suffix}", data.get("model_number")),
+        average_cycle_minutes=data[f"average_run_time{suffix}"],
+        is_combo=is_combo,
+        is_stacked=is_stacked,
     )
-
-
-def get_laundry_machine_statuses(building_name: str) -> list[LaundryMachine]:
-    """
-    :returns: A list of washers and dryers for the passed building location with their statuses
-
-    :param building_name: (String) one of these:
-        -> BRACKENRIDGE
-        -> HOLLAND
-        -> LOTHROP
-        -> MCCORMICK
-        -> SUTH_EAST
-        -> SUTH_WEST
-    """
-    machines = []
-    laundry_info = _get_laundry_info(building_name)
-
-    for obj in laundry_info["objects"]:
-        obj_machines = _parse_laundry_object_json(obj)
-        machines.extend(obj_machines)
-
-    return machines
