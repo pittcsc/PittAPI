@@ -45,6 +45,11 @@ dev = [
 line-length = 127
 target-version = ["py313"]
 
+[tool.pytest.ini_options]
+markers = [
+    "live: makes requests to live provider services",
+]
+
 [tool.setuptools.packages.find]
 exclude = ["docs*", "tests*"]
 namespaces = false
